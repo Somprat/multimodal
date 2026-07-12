@@ -1,6 +1,24 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+project_root="$(cd "${script_dir}/../../.." && pwd)"
+cd "${project_root}"
+
+python_bin="${PYTHON_BIN:-${project_root}/.venv/bin/python}"
+if [[ ! -x "${python_bin}" ]]; then
+  echo "Python environment not found: ${python_bin}" >&2
+  echo "Create the workspace-local .venv before running this script." >&2
+  exit 1
+fi
+
+local_vulkan_lib="${project_root}/.runtime/root/usr/lib/x86_64-linux-gnu"
+if [[ -d "${local_vulkan_lib}" ]]; then
+  export LD_LIBRARY_PATH="${local_vulkan_lib}${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}"
+fi
+export MS2_REAL2SIM_ASSET_DIR="${MS2_REAL2SIM_ASSET_DIR:-${project_root}/third_libs/SimplerEnv/ManiSkill2_real2sim/data}"
+export VK_ICD_FILENAMES="${VK_ICD_FILENAMES:-${project_root}/third_libs/SimplerEnv/ManiSkill2_real2sim/docker/nvidia_icd.json}"
+
 usage() {
   cat <<'EOF'
 Usage:
@@ -64,6 +82,18 @@ if [[ -z "${model_a}" || -z "${model_b}" ]]; then
   exit 1
 fi
 
+for ckpt_path in "${model_a}" "${model_b}"; do
+  if [[ ! -f "${ckpt_path}" ]]; then
+    echo "Checkpoint not found: ${ckpt_path}" >&2
+    exit 1
+  fi
+  config_path="$(dirname "$(dirname "${ckpt_path}")")/config.yaml"
+  if [[ ! -f "${config_path}" ]]; then
+    echo "Model config not found: ${config_path}" >&2
+    exit 1
+  fi
+done
+
 ckpt_paths=("${model_a}" "${model_b}")
 roots=()
 
@@ -91,7 +121,7 @@ run_bridge_task() {
   local robot_init_x="$8"
   local robot_init_y="$9"
 
-  CUDA_VISIBLE_DEVICES="${gpu_id}" python evaluation/simpler_env/simpler_env_inference.py ${use_bf16} \
+  CUDA_VISIBLE_DEVICES="${gpu_id}" "${python_bin}" evaluation/simpler_env/simpler_env_inference.py ${use_bf16} \
     --ckpt-path "${ckpt_path}" \
     --robot "${robot}" --policy-setup widowx_bridge \
     --control-freq 5 --sim-freq 500 --max-episode-steps 120 \
@@ -139,4 +169,4 @@ for ckpt_path in "${ckpt_paths[@]}"; do
     "0.127" "0.06"
 done
 
-python script/eval/bridge/extract_bridge_results.py --style md "${roots[@]}"
+"${python_bin}" script/eval/bridge/extract_bridge_results.py --style md "${roots[@]}"

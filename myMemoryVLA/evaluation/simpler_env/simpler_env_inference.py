@@ -7,7 +7,15 @@ import yaml
 from argparse import Namespace
 
 os.environ["DISPLAY"] = ""
-os.environ["VK_ICD_FILENAMES"] = "/usr/share/vulkan/icd.d/nvidia_icd.json"
+if "VK_ICD_FILENAMES" not in os.environ:
+    for icd_path in (
+        "/usr/share/vulkan/icd.d/nvidia_icd.json",
+        "/etc/vulkan/icd.d/nvidia_icd.json",
+    ):
+        if os.path.exists(icd_path):
+            os.environ["VK_ICD_FILENAMES"] = icd_path
+            break
+
 
 from simpler_env.evaluation.argparse import get_args
 

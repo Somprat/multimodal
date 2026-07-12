@@ -105,6 +105,8 @@ celerybeat.pid
 .env
 .venv
 env/
+!third_libs/SimplerEnv/simpler_env/utils/env/
+!third_libs/SimplerEnv/simpler_env/utils/env/*.py
 venv/
 ENV/
 env.bak/
