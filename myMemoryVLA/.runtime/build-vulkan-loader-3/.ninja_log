@@ -1,0 +1,27 @@
+# ninja log v7
+85	696	1783871841000000000	loader/CMakeFiles/asm_offset.dir/asm_offset.c.o	c69dacbc407a333f
+746	895	1783871842000000000	loader/asm_offset	899a532fb8eae093
+895	932	1783871842000000000	loader/gen_defines.asm	43e6953896a3d525
+895	932	1783871842000000000	/workspace/multimodal/myMemoryVLA/.runtime/build-vulkan-loader-3/loader/gen_defines.asm	43e6953896a3d525
+933	1546	1783871842000000000	loader/CMakeFiles/vulkan.dir/allocation.c.o	db3866be8ee1763a
+941	1554	1783871842000000000	loader/CMakeFiles/vulkan.dir/extension_manual.c.o	3fb13f4b8c8f99b8
+938	1673	1783871842000000000	loader/CMakeFiles/vulkan.dir/debug_utils.c.o	34288c46ae8f8903
+936	2001	1783871842000000000	loader/CMakeFiles/vulkan.dir/cJSON.c.o	a410972b7e7c4e12
+1548	2133	1783871842000000000	loader/CMakeFiles/vulkan.dir/loader_environment.c.o	b18f937f3d3bc7fe
+1557	2171	1783871842000000000	loader/CMakeFiles/vulkan.dir/gpa_helper.c.o	4719234568a23696
+2009	2533	1783871843000000000	loader/CMakeFiles/vulkan.dir/log.c.o	f6f3a17b1b2c0ebe
+2135	2756	1783871843000000000	loader/CMakeFiles/vulkan.dir/loader_json.c.o	cef4adb27c8a4728
+2173	2890	1783871843000000000	loader/CMakeFiles/vulkan.dir/settings.c.o	18da29e18803b2d9
+2535	3081	1783871843000000000	loader/CMakeFiles/vulkan.dir/terminator.c.o	df0fdcfaa215794b
+2766	3846	1783871844000000000	loader/CMakeFiles/vulkan.dir/trampoline.c.o	bef4293f731298df
+3083	3869	1783871844000000000	loader/CMakeFiles/vulkan.dir/wsi.c.o	6346fe6ce6bea4eb
+3871	4234	1783871845000000000	loader/CMakeFiles/vulkan.dir/dev_ext_trampoline.c.o	b5088ec24e19ac02
+4236	4601	1783871845000000000	loader/CMakeFiles/vulkan.dir/phys_dev_ext.c.o	d69f3d73b535e67b
+3847	4644	1783871845000000000	loader/CMakeFiles/vulkan.dir/loader_linux.c.o	81b483bf8f27589c
+4603	4796	1783871845000000000	loader/CMakeFiles/vulkan.dir/unknown_ext_chain_gas_x86.S.o	24002a896d8ef79
+2891	4924	1783871844000000000	loader/CMakeFiles/vulkan.dir/unknown_function_handling.c.o	2fd82db40a72dee
+1675	5393	1783871843000000000	loader/CMakeFiles/vulkan.dir/loader.c.o	10346df6808aa8fe
+5399	6462	1783871846000000000	loader/libvulkan.so.1.4.313	580b252d4c98756
+6463	6568	1783871847000000000	loader/libvulkan.so.1	48a13adaa2d7e148
+6463	6568	1783871847000000000	loader/libvulkan.so	48a13adaa2d7e148
+6569	6787	1783871847000000000	CMakeFiles/install.util	91a2dda17d410296

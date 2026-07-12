@@ -1,0 +1,8 @@
+{
+	"InstallScripts" : 
+	[
+		"/workspace/multimodal/myMemoryVLA/.runtime/build-vulkan-headers-2/cmake_install.cmake",
+		"/workspace/multimodal/myMemoryVLA/.runtime/build-vulkan-headers-2/tests/cmake_install.cmake"
+	],
+	"Parallel" : false
+}
