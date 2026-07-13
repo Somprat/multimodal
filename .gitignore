@@ -1,0 +1,22 @@
+# Machine-local environments and caches
+**/.venv/
+**/.runtime/
+**/__pycache__/
+**/.pytest_cache/
+**/*.egg-info/
+
+# Credentials
+**/.hf_token
+**/.*_token
+**/.*api_key
+.env
+
+# Large downloaded models and generated evaluation logs
+models/**/checkpoints/
+models/**/eval_simpler/
+myMemoryVLA/eval_simpler/
+myMemoryVLA/logs/
+
+# Hugging Face and Python caches
+.cache/
+**/pip-cache/

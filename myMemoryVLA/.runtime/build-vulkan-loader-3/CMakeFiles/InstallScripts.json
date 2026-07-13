@@ -1,9 +1,0 @@
-{
-	"InstallScripts" : 
-	[
-		"/workspace/multimodal/myMemoryVLA/.runtime/build-vulkan-loader-3/cmake_install.cmake",
-		"/workspace/multimodal/myMemoryVLA/.runtime/build-vulkan-loader-3/scripts/cmake_install.cmake",
-		"/workspace/multimodal/myMemoryVLA/.runtime/build-vulkan-loader-3/loader/cmake_install.cmake"
-	],
-	"Parallel" : false
-}

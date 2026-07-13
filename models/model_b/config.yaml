@@ -1,0 +1,55 @@
+action_dim: 7
+action_model_type: DiT-L
+consolidate_type: tome
+data_root_dir: ./data/openx_256
+dataloader_type: stream
+fusion_type: gate
+future_action_window_size: 15
+group_size: 16
+hf_token: hf_xxx
+image_aug: true
+is_resume: false
+load_all_data_for_training: true
+mem_length: 16
+per_token_size: 256
+pretrained_checkpoint: ./pretrained/CogACT-Large/checkpoints/CogACT-Large.pt
+repeated_diffusion_steps: 4
+resume_epoch: 0
+resume_step: 0
+retrieval_layers: 2
+run_id: memvla-bridge
+run_id_note: null
+run_root_dir: ./log/bridge
+save_interval: 2500
+seed: 42
+trackers:
+- jsonl
+- wandb
+update_fused: false
+use_ema: false
+use_timestep_pe: true
+vla:
+  base_vlm: prism-dinosiglip-224px+7b
+  data_mix: bridge
+  enable_gradient_checkpointing: true
+  enable_mixed_precision_training: true
+  epochs: 100
+  expected_world_size: 8
+  freeze_llm_backbone: false
+  freeze_vision_backbone: false
+  global_batch_size: 256
+  learning_rate: 2.0e-05
+  lr_scheduler_type: constant
+  max_grad_norm: 1.0
+  max_steps: 50000
+  per_device_batch_size: 32
+  reduce_in_full_precision: true
+  shuffle_buffer_size: 128000
+  train_strategy: fsdp-full-shard
+  type: prism-dinosiglip-224px+oxe+diffusion
+  unfreeze_last_llm_layer: false
+  vla_id: prism-dinosiglip-224px+oxe+diffusion
+  warmup_ratio: 0.0
+  weight_decay: 0.0
+wandb_entity: shihao-thu
+wandb_project: memvla

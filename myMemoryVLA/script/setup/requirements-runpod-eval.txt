@@ -1,0 +1,31 @@
+# Versions verified in the working RunPod evaluation environment.
+accelerate>=0.25.0
+draccus>=0.8.0
+easydict
+einops
+flask
+huggingface-hub==0.29.3
+hydra-core==1.2.0
+imageio==2.37.0
+json-numpy
+jsonlines
+matplotlib
+mediapy==1.2.0
+numpy==1.26.4
+opencv-python==4.11.0.86
+peft==0.11.1
+protobuf==3.20.3
+rich
+ruckig==0.12.2
+sapien==2.2.2
+scipy==1.12.0
+sentencepiece==0.1.99
+tensorflow==2.15.0
+tensorflow-metadata==1.14.0
+tensorflow-datasets==4.9.3
+tensorflow-graphics==2021.12.3
+thop
+timm==0.9.10
+tokenizers==0.19.1
+transformers==4.40.1
+dlimp @ git+https://github.com/moojink/dlimp_openvla@040105d256bd28866cc6620621a3d5f7b6b91b46

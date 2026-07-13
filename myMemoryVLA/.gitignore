@@ -149,3 +149,9 @@ dmypy.json
 # Caches and Datasets
 cache/
 data/
+
+# Reproducible machine-local evaluation state
+.runtime/
+.venv/
+eval_simpler/
+logs/
