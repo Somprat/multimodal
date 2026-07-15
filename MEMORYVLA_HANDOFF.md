@@ -1,6 +1,6 @@
 # MemoryVLA / SimplerEnv RunPod handoff
 
-Updated: 2026-07-13 UTC
+Updated: 2026-07-15 UTC
 
 All resumable source, metadata, setup scripts, and small test artifacts now live
 inside this repository. After cloning, set the repository root:
@@ -102,11 +102,11 @@ shihao1895/memvla-bridge
 https://huggingface.co/shihao1895/memvla-bridge
 ```
 
-Its checkpoint is approximately 31.2 GiB (`33,507,496,130` bytes). The optimized Hugging Face transfer failed with `Disk quota exceeded` while preallocating the checkpoint. The partial checkpoint was reset/truncated, so no meaningful checkpoint payload remains. Only small metadata files may exist under `$REPO_ROOT/models/model_b`.
+Its checkpoint is approximately 31.2 GiB (`33,507,496,130` bytes). The earlier download failed with `Disk quota exceeded`, but the download completed after moving to the larger persistent volume. The verified file is `$REPO_ROOT/models/model_b/checkpoints/memvla-bridge.pt`, with exactly `33,507,496,130` bytes. The alias `step-2.pt -> memvla-bridge.pt` and all three metadata files are present. No download process is running because the download is complete.
 
 Use a persistent `/workspace` volume of at least 50 GB; 60 GB or more is recommended because the environment and assets already use roughly 11 GB and evaluation outputs need headroom. Confirm that the same persistent volume is mounted after restarting.
 
-After enlarging storage:
+On every fresh or replaced Pod, verify storage before downloading:
 
 ```bash
 df -h /workspace
@@ -116,7 +116,7 @@ du -sh $REPO_ROOT/myMemoryVLA/.venv \
   $REPO_ROOT/models 2>/dev/null
 ```
 
-Resume/download the official MemoryVLA checkpoint:
+Restore/download the official MemoryVLA checkpoint on a fresh Pod:
 
 ```bash
 cd "$REPO_ROOT/myMemoryVLA"
@@ -124,7 +124,7 @@ source script/setup/env.sh
 .venv/bin/python script/setup/download_memvla_bridge.py
 ```
 
-For the requested filename, either pass the real checkpoint path to the script or create a symlink:
+The downloader creates the requested alias automatically. To recreate it manually:
 
 ```bash
 ln -sfn memvla-bridge.pt $REPO_ROOT/models/model_b/checkpoints/step-2.pt
@@ -136,10 +136,10 @@ Each model directory needs its associated `config.yaml`, `config.json`, and `dat
 
 - `/workspace/.hf_token` was created and appears to contain a syntactically valid token, but Meta's `meta-llama/Llama-2-7b-hf` access returned HTTP 403 because access is awaiting review.
 - Do not print or copy the token into logs or this handoff.
-- A matching public config/tokenizer from `NousResearch/Llama-2-7b-hf` was cached in the original environment; a fresh clone may need to fetch it again into `$REPO_ROOT/.cache/huggingface/hub`.
-- A cache alias for the canonical Meta repository exists and was verified with `HF_HUB_OFFLINE=1`.
+- A matching public config/tokenizer from `NousResearch/Llama-2-7b-hf` is materialized at `$REPO_ROOT/models/llama2-7b-public`; no separate Llama weights are required here.
+- `script/setup/env.sh` exports `MEMORYVLA_LLAMA2_7B_PATH` for this directory, and the Llama backbone reads the override. The directory is currently untracked and must be committed or recreated for a fresh clone.
 - Do not globally enable offline mode yet: uncached vision/TIMM weights may still need network access.
-- The clean next step is to make the evaluator use the cached public Llama config/tokenizer path (or an explicit mirror) while retaining online access for other weights.
+- The next step is to smoke-test model loading with the local Llama path while retaining online access for other weights.
 
 ## Model A is still unresolved
 
@@ -149,17 +149,24 @@ For a meaningful comparison, provide a second compatible MemoryVLA-style checkpo
 
 ## Recommended resume sequence
 
-1. Clone/pull this repository and run `myMemoryVLA/script/setup/bootstrap_runpod_eval.sh` if `.venv`, `.runtime`, or assets are absent.
-2. Restore the environment variables shown above.
-3. Re-run the Vulkan and import checks.
-4. Confirm at least 40 GiB of usable quota remains, then download `shihao1895/memvla-bridge`.
-5. Fix the Llama tokenizer/config lookup to use the cached public mirror without forcing all Hugging Face access offline.
-6. Run a one-model load/inference smoke test with the official checkpoint.
-7. Decide what valid compatible checkpoint should be model A.
-8. Run `compare_two_models_bridge.sh` for episode 0 only.
+1. Follow `FRESH_RUNPOD_SETUP.md` for a new Pod.
+2. Source `myMemoryVLA/script/setup/env.sh` and rerun Vulkan and import checks.
+3. Ensure `$REPO_ROOT/models/llama2-7b-public` is present.
+4. Run a one-model load/inference smoke test with the completed official checkpoint.
+5. Resolve any model-loading issue before launching an episode.
+6. Decide what valid compatible checkpoint should be model A.
+7. Run `compare_two_models_bridge.sh` for episode 0 only.
+
+## Current exact stopping point
+
+- SAPIEN, ManiSkill2-real2sim, Vulkan rendering, environment reset, and a random step have passed.
+- The official MemoryVLA Bridge checkpoint and metadata are complete.
+- The local public Llama config/tokenizer is present and wired into the loader.
+- Next: one-model checkpoint load/inference smoke test.
+- Model A remains unresolved; a same-checkpoint run tests plumbing, not scientific performance.
 
 ## Prompt for the next Codex session
 
 Paste this:
 
-> Continue my MemoryVLA/SimplerEnv RunPod setup. First read `$REPO_ROOT/MEMORYVLA_HANDOFF.md` completely and inspect the existing state; do not reinstall or redownload working dependencies unless they are missing. Stay inside `/workspace`. I expanded/replaced the persistent volume. Resume the official MemoryVLA Bridge checkpoint download, solve the remaining Llama config/tokenizer lookup cleanly, smoke-test model loading, and then work toward the episode-0 two-model Bridge evaluation. Model A is not yet defined, so do not treat CogACT as a valid MemoryVLA baseline.
+> Continue my MemoryVLA/SimplerEnv RunPod setup. Read `$REPO_ROOT/MEMORYVLA_HANDOFF.md` and `$REPO_ROOT/FRESH_RUNPOD_SETUP.md` completely and inspect existing state; do not reinstall or redownload working components. The official Bridge checkpoint and local public Llama config/tokenizer are present. Source `myMemoryVLA/script/setup/env.sh`, verify Vulkan/imports, then perform a one-model checkpoint load/inference smoke test and work toward episode 0. Model A is undefined, so do not treat CogACT as a valid MemoryVLA baseline.
