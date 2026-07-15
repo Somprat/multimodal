@@ -22,3 +22,8 @@ export HF_HOME="${repo_root}/.cache/huggingface"
 export HF_HUB_CACHE="${HF_HOME}/hub"
 export TRANSFORMERS_CACHE="${HF_HOME}/hub"
 export MEMORYVLA_MODEL_ROOT="${repo_root}/models"
+
+local_llama2_7b="${MEMORYVLA_MODEL_ROOT}/llama2-7b-public"
+if [[ -f "${local_llama2_7b}/config.json" && -f "${local_llama2_7b}/tokenizer.json" ]]; then
+  export MEMORYVLA_LLAMA2_7B_PATH="${MEMORYVLA_LLAMA2_7B_PATH:-${local_llama2_7b}}"
+fi

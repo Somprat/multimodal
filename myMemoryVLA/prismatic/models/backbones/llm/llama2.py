@@ -4,6 +4,7 @@ llama2.py
 Class definition for all LLMs derived from LlamaForCausalLM.
 """
 
+import os
 from typing import Optional, Sequence, Type
 
 import torch
@@ -50,6 +51,12 @@ LLAMA2_MODELS = {
     },
 }
 # fmt: on
+
+# Inference only needs the Llama config and tokenizer from this path; the model
+# parameters themselves are restored from the MemoryVLA checkpoint. Allow a
+# local, ungated mirror without changing the identifiers saved in checkpoints.
+if llama2_7b_path := os.environ.get("MEMORYVLA_LLAMA2_7B_PATH"):
+    LLAMA2_MODELS["llama2-7b-pure"]["hf_hub_path"] = llama2_7b_path
 
 
 class LLaMa2LLMBackbone(HFCausalLLMBackbone):
