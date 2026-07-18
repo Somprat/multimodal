@@ -1,10 +1,13 @@
 #!/bin/bash
 
+set -euo pipefail
+
+project_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
+cd "${project_root}"
+source script/setup/env.sh
+
 ckpt_paths=(
-/PATH/TO/YOUR/CHECKPOINT_1
-/PATH/TO/YOUR/CHECKPOINT_2
-such as: ./checkpoints/step-032500-epoch-03-loss=0.0455.pt
-...
+"${CKPT_PATH:-${MEMORYVLA_MODEL_ROOT}/model_b/checkpoints/memvla-bridge.pt}"
 )
 
 gpu_id=0
@@ -19,7 +22,7 @@ for ckpt_path in "${ckpt_paths[@]}"; do
     robot_init_x=0.147
     robot_init_y=0.028
 
-    CUDA_VISIBLE_DEVICES=${gpu_id} python evaluation/simpler_env/simpler_env_inference.py --ckpt-path ${ckpt_path} \
+    CUDA_VISIBLE_DEVICES=${gpu_id} .venv/bin/python evaluation/simpler_env/simpler_env_inference.py --ckpt-path ${ckpt_path} \
       --robot ${robot} --policy-setup widowx_bridge \
       --control-freq 5 --sim-freq 500 --max-episode-steps 120 \
       --env-name StackGreenCubeOnYellowCubeBakedTexInScene-v0 --scene-name ${scene_name} \
@@ -27,7 +30,7 @@ for ckpt_path in "${ckpt_paths[@]}"; do
       --robot-init-x ${robot_init_x} ${robot_init_x} 1 --robot-init-y ${robot_init_y} ${robot_init_y} 1 --obj-variation-mode episode --obj-episode-range 0 24 \
       --robot-init-rot-quat-center 0 0 0 1 --robot-init-rot-rpy-range 0 0 1 0 0 1 0 0 1 | tee ${eval_dir}/Cube.txt;
 
-    CUDA_VISIBLE_DEVICES=${gpu_id} python evaluation/simpler_env/simpler_env_inference.py --ckpt-path ${ckpt_path} \
+    CUDA_VISIBLE_DEVICES=${gpu_id} .venv/bin/python evaluation/simpler_env/simpler_env_inference.py --ckpt-path ${ckpt_path} \
       --robot ${robot} --policy-setup widowx_bridge \
       --control-freq 5 --sim-freq 500 --max-episode-steps 120 \
       --env-name PutCarrotOnPlateInScene-v0 --scene-name ${scene_name} \
@@ -35,7 +38,7 @@ for ckpt_path in "${ckpt_paths[@]}"; do
       --robot-init-x ${robot_init_x} ${robot_init_x} 1 --robot-init-y ${robot_init_y} ${robot_init_y} 1 --obj-variation-mode episode --obj-episode-range 0 24 \
       --robot-init-rot-quat-center 0 0 0 1 --robot-init-rot-rpy-range 0 0 1 0 0 1 0 0 1 | tee ${eval_dir}/Carrot.txt;
 
-    CUDA_VISIBLE_DEVICES=${gpu_id} python evaluation/simpler_env/simpler_env_inference.py --ckpt-path ${ckpt_path} \
+    CUDA_VISIBLE_DEVICES=${gpu_id} .venv/bin/python evaluation/simpler_env/simpler_env_inference.py --ckpt-path ${ckpt_path} \
       --robot ${robot} --policy-setup widowx_bridge \
       --control-freq 5 --sim-freq 500 --max-episode-steps 120 \
       --env-name PutSpoonOnTableClothInScene-v0 --scene-name ${scene_name} \
@@ -49,7 +52,7 @@ for ckpt_path in "${ckpt_paths[@]}"; do
     robot_init_x=0.127
     robot_init_y=0.06
 
-    CUDA_VISIBLE_DEVICES=${gpu_id} python evaluation/simpler_env/simpler_env_inference.py --ckpt-path ${ckpt_path} \
+    CUDA_VISIBLE_DEVICES=${gpu_id} .venv/bin/python evaluation/simpler_env/simpler_env_inference.py --ckpt-path ${ckpt_path} \
       --robot ${robot} --policy-setup widowx_bridge \
       --control-freq 5 --sim-freq 500 --max-episode-steps 120 \
       --env-name PutEggplantInBasketScene-v0 --scene-name ${scene_name} \
@@ -57,10 +60,6 @@ for ckpt_path in "${ckpt_paths[@]}"; do
       --robot-init-x ${robot_init_x} ${robot_init_x} 1 --robot-init-y ${robot_init_y} ${robot_init_y} 1 --obj-variation-mode episode --obj-episode-range 0 24 \
       --robot-init-rot-quat-center 0 0 0 1 --robot-init-rot-rpy-range 0 0 1 0 0 1 0 0 1 | tee ${eval_dir}/Eggplant.txt;
 
-  done
-  wait
-  echo "Done: ${ckpt_path}"
 done
 
-wait
 echo "All done!"

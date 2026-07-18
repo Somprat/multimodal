@@ -1,6 +1,6 @@
 # MemoryVLA / SimplerEnv RunPod handoff
 
-Updated: 2026-07-15 UTC
+Updated: 2026-07-18 UTC
 
 All resumable source, metadata, setup scripts, and small test artifacts now live
 inside this repository. After cloning, set the repository root:
@@ -147,26 +147,54 @@ There is no genuine model A checkpoint yet. The published CogACT/CogACT-Large ch
 
 For a meaningful comparison, provide a second compatible MemoryVLA-style checkpoint and its metadata. To validate plumbing only, model A and model B may temporarily point at the same official checkpoint, but that is not a scientific comparison.
 
+## Completed official Bridge evaluation (2026-07-18)
+
+The official `shihao1895/memvla-bridge` checkpoint completed the full SimplerEnv-Bridge evaluation: four tasks with 24 object episodes each, 96 episodes total, full precision on one NVIDIA L40S.
+
+| Task | Local successes | Local rate | Published rate | Difference |
+| --- | ---: | ---: | ---: | ---: |
+| Spoon | 21/24 | 87.50% | 75.0% | +12.50 points |
+| Carrot | 19/24 | 79.17% | 75.0% | +4.17 points |
+| Cube | 9/24 | 37.50% | 37.5% | 0 points |
+| Eggplant | 24/24 | 100.00% | 100.0% | 0 points |
+| Overall | 73/96 | 76.04% | 71.9% | +4.17 points |
+
+Persistent logs are under `$REPO_ROOT/models/model_b/eval_simpler/memvla-bridge.pt/`. The dated report is `$REPO_ROOT/MEMORYVLA_BRIDGE_EVAL_REPORT_2026-07-18.md`.
+
+Important fixes learned during the run:
+
+- Malformed and interrupted Hugging Face partials exhausted a hidden network-volume quota even though `df` showed free cluster capacity.
+- Staging the download on `/tmp`, exact-size verifying it, and copying it once to network storage was reliable.
+- SAPIEN 2.2.2 needs `pkg_resources`; the bootstrap now pins `setuptools<81`.
+- Video writing needs an executable named `ffmpeg`; install it or expose the `imageio_ffmpeg` binary through a symlink.
+- A failed simulation created a zero-byte generated `.nonconvex.stl`; deleting only that derivative allowed regeneration from the valid GLB.
+- Interrupted pipelines can leave evaluator children holding GPU memory. Check `nvidia-smi` before retrying.
+- Headless GLFW warnings are expected when Vulkan offscreen rendering continues.
+- The Bridge script now uses the repository environment/checkpoint, accepts `CKPT_PATH`, and fails fast.
+
 ## Recommended resume sequence
 
 1. Follow `FRESH_RUNPOD_SETUP.md` for a new Pod.
 2. Source `myMemoryVLA/script/setup/env.sh` and rerun Vulkan and import checks.
 3. Ensure `$REPO_ROOT/models/llama2-7b-public` is present.
-4. Run a one-model load/inference smoke test with the completed official checkpoint.
-5. Resolve any model-loading issue before launching an episode.
-6. Decide what valid compatible checkpoint should be model A.
-7. Run `compare_two_models_bridge.sh` for episode 0 only.
+4. Verify the checkpoint size is exactly `33507496130` bytes and metadata is present.
+5. Check `nvidia-smi` for stale evaluator processes.
+6. Run the one-episode smoke command in steps 10-11 of `FRESH_RUNPOD_SETUP.md`.
+7. Run `bash script/eval/bridge/eval_bridge.sh` only after a clean smoke test.
+8. Extract and preserve all four task logs.
+9. Resolve a genuinely compatible Model A only if a two-model comparison is needed.
 
 ## Current exact stopping point
 
-- SAPIEN, ManiSkill2-real2sim, Vulkan rendering, environment reset, and a random step have passed.
-- The official MemoryVLA Bridge checkpoint and metadata are complete.
-- The local public Llama config/tokenizer is present and wired into the loader.
-- Next: one-model checkpoint load/inference smoke test.
+- SAPIEN, Vulkan rendering, checkpoint loading, diffusion inference, video writing, and extraction have passed.
+- The official Bridge checkpoint and metadata are persistently installed and exact-size verified.
+- The local Llama config/tokenizer and TIMM vision weights are present.
+- The full 96-episode evaluation completed with 76.04% overall success.
+- Do not rerun it on a new Pod unless another stochastic sample is desired.
 - Model A remains unresolved; a same-checkpoint run tests plumbing, not scientific performance.
 
 ## Prompt for the next Codex session
 
 Paste this:
 
-> Continue my MemoryVLA/SimplerEnv RunPod setup. Read `$REPO_ROOT/MEMORYVLA_HANDOFF.md` and `$REPO_ROOT/FRESH_RUNPOD_SETUP.md` completely and inspect existing state; do not reinstall or redownload working components. The official Bridge checkpoint and local public Llama config/tokenizer are present. Source `myMemoryVLA/script/setup/env.sh`, verify Vulkan/imports, then perform a one-model checkpoint load/inference smoke test and work toward episode 0. Model A is undefined, so do not treat CogACT as a valid MemoryVLA baseline.
+> Continue my MemoryVLA/SimplerEnv RunPod work. Read `$REPO_ROOT/MEMORYVLA_HANDOFF.md`, `$REPO_ROOT/FRESH_RUNPOD_SETUP.md`, and `$REPO_ROOT/MEMORYVLA_BRIDGE_EVAL_REPORT_2026-07-18.md` completely; inspect existing state and do not reinstall, redownload, or rerun working components unnecessarily. The official Bridge checkpoint is exact-size verified, and the full 96-episode evaluation completed at 76.04%. Source `myMemoryVLA/script/setup/env.sh`, verify persistent paths and GPU/Vulkan health, then help with the next requested experiment. Model A remains undefined, so do not treat CogACT as a valid MemoryVLA baseline.

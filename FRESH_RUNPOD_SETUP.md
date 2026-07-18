@@ -24,7 +24,7 @@ On a Debian/Ubuntu RunPod image:
 apt-get update
 apt-get install -y \
   git git-lfs python3.10-venv build-essential \
-  libvulkan1 vulkan-tools \
+  ffmpeg libvulkan1 vulkan-tools \
   libgl1 libegl1 libglx0 libopengl0 libwayland-client0
 ```
 
@@ -165,9 +165,106 @@ You now have:
 - the local public Llama config/tokenizer path;
 - the official MemoryVLA Bridge checkpoint and metadata.
 
-The next step is a one-model checkpoint load/inference smoke test and then an episode-0 Bridge evaluation.
+Continue with the smoke test and full evaluation below.
 
 Model A is still unresolved. CogACT is not a faithful baseline with the current loader because MemoryVLA-specific modules would be missing and randomly initialized. Using the same official checkpoint for A and B can test plumbing, but is not a scientific comparison.
+
+## 10. Prepare evaluation-only runtime details
+
+Verify that ffmpeg is available because SimplerEnv writes one video and action plot per episode:
+
+```bash
+command -v ffmpeg
+ffmpeg -version | head -2
+```
+
+If the system package cannot be installed but `imageio-ffmpeg` is present, expose its bundled binary under the expected name:
+
+```bash
+mkdir -p /tmp/memoryvla-bin
+ln -sfn "$(.venv/bin/python -c 'import imageio_ffmpeg; print(imageio_ffmpeg.get_ffmpeg_exe())')" \
+  /tmp/memoryvla-bin/ffmpeg
+export PATH="/tmp/memoryvla-bin:$PATH"
+```
+
+Before each evaluation, ensure that no stale process is holding GPU memory:
+
+```bash
+nvidia-smi --query-compute-apps=pid,used_memory --format=csv,noheader
+```
+
+Do not start a second evaluator while one is loading or running. A full-precision load uses nearly the entire 46 GB L40S.
+
+## 11. Run one Bridge smoke episode
+
+The smoke test below evaluates only Cube object episode 0. It proves checkpoint loading, CUDA inference, Vulkan rendering, simulation, scoring, and video writing. Its 0/1 result is not a meaningful accuracy estimate.
+
+```bash
+cd "$REPO_ROOT/myMemoryVLA"
+source script/setup/env.sh
+
+CUDA_VISIBLE_DEVICES=0 .venv/bin/python evaluation/simpler_env/simpler_env_inference.py \
+  --ckpt-path "$MEMORYVLA_MODEL_ROOT/model_b/checkpoints/memvla-bridge.pt" \
+  --robot widowx --policy-setup widowx_bridge \
+  --control-freq 5 --sim-freq 500 --max-episode-steps 120 \
+  --env-name StackGreenCubeOnYellowCubeBakedTexInScene-v0 \
+  --scene-name bridge_table_1_v1 \
+  --rgb-overlay-path ./third_libs/SimplerEnv/ManiSkill2_real2sim/data/real_inpainting/bridge_real_eval_1.png \
+  --robot-init-x 0.147 0.147 1 --robot-init-y 0.028 0.028 1 \
+  --obj-variation-mode episode --obj-episode-range 0 1 \
+  --robot-init-rot-quat-center 0 0 0 1 \
+  --robot-init-rot-rpy-range 0 0 1 0 0 1 0 0 1
+```
+
+A clean completion ends with `Average success 0.0` or `Average success 1.0`. The headless warning `GLFW error: X11: Failed to open display` followed by `Continue without GLFW` is expected.
+
+If SAPIEN reports a valid GLB as empty, check for a zero-byte generated collision cache:
+
+```bash
+find .runtime/ManiSkill2_real2sim-assets/data -type f -size 0 -print
+```
+
+Only if the output identifies a zero-byte generated `.nonconvex.stl`, remove that exact derivative so SAPIEN can regenerate it from the valid `.glb`. Never remove the source `.glb`.
+
+## 12. Run the full official Bridge benchmark
+
+The repository script defaults to the verified official checkpoint and runs 24 object variations for each of Cube, Carrot, Spoon, and Eggplant: 96 episodes total.
+
+```bash
+cd "$REPO_ROOT/myMemoryVLA"
+source script/setup/env.sh
+bash script/eval/bridge/eval_bridge.sh
+```
+
+To evaluate another compatible MemoryVLA checkpoint:
+
+```bash
+CKPT_PATH=/absolute/path/to/checkpoint.pt bash script/eval/bridge/eval_bridge.sh
+```
+
+On an L40S, the tested run took about two hours. Logs and videos are written beneath `$MEMORYVLA_MODEL_ROOT/model_b/eval_simpler/memvla-bridge.pt/`.
+
+## 13. Extract and compare results
+
+```bash
+cd "$REPO_ROOT/myMemoryVLA"
+.venv/bin/python script/eval/bridge/extract_bridge_results.py \
+  "$MEMORYVLA_MODEL_ROOT/model_b"
+```
+
+The official MemoryVLA Bridge values are Spoon 75.0%, Carrot 75.0%, Cube 37.5%, Eggplant 100.0%, and 71.9% overall. The completed 2026-07-18 local run produced Spoon 87.5%, Carrot 79.17%, Cube 37.5%, Eggplant 100.0%, and 76.04% overall (73/96).
+
+SimplerEnv and diffusion sampling are variable. Keep all four task logs, report the exact episode count, and avoid treating a one-episode smoke result as accuracy.
+
+## 14. Preserve results before replacing a Pod
+
+```bash
+stat -c '%s %n' "$MEMORYVLA_MODEL_ROOT/model_b/checkpoints/memvla-bridge.pt"
+find "$MEMORYVLA_MODEL_ROOT/model_b/eval_simpler/memvla-bridge.pt" \
+  -maxdepth 1 -name '*.txt' -print
+```
+
+The checkpoint, metadata, logs, videos, action plots, `.venv`, `.runtime`, and caches persist when the same `/workspace` network volume is attached to a new Pod.
 
 ## Troubleshooting order
 
