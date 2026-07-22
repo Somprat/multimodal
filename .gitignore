@@ -14,6 +14,7 @@
 # Large downloaded models and generated evaluation logs
 models/**/checkpoints/
 models/**/eval_simpler/
+models/memvla-libero-spatial/
 myMemoryVLA/eval_simpler/
 myMemoryVLA/logs/
 

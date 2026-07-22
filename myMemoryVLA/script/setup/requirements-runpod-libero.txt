@@ -1,0 +1,16 @@
+# LIBERO simulator additions for the existing MemoryVLA Python 3.10 stack.
+# Keep the model stack pins from requirements-runpod-eval.txt; do not install
+# LIBERO's full legacy requirements.txt because it downgrades NumPy/Transformers.
+bddl==1.0.1
+cloudpickle==2.1.0
+easydict==1.9
+future==0.18.2
+glfw==2.10.0
+gym==0.25.2
+llvmlite==0.42.0
+mujoco==2.3.7
+numba==0.59.1
+PyOpenGL==3.1.7
+robomimic==0.2.0
+robosuite==1.4.0
+tensorboardX==2.6.2.2

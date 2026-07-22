@@ -155,3 +155,6 @@ data/
 .venv/
 eval_simpler/
 logs/
+
+# Recreated by script/setup/bootstrap_runpod_libero.sh
+third_libs/LIBERO/
