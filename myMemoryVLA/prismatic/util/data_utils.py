@@ -91,7 +91,8 @@ class PaddedCollatorForLanguageModeling:
             multimodal_indices=multimodal_indices,
         )
 
-
+# standardize batches to be the same length.
+# put multiple modalities and example in to batch i.e. preprocess + standardize it
 @dataclass
 class PaddedCollatorForActionPrediction:
     model_max_length: int
@@ -152,6 +153,11 @@ class PaddedCollatorForActionPrediction:
         action_masks = [instance["action_masks"] for instance in instances]
         action_masks = torch.stack(action_masks)
 
+        optional_modalities = {}
+        for key in ("depth_values", "proprio", "spatial_featurese"):
+            if all(key in instance for instance in instances):
+                optional_modalities[key] = torch.stack([instance[key] for instance in instances])
+
         output = dict(
             pixel_values=pixel_values,
             input_ids=input_ids,
@@ -163,5 +169,7 @@ class PaddedCollatorForActionPrediction:
             episode_ids=episode_ids,
             timesteps=timesteps,
         )
+
+        output.update(optional_modalities)
 
         return output

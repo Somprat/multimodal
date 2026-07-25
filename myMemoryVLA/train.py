@@ -78,6 +78,9 @@ class TrainConfig:
     fusion_type: str = 'gate' # Memory fusion type, chose from ['gate', 'add']
     consolidate_type: str = 'tome' # Memory consolidate type, chose from ['fifo', 'tome']
     update_fused: bool = False # Whether to update fused memory
+    load_depth: bool = False # Whether to load depth observations from RLDS
+    load_proprio: bool = False # Whether to load proprioceptive observations from RLDS
+    use_spatial_features: bool = False # Whether to load/use precomputed spatial features if available
 
 
     def __post_init__(self) -> None:
@@ -220,6 +223,9 @@ def train(cfg: TrainConfig) -> None:
         future_action_window_size=cfg.future_action_window_size,
         dataloader_type=cfg.dataloader_type,
         group_size=cfg.group_size,
+        load_depth=cfg.load_depth,
+        load_proprio=cfg.load_proprio,
+        use_spatial_features=cfg.use_spatial_features,
     )
 
     # Save dataset statistics for de-normalization at inference time

@@ -81,17 +81,48 @@ class RLDSBatchTransform:
         if not self.predict_stop_token:
             labels[-1] = IGNORE_INDEX
 
-        timesteps = rlds_batch['observation']['timestep']
+        timesteps = rlds_batch["observation"]["timestep"]
+        observation = rlds_batch["observation"]
 
-        return dict(pixel_values=pixel_values,
-                    input_ids=input_ids,
-                    labels=labels,
-                    dataset_name=dataset_name,
-                    actions=action,
-                    action_masks=action_mask,
-                    timesteps=timesteps,
-                    episode_ids=None,
-                    )
+        output = dict(
+            pixel_values=pixel_values,
+            input_ids=input_ids,
+            labels=labels,
+            dataset_name=dataset_name,
+            actions=action,
+            action_masks=action_mask,
+            timesteps=timesteps,
+            episode_ids=None,
+        )
+
+        depth = None
+        if "depth_primary" in observation:
+            depth = torch.tensor(observation["depth_primary"][0], dtype=torch.float32)
+
+        proprio = None
+        if "proprio" in observation:
+            proprio = torch.tensor(observation["proprio"][0], dtype=torch.float32)
+
+        camera_parts = []
+        for key in ("camera_intrinsics", "camera_extrinsics", "scene_id"):
+            if key in observation:
+                try:
+                    camera_parts.append(torch.tensor(observation[key][0], dtype=torch.float32).flatten())
+                except (TypeError, ValueError):
+                    pass
+
+        camera = None
+        if len(camera_parts) > 0:
+            camera = torch.cat(camera_parts)
+
+        if depth is not None:
+            output["depth"] = depth
+        if proprio is not None:
+            output["proprio"] = proprio
+        if camera is not None:
+            output["camera"] = camera
+
+        return output
 
 
 class RLDSDataset(IterableDataset):
@@ -108,9 +139,11 @@ class RLDSDataset(IterableDataset):
         load_all_data_for_training: bool = True,
         load_depth=False,
         load_proprio=False,
+        use_spatial_features: bool = False,
     ) -> None:
         """Lightweight wrapper around RLDS TFDS Pipeline for use with PyTorch/OpenVLA Data Loaders."""
         self.data_root_dir, self.data_mix, self.batch_transform = data_root_dir, data_mix, batch_transform
+        self.use_spatial_features = use_spatial_features
 
         # Configure RLDS Dataset(s)
         if self.data_mix in OXE_NAMED_MIXTURES:

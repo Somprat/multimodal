@@ -17,7 +17,8 @@ from prismatic.util.data_utils import PaddedCollatorForActionPrediction
 from vla.datasets import EpisodicRLDSDataset, RLDSBatchTransform, RLDSDataset, GroupRLDSDataset, StreamRLDSDataset
 from vla.action_tokenizer import ActionTokenizer
 
-
+# create action tokenizer, transform batch
+# return dataset, action_tokenizer, collator
 def get_vla_dataset_and_collator(
     data_root_dir: Path,
     data_mix: str,
@@ -34,6 +35,9 @@ def get_vla_dataset_and_collator(
     load_all_data_for_training: bool = True,  # Load all data for training, or only a subset
     dataloader_type: str = "group",
     group_size: int = 16,
+    load_depth: bool = False,
+    load_proprio: bool = False,
+    use_spatial_features: bool = False,
 ) -> Tuple[Dataset, ActionTokenizer, PaddedCollatorForActionPrediction]:
     """Initialize RLDS Dataset (wraps TFDS), ActionTokenizer, and initialize transform/collation functions."""
 
@@ -62,7 +66,11 @@ def get_vla_dataset_and_collator(
             future_action_window_size=future_action_window_size,
             image_aug=image_aug,
             load_all_data_for_training=load_all_data_for_training,
+            load_depth=load_depth,
+            load_proprio=load_proprio,
+            use_spatial_features=use_spatial_features,
         )
+        # return a group of episode frames. indexed by id
     elif dataloader_type == "group":
         assert group_size > 1, "Group size must be greater than 1 for grouped dataset"
         dataset = GroupRLDSDataset(
@@ -76,7 +84,11 @@ def get_vla_dataset_and_collator(
             image_aug=image_aug,
             load_all_data_for_training=load_all_data_for_training,
             group_size=group_size,
+            load_depth=load_depth,
+            load_proprio=load_proprio,
+            use_spatial_features=use_spatial_features,
         )
+    # return episodes in stream order
     elif dataloader_type == "stream":
         dataset = StreamRLDSDataset(
             data_root_dir,
@@ -88,6 +100,9 @@ def get_vla_dataset_and_collator(
             future_action_window_size=future_action_window_size,
             image_aug=image_aug,
             load_all_data_for_training=load_all_data_for_training,
+            load_depth=load_depth,
+            load_proprio=load_proprio,
+            use_spatial_features=use_spatial_features,
         )
 
     else:

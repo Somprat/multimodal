@@ -101,7 +101,7 @@ class CrossTransformerBlock(nn.Module):
         ffn_out = self.ffn(x)
         return self.ffn_norm(x + ffn_out)
 
-
+# compress visual tokens to the size of 256 i.e. Preprocessing
 class BottleneckSE(nn.Module):
     def __init__(self, C_in, C_mid, C_out):
         super().__init__()
@@ -109,6 +109,7 @@ class BottleneckSE(nn.Module):
         self.C_mid = C_mid
         self.C_out = C_out
 
+        # takes in whatever dimension -> convert it to c_mid = 512.
         self.reduce = nn.Conv2d(C_in, C_mid, 1, bias=False)
         self.act = nn.ReLU(inplace=True)
 
@@ -122,15 +123,18 @@ class BottleneckSE(nn.Module):
 
         self.expand = nn.Conv2d(C_mid, C_out, 1, bias=False)
 
+
     def forward(self, x):
         _b, _n, _c = x.shape
         _h = _w = int(math.sqrt(_n))
         assert _h * _h == _n, "Input feature has no spatial structure"
 
         x = x.reshape(_b, _h, _w, _c).permute(0, 3, 1, 2)  # (B, C_in, H, W)
+        # main reduce mechanism: reduce whatever c_in is to c_mid = 512 and c_out = 256
         z = self.act(self.reduce(x))
         w = self.excite(z)
 
+        # c_mid -> c_out
         final = self.expand(z * w)
         final = final.reshape(_b, self.C_out, _n).permute(0, 2, 1)
         return final
@@ -357,6 +361,86 @@ class PerMemBank(CogMemBank):
         )
 
 
+class SpatialMemBank(CogMemBank):
+    def __init__(self,
+                 dataloader_type: str,
+                 group_size: int,
+                 token_size: int,
+                 mem_length: int = 16,
+                 retrieval_layers: int = 2,
+                 use_timestep_pe: bool = True,
+                 fusion_type: str = 'gate',
+                 consolidate_type: str = 'tome',
+                 update_fused: bool = False,
+                 ):
+        super().__init__(
+            dataloader_type=dataloader_type,
+            group_size=group_size,
+            token_size=token_size,
+            mem_length=mem_length,
+            retrieval_layers=retrieval_layers,
+            use_timestep_pe=use_timestep_pe,
+            fusion_type=fusion_type,
+            consolidate_type=consolidate_type,
+            update_fused=update_fused,
+        )
+
+
+class SpatialEncoder(nn.Module):
+    def __init__(self, spatial_token_size: int, depth_patch_size: int = 16):
+        super().__init__()
+        self.spatial_token_size = spatial_token_size
+        self.depth_patch_size = depth_patch_size
+
+        # encoder for depth. other encders are only 1 linear
+        self.depth_encoder = nn.Sequential(
+            nn.Conv2d(1, spatial_token_size, kernel_size=depth_patch_size, stride=depth_patch_size),
+            nn.ReLU(inplace=True),
+        )
+        self.proprio_scalar_encoder = nn.Linear(1, spatial_token_size)
+        self.camera_scalar_encoder = nn.Linear(1, spatial_token_size)
+        self.depth_modality = nn.Parameter(torch.zeros(1, 1, spatial_token_size))
+        self.proprio_modality = nn.Parameter(torch.zeros(1, 1, spatial_token_size))
+        self.camera_modality = nn.Parameter(torch.zeros(1, 1, spatial_token_size))
+
+    def _normalize_depth(self, depth: torch.Tensor) -> torch.Tensor:
+        if depth.dim() == 3:
+            depth = depth.unsqueeze(1)
+        elif depth.dim() == 4 and depth.shape[-1] == 1:
+            depth = depth.permute(0, 3, 1, 2)
+        assert depth.dim() == 4 and depth.shape[1] == 1, "depth must be [B, 1, H, W], [B, H, W], or [B, H, W, 1]"
+        return depth
+
+    def forward(
+        self,
+        depth: Optional[torch.Tensor] = None,
+        proprio: Optional[torch.Tensor] = None,
+        camera: Optional[torch.Tensor] = None,
+    ) -> Optional[torch.Tensor]:
+        spatial_tokens = []
+
+        # each stuff goes through its encoder and got appended to spatial tokens
+        if depth is not None:
+            # mske sure that they are in the order of [B, 1, H, W]
+            depth = self._normalize_depth(depth)
+            depth_tokens = self.depth_encoder(depth).flatten(2).transpose(1, 2)
+            spatial_tokens.append(depth_tokens + self.depth_modality)
+
+        if proprio is not None:
+            proprio_tokens = self.proprio_scalar_encoder(proprio.flatten(1).unsqueeze(-1))
+            spatial_tokens.append(proprio_tokens + self.proprio_modality)
+
+        if camera is not None:
+            camera_tokens = self.camera_scalar_encoder(camera.flatten(1).unsqueeze(-1))
+            spatial_tokens.append(camera_tokens + self.camera_modality)
+
+        if len(spatial_tokens) == 0:
+            return None
+
+        return torch.cat(spatial_tokens, dim=1)
+
+
+
 class MemoryVLA(nn.Module):
     def __init__(
         self,
@@ -433,6 +517,21 @@ class MemoryVLA(nn.Module):
             update_fused=self.update_fused,
         )
 
+        self.spatial_encoder = SpatialEncoder(spatial_token_size=self.per_token_size)
+        self.spatial_mem_bank = SpatialMemBank(
+            dataloader_type=self.dataloader_type,
+            group_size=self.group_size,
+            token_size=self.per_token_size,
+            mem_length=self.mem_length,
+            retrieval_layers=self.retrieval_layers,
+            use_timestep_pe=self.use_timestep_pe,
+            fusion_type=self.fusion_type,
+            consolidate_type=self.consolidate_type,
+            update_fused=self.update_fused,
+        )
+        self.spatial_to_per_fusion = CrossTransformerBlock(self.per_token_size)
+        self.per_spatial_gate = GateFusion(self.per_token_size)
+
         self.action_model = ActionModel(
             model_type=action_model_type,
             token_size=token_size,
@@ -477,11 +576,36 @@ class MemoryVLA(nn.Module):
     def freeze_backbones(self, stage):
         self.vlm.freeze_backbones(stage)
 
+    def _fuse_spatial_tokens(
+        self,
+        per_tokens: torch.Tensor,
+        spatial_tokens: Optional[torch.Tensor],
+        episode_ids,
+        timesteps,
+    ) -> torch.Tensor:
+        if spatial_tokens is None:
+            return per_tokens
+
+        spatial_tokens = self.spatial_mem_bank.process_batch(
+            tokens=spatial_tokens,
+            episode_ids=episode_ids,
+            timesteps=timesteps,
+        )
+        spatial_context = self.spatial_to_per_fusion(
+            per_tokens,
+            spatial_tokens,
+            spatial_tokens,
+        )
+        return self.per_spatial_gate(per_tokens, spatial_context)
+
     def forward(
         self,
         input_ids: torch.LongTensor=None,
         attention_mask: Optional[torch.Tensor] = None,
         pixel_values: Optional[torch.FloatTensor] = None,
+        depth: Optional[torch.FloatTensor] = None,
+        proprio: Optional[torch.FloatTensor] = None,
+        camera: Optional[torch.FloatTensor] = None,
         labels: Optional[torch.LongTensor] = None,
         actions: Optional[torch.FloatTensor] = None,
         action_masks: Optional[torch.FloatTensor] = None,
@@ -541,6 +665,17 @@ class MemoryVLA(nn.Module):
 
         per_tokens = self.per_mem_bank.process_batch(
             tokens=per_tokens,
+            episode_ids=episode_ids,
+            timesteps=timesteps,
+        )
+        spatial_tokens = self.spatial_encoder(
+            depth=depth,
+            proprio=proprio,
+            camera=camera,
+        )
+        per_tokens = self._fuse_spatial_tokens(
+            per_tokens=per_tokens,
+            spatial_tokens=spatial_tokens,
             episode_ids=episode_ids,
             timesteps=timesteps,
         )
@@ -676,7 +811,7 @@ class MemoryVLA(nn.Module):
             if key not in {"projector", "llm_backbone", "vision_backbone",
                            "action_model", "ema_diffusion"}:
                 module = getattr(memory_vla, key, None)
-                module.load_state_dict(sub_state, strict=True)
+                module.load_state_dict(sub_state, strict=False)
 
         del model_state_dict
         import gc
@@ -697,6 +832,9 @@ class MemoryVLA(nn.Module):
         use_ddim: bool = False,
         num_ddim_steps: int = 10,
         episode_first_frame: str = 'False',
+        depth: Optional[torch.FloatTensor] = None,
+        proprio: Optional[torch.FloatTensor] = None,
+        camera: Optional[torch.FloatTensor] = None,
         **kwargs: str
     ) -> np.ndarray:
         """
@@ -766,6 +904,7 @@ class MemoryVLA(nn.Module):
             print(" ** reset memory ** ")
             self.cog_mem_bank.reset()
             self.per_mem_bank.reset()
+            self.spatial_mem_bank.reset()
             self.cur_timestep = 0
 
         episode_ids = [0]
@@ -780,6 +919,17 @@ class MemoryVLA(nn.Module):
 
         per_tokens = self.per_mem_bank.process_batch(
             tokens=per_tokens,
+            episode_ids=episode_ids,
+            timesteps=timesteps,
+        )
+        spatial_tokens = self.spatial_encoder(
+            depth=depth,
+            proprio=proprio,
+            camera=camera,
+        )
+        per_tokens = self._fuse_spatial_tokens(
+            per_tokens=per_tokens,
+            spatial_tokens=spatial_tokens,
             episode_ids=episode_ids,
             timesteps=timesteps,
         )
