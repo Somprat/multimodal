@@ -1,10 +1,10 @@
-# Fresh RunPod setup for MemoryVLA + SimplerEnv
+# Fresh RunPod setup for MemoryVLA + SimplerEnv and LIBERO
 
 This guide rebuilds the tested environment from a fresh RunPod and explains what each command does. The tested stack used an NVIDIA L40S, Python 3.10, PyTorch 2.2.0 with CUDA 12.1, SAPIEN 2.2.2, and NumPy 1.26.4.
 
 ## 1. Choose and inspect the Pod
 
-Attach a persistent `/workspace` volume with at least 60 GB available. The MemoryVLA checkpoint alone is 33,507,496,130 bytes; the virtual environment, caches, assets, and evaluation output need more room.
+Attach a persistent `/workspace` volume with at least 100 GB available when keeping both Bridge and LIBERO checkpoints. Each checkpoint is about 33.5 GB; the virtual environment, caches, assets, and evaluation output need additional room.
 
 ```bash
 nvidia-smi
@@ -23,18 +23,20 @@ On a Debian/Ubuntu RunPod image:
 ```bash
 apt-get update
 apt-get install -y \
-  git git-lfs python3.10-venv build-essential \
+  git git-lfs tmux python3.10-venv build-essential \
   ffmpeg libvulkan1 vulkan-tools \
-  libgl1 libegl1 libglx0 libopengl0 libwayland-client0
+  libgl1 libegl1 libglx0 libopengl0 libwayland-client0 \
+  libosmesa6-dev libgl1-mesa-dev libglu1-mesa-dev
 ```
 
 `apt-get update` refreshes the package index; it does not upgrade the whole machine. The install command adds:
 
-- `git` for source and simulation assets, and `git-lfs` for repositories using large-file storage;
+- `git` for source and simulation assets, `git-lfs` for repositories using large-file storage, and `tmux` for evaluations that survive SSH disconnects;
 - `python3.10-venv` for an isolated Python environment;
 - `build-essential` for Python packages containing native extensions;
 - `libvulkan1` (the Vulkan loader) and `vulkan-tools` (including `vulkaninfo`);
-- GLVND/OpenGL/EGL/Wayland libraries that SAPIEN's offscreen renderer may load.
+- GLVND/OpenGL/EGL/Wayland libraries that SAPIEN's offscreen renderer may load;
+- OSMesa and Mesa development libraries used by MuJoCo's headless LIBERO renderer.
 
 SAPIEN is the Python simulator, while Vulkan is the lower-level graphics system used to render camera images. A successful `pip install sapien` does not prove that the container has a working NVIDIA Vulkan driver path. This distinction caused much of the earlier setup difficulty.
 
@@ -265,6 +267,93 @@ find "$MEMORYVLA_MODEL_ROOT/model_b/eval_simpler/memvla-bridge.pt" \
 ```
 
 The checkpoint, metadata, logs, videos, action plots, `.venv`, `.runtime`, and caches persist when the same `/workspace` network volume is attached to a new Pod.
+
+
+## 15. Set up and evaluate LIBERO Spatial
+
+### Install LIBERO and verify the simulator
+
+```bash
+cd "$REPO_ROOT/myMemoryVLA"
+bash script/setup/bootstrap_runpod_libero.sh
+source script/setup/env.sh
+.venv/bin/python script/setup/smoke_test_libero.py
+```
+
+- The bootstrap clones official LIBERO at the pinned revision, installs its pinned packages, and writes repository-local configuration.
+- Sourcing `env.sh` selects OSMesa and exports LIBERO, cache, and model paths.
+- The smoke test creates a real environment, renders a 64x64 observation, and takes one step. It does not load MemoryVLA or measure policy accuracy.
+
+Warnings about the absent demonstration dataset, robosuite private macro, and duplicate TensorFlow CUDA factories are nonfatal for rollouts.
+
+### Download and verify the checkpoint
+
+```bash
+cd "$REPO_ROOT/myMemoryVLA"
+source script/setup/env.sh
+.venv/bin/python script/setup/download_memvla_libero.py spatial \
+  --output /tmp/memvla-libero-spatial
+stat -c '%s bytes  %n' \
+  "$MEMORYVLA_MODEL_ROOT/memvla-libero-spatial/checkpoints/memvla-libero-spatial.pt"
+```
+
+The downloader fetches `shihao1895/memvla-libero-spatial` and its metadata. `/tmp` staging avoids slow incremental network-volume writes. The expected size is exactly `33507487606` bytes.
+
+### Run a 10-episode policy smoke
+
+```bash
+cd "$REPO_ROOT/myMemoryVLA"
+source script/setup/env.sh
+NUM_TRIALS_PER_TASK=1 TASK_SUITE_NAME=libero_spatial \
+  bash script/eval/libero/eval_libero.sh
+```
+
+This runs one trial for each of the 10 Spatial tasks and validates model serving, action prediction, scoring, logs, and videos. It is not the official accuracy measurement.
+
+### Run the official 500-episode benchmark
+
+Start a persistent shell so closing SSH does not stop the run:
+
+```bash
+tmux new -s memoryvla-libero
+```
+
+Then run inside `tmux`:
+
+```bash
+cd "$REPO_ROOT/myMemoryVLA"
+source script/setup/env.sh
+NUM_TRIALS_PER_TASK=50 TASK_SUITE_NAME=libero_spatial \
+  bash script/eval/libero/eval_libero.sh
+```
+
+`NUM_TRIALS_PER_TASK=50` selects 50 trials for each task. `TASK_SUITE_NAME` selects the 10-task Spatial suite. The launcher starts the model server, waits for its health check, runs all 500 episodes with seed 7 and action-chunk window 8, saves logs and every rollout MP4, then cleans up the server.
+
+Detach with `Ctrl-b`, then `d`; reconnect with:
+
+```bash
+tmux attach -t memoryvla-libero
+```
+
+The tested L40S run took about 3.5 hours and used roughly 33.5 GB of GPU memory.
+
+### Check progress and accuracy
+
+```bash
+LOG_DIR="$MEMORYVLA_MODEL_ROOT/memvla-libero-spatial/eval_libero/memvla-libero-spatial.pt"
+LATEST_LOG="$(find "$LOG_DIR" -maxdepth 1 -name 'libero_spatial-50trials-*.txt' \
+  -printf '%T@ %p\n' | sort -n | tail -1 | cut -d' ' -f2-)"
+tail -10 "$LATEST_LOG"
+```
+
+The last episode line shows progress. A complete run shows 500 episodes; `Current total success rate` is the final fraction. The 2026-07-25 run produced 494/500 = 98.8%, versus 98.4% published.
+
+Check whether it is active and count videos with:
+
+```bash
+ps -ef | grep -E '[d]eploy.py|[e]val_libero.py'
+find "${LATEST_LOG%.txt}_videos" -type f -name '*.mp4' | wc -l
+```
 
 ## Troubleshooting order
 

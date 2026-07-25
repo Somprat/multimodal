@@ -49,6 +49,7 @@ if __name__ == "__main__":
         args = get_args()
     finally:
         sys.argv = original_argv
+        
 
     with open(os.path.join(os.path.dirname(os.path.dirname(args.ckpt_path)), 'config.yaml'), 'r') as f:
         yaml_args = yaml.safe_load(f) or {}

@@ -1,6 +1,7 @@
-# MemoryVLA SimplerEnv-Bridge evaluation report
+# MemoryVLA SimplerEnv-Bridge and LIBERO evaluation report
 
-Date: 2026-07-18 UTC
+Bridge run: 2026-07-18 UTC
+LIBERO Spatial run: 2026-07-25 UTC
 
 ## Objective
 
@@ -118,3 +119,82 @@ The MemoryVLA repository's SimplerEnv-Bridge table reports Spoon 75.0, Carrot 75
 The official checkpoint is hosted at:
 
 <https://huggingface.co/shihao1895/memvla-bridge>
+
+
+---
+
+## LIBERO Spatial evaluation
+
+### Objective and model
+
+Run the official MemoryVLA Spatial checkpoint on the complete LIBERO Spatial benchmark and compare the local success rate with the 98.4% result reported by the MemoryVLA project.
+
+- Model: `shihao1895/memvla-libero-spatial`
+- Checkpoint: `models/memvla-libero-spatial/checkpoints/memvla-libero-spatial.pt`
+- Verified checkpoint size: `33,507,487,606` bytes
+- GPU: NVIDIA L40S, 46 GB
+- Inference mode: full precision (`torch.float32`)
+- LIBERO revision: `8f1084e3132a39270c3a13ebe37270a43ece2a01`
+- Renderer: MuJoCo with OSMesa
+
+### Protocol
+
+- Suite: `libero_spatial`
+- 10 tasks, 50 trials per task, 500 episodes total
+- Seed: 7
+- Action chunking enabled with window 8
+- Unnormalization key: `libero_spatial_no_noops`
+- Adaptive ensemble alpha: 0.1
+- Classifier-free guidance scale: 1.5
+
+A 10-task, one-trial-per-task policy smoke completed first at 10/10. That result only validates the evaluation path and is not the benchmark accuracy. The full 500-episode run took about 3.5 hours.
+
+### Result
+
+| Benchmark | Local successes | Local rate | Published rate | Difference |
+| --- | ---: | ---: | ---: | ---: |
+| LIBERO Spatial | **494/500** | **98.8%** | **98.4%** | **+0.4 points** |
+
+The full log ends with 500 episodes, 494 successes, and `Current total success rate: 0.988`. Six episodes failed. All 500 episodes produced rollout MP4 files.
+
+### Persistent LIBERO artifacts
+
+A Git-tracked copy of the final text log is preserved at:
+
+```text
+artifacts/libero_spatial_eval_2026-07-25/libero_spatial-50trials-seed7-ac8.txt
+```
+
+The machine-local original log and rollout videos are at:
+
+```text
+models/memvla-libero-spatial/eval_libero/memvla-libero-spatial.pt/libero_spatial-50trials-seed7-ac8-2026_07_25-00_00_15.txt
+models/memvla-libero-spatial/eval_libero/memvla-libero-spatial.pt/libero_spatial-50trials-seed7-ac8-2026_07_25-00_00_15_videos/
+```
+
+The earlier 10-episode smoke artifacts are in the same directory with `1trials` in their names.
+
+### Issue found and resolved
+
+The first attempt on the 2026-07-25 Pod loaded the model but failed before episode 1 because OSMesa was absent. PyOpenGL raised `AttributeError: 'NoneType' object has no attribute 'glGetError'`. This fixed the renderer:
+
+```bash
+apt-get update
+apt-get install -y libosmesa6-dev libgl1-mesa-dev libglu1-mesa-dev
+```
+
+The simulator smoke passed after the repair and the full run completed normally.
+
+### Reproduce LIBERO Spatial
+
+Follow the LIBERO section in `FRESH_RUNPOD_SETUP.md`. With the environment and checkpoint prepared:
+
+```bash
+cd "$REPO_ROOT/myMemoryVLA"
+source script/setup/env.sh
+NUM_TRIALS_PER_TASK=50 TASK_SUITE_NAME=libero_spatial \
+  bash script/eval/libero/eval_libero.sh
+```
+
+Published table: <https://github.com/shihao1895/MemoryVLA#libero>
+Official checkpoint: <https://huggingface.co/shihao1895/memvla-libero-spatial>
