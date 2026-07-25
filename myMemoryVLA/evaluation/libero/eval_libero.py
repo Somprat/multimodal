@@ -5,7 +5,7 @@ import draccus
 import numpy as np
 import tqdm
 
-os.environ['MUJOCO_GL'] = 'osmesa'
+os.environ.setdefault("MUJOCO_GL", "osmesa")
 # apt install -y libosmesa6-dev libgl1-mesa-dev libglu1-mesa-dev
 
 from libero.libero import benchmark

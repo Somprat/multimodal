@@ -1,6 +1,6 @@
-# MemoryVLA / SimplerEnv RunPod handoff
+# MemoryVLA / SimplerEnv + LIBERO RunPod handoff
 
-Updated: 2026-07-18 UTC
+Updated: 2026-07-25 UTC
 
 All resumable source, metadata, setup scripts, and small test artifacts now live
 inside this repository. After cloning, set the repository root:
@@ -172,6 +172,122 @@ Important fixes learned during the run:
 - Headless GLFW warnings are expected when Vulkan offscreen rendering continues.
 - The Bridge script now uses the repository environment/checkpoint, accepts `CKPT_PATH`, and fails fast.
 
+## LIBERO setup status (2026-07-22)
+
+Goal: reproduce the MemoryVLA LIBERO evaluation path, starting with the
+published Spatial checkpoint and eventually running the official benchmark.
+
+### Completed and verified
+
+- Cloned official LIBERO under `myMemoryVLA/third_libs/LIBERO` at commit
+  `8f1084e3132a39270c3a13ebe37270a43ece2a01`. This clone is machine-local
+  and ignored by Git; the bootstrap script recreates it.
+- Installed the required Mesa/OSMesa host libraries and pinned Python
+  dependencies in the existing `myMemoryVLA/.venv`.
+- Added a reproducible bootstrap, pinned requirements, checkpoint downloader,
+  and simulator smoke test under `myMemoryVLA/script/setup/`.
+- `script/setup/env.sh` now configures LIBERO paths and defaults
+  `MUJOCO_GL=osmesa`. EGL did not initialize on this Pod; OSMesa works.
+- The real LIBERO simulator smoke test passed twice. Reset returned a
+  `(64, 64, 3)` uint8 agent-view image and one environment step completed
+  with `reward=0`, `done=False`.
+- `deploy.py` now provides `/health` after the model is loaded. The LIBERO
+  launcher uses that health check, repository defaults, environment
+  overrides, checkpoint validation, and cleanup traps.
+- Shell and Python syntax checks passed for the new and modified LIBERO files.
+
+Recreate and test the simulator on a new Pod:
+
+```bash
+cd "$REPO_ROOT/myMemoryVLA"
+bash script/setup/bootstrap_runpod_libero.sh
+source script/setup/env.sh
+.venv/bin/python script/setup/smoke_test_libero.py
+```
+
+Nonfatal warnings include LIBERO's absent dataset directory, robosuite's
+missing private macro file, and duplicate TensorFlow CUDA factory
+registration. The demonstration dataset is not required for benchmark
+rollouts.
+
+### Checkpoint and completed evaluation
+
+The official Spatial model is `shihao1895/memvla-libero-spatial`. Its checkpoint is complete and exact-size verified at `33,507,487,606` bytes:
+
+```text
+$REPO_ROOT/models/memvla-libero-spatial/checkpoints/memvla-libero-spatial.pt
+```
+
+Its `config.yaml`, `config.json`, and `dataset_statistics.json` are present. On a fresh Pod, download it with:
+
+```bash
+cd "$REPO_ROOT/myMemoryVLA"
+source script/setup/env.sh
+.venv/bin/python script/setup/download_memvla_libero.py spatial \
+  --output /tmp/memvla-libero-spatial
+```
+
+The 10-task/one-trial policy smoke completed at 10/10. The official protocol then completed all 10 tasks x 50 trials, 500 episodes total, seed 7, with action-chunk window 8.
+
+| Result | Local | Published | Difference |
+| --- | ---: | ---: | ---: |
+| LIBERO Spatial | **494/500 (98.8%)** | **98.4%** | **+0.4 points** |
+
+The complete result log is:
+
+```text
+$REPO_ROOT/models/memvla-libero-spatial/eval_libero/memvla-libero-spatial.pt/libero_spatial-50trials-seed7-ac8-2026_07_25-00_00_15.txt
+```
+
+All 500 rollout MP4s are under the matching `_videos/` directory. The run took about 3.5 hours on one NVIDIA L40S in full precision.
+
+The first attempt on the replacement Pod failed before episode 1 because OSMesa host libraries were absent. This fixed it:
+
+```bash
+apt-get update
+apt-get install -y libosmesa6-dev libgl1-mesa-dev libglu1-mesa-dev
+```
+
+The simulator smoke passed after the repair. For future unattended runs, use `tmux` so closing SSH cannot terminate the evaluation shell.
+
+Policy smoke:
+
+```bash
+cd "$REPO_ROOT/myMemoryVLA"
+source script/setup/env.sh
+NUM_TRIALS_PER_TASK=1 TASK_SUITE_NAME=libero_spatial \
+  bash script/eval/libero/eval_libero.sh
+```
+
+Official 500-episode benchmark:
+
+```bash
+NUM_TRIALS_PER_TASK=50 TASK_SUITE_NAME=libero_spatial \
+  bash script/eval/libero/eval_libero.sh
+```
+
+### Docker decision
+
+Docker is not installed on this RunPod. OpenPI's existing LIBERO Compose image
+evaluates OpenPI pi0.5, not MemoryVLA, so it cannot be used unchanged. A
+MemoryVLA image would still need NVIDIA runtime/GPU passthrough, checkpoint
+mounts, model server/client orchestration, and Mesa/OSMesa libraries. Reusing
+the working repository `.venv` is currently the shortest reproducible path.
+
+### Files from this LIBERO pass
+
+Modified: `deploy.py`, `evaluation/libero/eval_libero.py`,
+`script/eval/libero/eval_libero.sh`, `script/setup/env.sh`, and both
+relevant `.gitignore` files.
+
+Added under `myMemoryVLA/script/setup/`:
+`bootstrap_runpod_libero.sh`, `download_memvla_libero.py`,
+`requirements-runpod-libero.txt`, and `smoke_test_libero.py`.
+
+The tracked modification to
+`myMemoryVLA/evaluation/simpler_env/simpler_env_inference.py` predates this
+LIBERO pass and was deliberately left untouched.
+
 ## Recommended resume sequence
 
 1. Follow `FRESH_RUNPOD_SETUP.md` for a new Pod.
@@ -189,7 +305,8 @@ Important fixes learned during the run:
 - SAPIEN, Vulkan rendering, checkpoint loading, diffusion inference, video writing, and extraction have passed.
 - The official Bridge checkpoint and metadata are persistently installed and exact-size verified.
 - The local Llama config/tokenizer and TIMM vision weights are present.
-- The full 96-episode evaluation completed with 76.04% overall success.
+- The full 96-episode Bridge evaluation completed with 76.04% overall success.
+- The full 500-episode LIBERO Spatial evaluation completed with 98.8% success (494/500), compared with 98.4% published.
 - Do not rerun it on a new Pod unless another stochastic sample is desired.
 - Model A remains unresolved; a same-checkpoint run tests plumbing, not scientific performance.
 
@@ -197,4 +314,4 @@ Important fixes learned during the run:
 
 Paste this:
 
-> Continue my MemoryVLA/SimplerEnv RunPod work. Read `$REPO_ROOT/MEMORYVLA_HANDOFF.md`, `$REPO_ROOT/FRESH_RUNPOD_SETUP.md`, and `$REPO_ROOT/MEMORYVLA_BRIDGE_EVAL_REPORT_2026-07-18.md` completely; inspect existing state and do not reinstall, redownload, or rerun working components unnecessarily. The official Bridge checkpoint is exact-size verified, and the full 96-episode evaluation completed at 76.04%. Source `myMemoryVLA/script/setup/env.sh`, verify persistent paths and GPU/Vulkan health, then help with the next requested experiment. Model A remains undefined, so do not treat CogACT as a valid MemoryVLA baseline.
+> Continue my MemoryVLA RunPod work. Read `$REPO_ROOT/MEMORYVLA_HANDOFF.md`, `$REPO_ROOT/FRESH_RUNPOD_SETUP.md`, and `$REPO_ROOT/MEMORYVLA_BRIDGE_EVAL_REPORT_2026-07-18.md` completely; inspect existing state and do not reinstall, redownload, or rerun working components unnecessarily. The full Bridge evaluation completed at 76.04% (73/96), and the full LIBERO Spatial evaluation completed at 98.8% (494/500). Source `myMemoryVLA/script/setup/env.sh`, verify persistent paths and GPU/renderer health, then help with the next requested experiment. Model A remains undefined, so do not treat CogACT as a valid MemoryVLA baseline.

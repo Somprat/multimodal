@@ -22,6 +22,9 @@ export HF_HOME="${repo_root}/.cache/huggingface"
 export HF_HUB_CACHE="${HF_HOME}/hub"
 export TRANSFORMERS_CACHE="${HF_HOME}/hub"
 export MEMORYVLA_MODEL_ROOT="${repo_root}/models"
+export LIBERO_CONFIG_PATH="${project_root}/.runtime/libero"
+export MUJOCO_GL="${MUJOCO_GL:-osmesa}"
+export PYTHONPATH="${project_root}/third_libs/LIBERO:${project_root}/evaluation/libero${PYTHONPATH:+:${PYTHONPATH}}"
 
 local_llama2_7b="${MEMORYVLA_MODEL_ROOT}/llama2-7b-public"
 if [[ -f "${local_llama2_7b}/config.json" && -f "${local_llama2_7b}/tokenizer.json" ]]; then

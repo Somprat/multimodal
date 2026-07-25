@@ -272,5 +272,11 @@ def inference():
 
     return jsonify({'response': action_str})
 
+@app.route('/health', methods=['GET'])
+def health():
+    """Report readiness only after the model has finished loading."""
+    return jsonify({'status': 'ready'})
+
+
 if __name__ == "__main__":
     app.run(host="0.0.0.0", debug=False, port=args.port)
