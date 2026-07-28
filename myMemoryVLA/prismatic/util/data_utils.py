@@ -154,7 +154,7 @@ class PaddedCollatorForActionPrediction:
         action_masks = torch.stack(action_masks)
 
         optional_modalities = {}
-        for key in ("depth_values", "proprio", "spatial_featurese"):
+        for key in ("depth", "proprio", "spatial_featurese", "intrinsic"):
             if all(key in instance for instance in instances):
                 optional_modalities[key] = torch.stack([instance[key] for instance in instances])
 

@@ -17,7 +17,7 @@ import tensorflow as tf
 
 import simpler_env
 from simpler_env import ENVIRONMENTS
-from simpler_env.utils.env.observation_utils import get_image_from_maniskill2_obs_dict
+from simpler_env.utils.env.observation_utils import get_image_depth_intrinsics_from_maniskill2_obs_dict
 
 parser = argparse.ArgumentParser()
 
@@ -89,13 +89,16 @@ for ep_id in range(args.n_trajs):
     model.reset(instruction)
     print(instruction)
 
-    image = get_image_from_maniskill2_obs_dict(env, obs)  # np.ndarray of shape (H, W, 3), uint8
+    image, depth, intrinsic = get_image_depth_intrinsics_from_maniskill2_obs_dict(env, obs)  # np.ndarray of shape (H, W, 3), uint8
     images = [image]
+    depths = [depth]
+    intrinsics = [intrinsic]
+
     predicted_terminated, success, truncated = False, False, False
     timestep = 0
     while not (predicted_terminated or truncated):
         # step the model; "raw_action" is raw model action output; "action" is the processed action to be sent into maniskill env
-        raw_action, action = model.step(image, instruction)
+        raw_action, action = model.step(image, depth, intrinsic, instruction)
         predicted_terminated = bool(action["terminate_episode"][0] > 0)
         if predicted_terminated:
             if not is_final_subtask:
@@ -114,8 +117,10 @@ for ep_id in range(args.n_trajs):
             print(instruction)
         is_final_subtask = env.is_final_subtask() 
         # update image observation
-        image = get_image_from_maniskill2_obs_dict(env, obs)
+        image, depth, intrinsic = get_image_depth_intrinsics_from_maniskill2_obs_dict(env, obs)
         images.append(image)
+        depths.append(depth)
+        intrinsics.append(intrinsic)
         timestep += 1
 
     episode_stats = info.get("episode_stats", {})

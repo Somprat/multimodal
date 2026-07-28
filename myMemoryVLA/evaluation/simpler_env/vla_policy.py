@@ -92,22 +92,38 @@ class VLAInference:
 
         self.task_description = None
         self.image_history = deque(maxlen=self.horizon)
+        self.depth_history = deque(maxlen=self.horizon)
+        self.intrinsic_history = deque(maxlen=self.horizon)
         if self.action_ensemble:
             self.action_ensembler = AdaptiveEnsembler(self.action_ensemble_horizon, self.adaptive_ensemble_alpha)
         else:
             self.action_ensembler = None
         self.num_image_history = 0
+        self.num_depth_history = 0
+        self.num_intrinsic_history = 0
 
     def _add_image_to_history(self, image: np.ndarray) -> None:
         self.image_history.append(image)
         self.num_image_history = min(self.num_image_history + 1, self.horizon)
 
+    def _add_depth_to_history(self, depth: np.float64) -> None:
+        self.depth_history.append(depth)
+        self.num_depth_history = min(self.num_depth_history+1, self.horizon)
+
+    def _add_intrinsic_to_history(self, intrinsic: np.float64) -> None:
+        self.intrinsic_history.append(intrinsic)
+        self.num_intrinsic_history = min(self.num_intrinsic_history+1, self.horizon)
+
     def reset(self, task_description: str) -> None:
         self.task_description = task_description
         self.image_history.clear()
+        self.depth_history.clear()
+        self.intrinsic_history.clear()
         if self.action_ensemble:
             self.action_ensembler.reset()
         self.num_image_history = 0
+        self.num_depth_history = 0
+        self.num_intrinsic_history = 0
 
         self.sticky_action_is_on = False
         self.gripper_action_repeat = 0
@@ -115,7 +131,7 @@ class VLAInference:
         self.previous_gripper_action = None
 
     def step(
-        self, image: np.ndarray,
+        self, image: np.ndarray, depth: np.float64, intrinsic:np.float64,
             task_description: Optional[str] = None,
             episode_first_frame: str = 'False',
             *args, **kwargs
@@ -139,9 +155,11 @@ class VLAInference:
 
         assert image.dtype == np.uint8
         self._add_image_to_history(self._resize_image(image))
+        self._add_depth_to_history(depth)
+        self._add_intrinsic_to_history(intrinsic)
         image: Image.Image = Image.fromarray(image)
         raw_actions, normalized_actions = self.vla.predict_action(
-            image=image,
+            image=image, depth=depth, intrinsics=intrinsic,
             instruction=self.task_description,
             unnorm_key=self.unnorm_key,
             cfg_scale=self.cfg_scale,

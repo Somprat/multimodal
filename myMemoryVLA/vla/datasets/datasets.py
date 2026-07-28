@@ -83,6 +83,7 @@ class RLDSBatchTransform:
 
         timesteps = rlds_batch["observation"]["timestep"]
         observation = rlds_batch["observation"]
+        print(observation.keys())
 
         output = dict(
             pixel_values=pixel_values,
@@ -103,27 +104,34 @@ class RLDSBatchTransform:
         if "proprio" in observation:
             proprio = torch.tensor(observation["proprio"][0], dtype=torch.float32)
 
-        camera_parts = []
-        for key in ("camera_intrinsics", "camera_extrinsics", "scene_id"):
-            if key in observation:
-                try:
-                    camera_parts.append(torch.tensor(observation[key][0], dtype=torch.float32).flatten())
-                except (TypeError, ValueError):
-                    pass
+        # camera_parts = []
+        # for key in ("camera_intrinsics", "camera_extrinsics", "scene_id"):
+        #     if key in observation:
+        #         try:
+        #             camera_parts.append(torch.tensor(observation[key][0], dtype=torch.float32))
+        #         except (TypeError, ValueError):
+        #             pass
 
-        camera = None
-        if len(camera_parts) > 0:
-            camera = torch.cat(camera_parts)
+        # camera = None
+        # if len(camera_parts) > 0:
+        #     camera = torch.cat(camera_parts)
+
+        intrinsic = None
+        if "camera_intrinsics" in observation:
+            intrinsic = torch.tensor(observation["camera_intrinsics"][0], dtype = torch.float32)
 
         if depth is not None:
             output["depth"] = depth
         if proprio is not None:
             output["proprio"] = proprio
-        if camera is not None:
-            output["camera"] = camera
+        # if camera is not None:
+        #     output["camera"] = camera
+        if intrinsic is not None:
+            output["intrinsic"] = intrinsic
+        
 
-        return output
-
+        return  output
+    # some techinal words: collator = a function that create a batch of data
 
 class RLDSDataset(IterableDataset):
     def __init__(
@@ -137,9 +145,9 @@ class RLDSDataset(IterableDataset):
         train: bool = True,
         image_aug: bool = False,
         load_all_data_for_training: bool = True,
-        load_depth=False,
-        load_proprio=False,
-        use_spatial_features: bool = False,
+        load_depth=True,
+        load_proprio=True,
+        use_spatial_features: bool = True,
     ) -> None:
         """Lightweight wrapper around RLDS TFDS Pipeline for use with PyTorch/OpenVLA Data Loaders."""
         self.data_root_dir, self.data_mix, self.batch_transform = data_root_dir, data_mix, batch_transform

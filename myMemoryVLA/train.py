@@ -78,9 +78,15 @@ class TrainConfig:
     fusion_type: str = 'gate' # Memory fusion type, chose from ['gate', 'add']
     consolidate_type: str = 'tome' # Memory consolidate type, chose from ['fifo', 'tome']
     update_fused: bool = False # Whether to update fused memory
-    load_depth: bool = False # Whether to load depth observations from RLDS
-    load_proprio: bool = False # Whether to load proprioceptive observations from RLDS
-    use_spatial_features: bool = False # Whether to load/use precomputed spatial features if available
+    load_depth: bool = True # Whether to load depth observations from RLDS
+    load_proprio: bool = True # Whether to load proprioceptive observations from RLDS
+    use_spatial_features: bool = True # Whether to load/use precomputed spatial features if available
+
+    # the same thing as per_token_size in memory_vla.py
+    # spatial_token_size: int = 256
+    num_spatial_tokens: int = 16
+    depth_patch_size: int = 16
+    max_points_spatial:int = 1024
 
 
     def __post_init__(self) -> None:

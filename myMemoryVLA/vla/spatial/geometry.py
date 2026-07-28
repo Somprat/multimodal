@@ -22,7 +22,8 @@ def make_pixel_grid(
     )
     return u, v
 
-
+# intrinsic + depth = points
+# can put points in PointCloudSpatialEncoder
 def parse_intrinsics(
     intrinsics: Union[Mapping[str, torch.Tensor], torch.Tensor],
     batch_size: int,

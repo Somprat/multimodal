@@ -3,7 +3,7 @@ import numpy as np
 from transforms3d.euler import quat2euler
 
 from simpler_env.utils.env.env_builder import build_maniskill2_env, get_robot_control_mode
-from simpler_env.utils.env.observation_utils import get_image_from_maniskill2_obs_dict
+from simpler_env.utils.env.observation_utils import get_image_depth_intrinsics_from_maniskill2_obs_dict
 from simpler_env.utils.visualization import write_video
 
 
@@ -90,8 +90,10 @@ def run_maniskill2_eval_single_episode(
     print(task_description)
 
     # Initialize logging
-    image = get_image_from_maniskill2_obs_dict(env, obs, camera_name=obs_camera_name)
+    image, depth, intrinsic = get_image_depth_intrinsics_from_maniskill2_obs_dict(env, obs, camera_name=obs_camera_name)
     images = [image]
+    depths = [depth]
+    intrinsics = [intrinsic]
     predicted_actions = []
     predicted_terminated, done, truncated = False, False, False
 
@@ -106,7 +108,7 @@ def run_maniskill2_eval_single_episode(
     while not (predicted_terminated or truncated):
         # step the model; "raw_action" is raw model action output; "action" is the processed action to be sent into maniskill env
         raw_action, action = model.step(
-            image,
+            image, depth, intrinsic,
             task_description,
             episode_first_frame=episode_first_frame,
         )
@@ -131,11 +133,14 @@ def run_maniskill2_eval_single_episode(
             task_description = new_task_description
             print(task_description)
         is_final_subtask = env.is_final_subtask()
+        
 
         # print(timestep, info)
 
-        image = get_image_from_maniskill2_obs_dict(env, obs, camera_name=obs_camera_name)
+        image, depth, intrinsic = get_image_depth_intrinsics_from_maniskill2_obs_dict(env, obs, camera_name=obs_camera_name)
         images.append(image)
+        depths.append(depth)
+        intrinsics.append(intrinsic)
         timestep += 1
 
     print(success)
@@ -220,3 +225,4 @@ def maniskill2_evaluator(model, args):
                     raise NotImplementedError()
 
     return success_arr
+# array of boolean

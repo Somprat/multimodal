@@ -200,6 +200,7 @@ def load_vla(
         model_cfg.model_id,
         vision_backbone,
         llm_backbone,
+        device="cpu",
         arch_specifier=model_cfg.arch_specifier,
         freeze_weights=not load_for_training,
         norm_stats=norm_stats,

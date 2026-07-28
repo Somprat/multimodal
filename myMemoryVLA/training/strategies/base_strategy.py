@@ -171,6 +171,7 @@ class TrainingStrategy(ABC):
                         pixel_values=batch["pixel_values"],
                         depth=batch.get("depth"),
                         proprio=batch.get("proprio"),
+                        intrinsics=batch.get("intrinsic"),
                         camera=batch.get("camera"),
                         action_masks=batch["action_masks"],
                         labels=batch["labels"],

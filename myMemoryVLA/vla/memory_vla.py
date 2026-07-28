@@ -19,12 +19,14 @@ from prismatic.models.backbones.vision import VisionBackbone
 from prismatic.models.vlms.prismatic import PrismaticVLM
 from prismatic.overwatch import initialize_overwatch
 from prismatic.util.nn_utils import FusedMLPProjector, LinearProjector, MLPProjector
+from spatial import geometry
 
 from action_model.action_model import ActionModel
 from action_model.models import DiT
 
 # Initialize Overwatch =>> Wraps `logging.Logger`
 overwatch = initialize_overwatch(__name__)
+
 
 
 class TimestepEmbedder(nn.Module):
@@ -384,8 +386,6 @@ class SpatialMemBank(CogMemBank):
             consolidate_type=consolidate_type,
             update_fused=update_fused,
         )
-
-
 class SpatialEncoder(nn.Module):
     def __init__(self, spatial_token_size: int, depth_patch_size: int = 16):
         super().__init__()
@@ -440,11 +440,145 @@ class SpatialEncoder(nn.Module):
         return torch.cat(spatial_tokens, dim=1)
 
 
+class PointCloudSpatialEncoder(nn.Module):
+    """Encode point-cloud observations into a fixed set of spatial tokens."""
+
+    def __init__(
+        self,
+        spatial_token_size: int,
+        num_spatial_tokens: int,
+        point_dim: int = 3,
+        proprio_dim: Optional[int] = None,
+        camera_dim: Optional[int] = None,
+        hidden_dim: int = 128,
+        num_heads: int = 4,
+        max_points: Optional[int] = None,
+    ) -> None:
+        super().__init__()
+
+        self.spatial_token_size = spatial_token_size
+        self.num_spatial_tokens = num_spatial_tokens
+        self.max_points = max_points
+
+        self.point_mlp = nn.Sequential(
+            nn.Linear(point_dim, hidden_dim),
+            nn.LayerNorm(hidden_dim),
+            nn.GELU(),
+            nn.Linear(hidden_dim, hidden_dim),
+            nn.LayerNorm(hidden_dim),
+            nn.GELU(),
+        )
+
+        self.proprio_proj = (
+            nn.Sequential(
+                nn.Linear(proprio_dim, hidden_dim),
+                nn.GELU(),
+                nn.Linear(hidden_dim, hidden_dim),
+            )
+            if proprio_dim is not None
+            else None
+        )
+        self.camera_proj = (
+            nn.Sequential(
+                nn.Linear(camera_dim, hidden_dim),
+                nn.GELU(),
+                nn.Linear(hidden_dim, hidden_dim),
+            )
+            if camera_dim is not None
+            else None
+        )
+
+        self.query_tokens = nn.Parameter(torch.randn(num_spatial_tokens, hidden_dim) * 0.02)
+        self.cross_attn = nn.MultiheadAttention(
+            embed_dim=hidden_dim,
+            num_heads=num_heads,
+            batch_first=True,
+        )
+        self.output_norm = nn.LayerNorm(hidden_dim)
+        self.output_proj = nn.Linear(hidden_dim, spatial_token_size)
+
+    def forward(
+        self,
+        points: torch.Tensor,
+        proprio: Optional[torch.Tensor] = None,
+        camera: Optional[torch.Tensor] = None,
+        point_mask: Optional[torch.Tensor] = None,
+    ) -> torch.Tensor:
+        """
+        Args:
+            points: Point cloud tensor shaped [B, N, point_dim].
+            proprio: Optional proprioception vector shaped [B, proprio_dim].
+            camera: Optional camera metadata vector shaped [B, camera_dim].
+            point_mask: Optional boolean mask shaped [B, N], where True marks valid points.
+
+        Returns:
+            Spatial tokens shaped [B, num_spatial_tokens, spatial_token_size].
+        """
+
+        if points.ndim != 3:
+            raise ValueError(f"points must be shaped [B, N, point_dim], got {tuple(points.shape)}")
+
+        points = torch.nan_to_num(points, nan=0.0, posinf=0.0, neginf=0.0)
+        points, point_mask = self._maybe_subsample(points, point_mask)
+
+        point_tokens = self.point_mlp(points)
+
+        context = self._encode_context(
+            batch_size=points.shape[0],
+            device=points.device,
+            dtype=point_tokens.dtype,
+            proprio=proprio,
+            camera=camera,
+        )
+        if context is not None:
+            point_tokens = point_tokens + context[:, None, :]
+
+        queries = self.query_tokens[None, :, :].expand(points.shape[0], -1, -1)
+        key_padding_mask = None if point_mask is None else ~point_mask.bool()
+
+        spatial_tokens, _ = self.cross_attn(
+            query=queries,
+            key=point_tokens,
+            value=point_tokens,
+            key_padding_mask=key_padding_mask,
+            need_weights=False,
+        )
+
+        spatial_tokens = self.output_norm(spatial_tokens)
+        return self.output_proj(spatial_tokens)
+
+    def _maybe_subsample(
+        self,
+        points: torch.Tensor,
+        point_mask: Optional[torch.Tensor],
+    ) -> tuple[torch.Tensor, Optional[torch.Tensor]]:
+        if self.max_points is None or points.shape[1] <= self.max_points:
+            return points, point_mask
+
+        # Deterministic stride sampling keeps this module lightweight and reproducible.
+        indices = torch.linspace(
+            0,
+            points.shape[1] - 1,
+            steps=self.max_points,
+            device=points.device,
+        ).long()
+        points = points.index_select(dim=1, index=indices)
+        if point_mask is not None:
+            point_mask = point_mask.index_select(dim=1, index=indices)
+        return points, point_mask
+
 
 class MemoryVLA(nn.Module):
     def __init__(
         self,
         vlm: PrismaticVLM,
+        # equivaletn to per_token_size
+        # spatial_token_size: np.int16,
+        num_spatial_tokens: np.int16,
+        depth_patch_size: np.int16,
+        camera_dim: Optional[np.int16] = None ,
+        proprio_dim: Optional[np.int16] = None, # should be fixed but shouldn't be required
+        max_points_spatial: Optional[np.int16] = None, # this should be optional which is good
         action_model_type: str = 'DiT-L',
         token_size: int = 4096,
         action_dim: int = 7,
@@ -460,6 +594,8 @@ class MemoryVLA(nn.Module):
         fusion_type: str = 'gate',
         consolidate_type: str = 'tome',
         update_fused: bool = False,
+
+
         **kwargs,
     ) -> None:
         super().__init__()
@@ -516,8 +652,25 @@ class MemoryVLA(nn.Module):
             consolidate_type=self.consolidate_type,
             update_fused=self.update_fused,
         )
+# we want to use the forwar function of this class which takes in points
+# we already have the depth_to_points function from geometry.py
+# Goal: connect whatever that gives us depth, plug in the depth_to_points and put it here!
+        
+        self.spatial_encoder = SpatialEncoder(
+            spatial_token_size = self.per_token_size,
+            depth_patch_size = depth_patch_size
+        )
 
-        self.spatial_encoder = SpatialEncoder(spatial_token_size=self.per_token_size)
+        self.point_cloud_spatial_encoder = PointCloudSpatialEncoder(
+                    spatial_token_size=self.per_token_size,
+                    num_spatial_tokens=num_spatial_tokens,
+                    point_dim = 3,
+                    proprio_dim = proprio_dim,
+                    camera_dim = camera_dim,
+                    hidden_dim = 128,
+                    num_heads = 4,
+                    max_points = max_points_spatial
+        )
         self.spatial_mem_bank = SpatialMemBank(
             dataloader_type=self.dataloader_type,
             group_size=self.group_size,
@@ -597,15 +750,34 @@ class MemoryVLA(nn.Module):
             spatial_tokens,
         )
         return self.per_spatial_gate(per_tokens, spatial_context)
+# it literally is declared with self. What are you talking about?
+    def _add_batch_depth(self, depth):
+        depth = depth.squeeze(-1)
+        depth = depth.unsqueeze(0)
+
+        encoder_param = next(self.point_cloud_spatial_encoder.parameters())
+        device = encoder_param.device
+        dtype = encoder_param.dtype
+
+        return depth.to(device = device, dtype = dtype)
+
+    def _add_batch_intrinsics(self, intrinsics):
+        intrinsics = intrinsics.unsqueeze(0)
+
+        encoder_param = next(self.point_cloud_spatial_encoder.parameters())
+        device = encoder_param.device
+        dtype = encoder_param.dtype
+        return intrinsics.to(device, dtype)
 
     def forward(
         self,
-        input_ids: torch.LongTensor=None,
-        attention_mask: Optional[torch.Tensor] = None,
-        pixel_values: Optional[torch.FloatTensor] = None,
         depth: Optional[torch.FloatTensor] = None,
         proprio: Optional[torch.FloatTensor] = None,
         camera: Optional[torch.FloatTensor] = None,
+        intrinsics: Optional[torch.FloatTensor] = None,
+        input_ids: torch.LongTensor=None,
+        attention_mask: Optional[torch.Tensor] = None,
+        pixel_values: Optional[torch.FloatTensor] = None,
         labels: Optional[torch.LongTensor] = None,
         actions: Optional[torch.FloatTensor] = None,
         action_masks: Optional[torch.FloatTensor] = None,
@@ -668,11 +840,28 @@ class MemoryVLA(nn.Module):
             episode_ids=episode_ids,
             timesteps=timesteps,
         )
-        spatial_tokens = self.spatial_encoder(
-            depth=depth,
-            proprio=proprio,
-            camera=camera,
-        )
+
+        if depth is None or intrinsics is None:
+            spatial_tokens = self.spatial_encoder(
+                depth=depth,
+                proprio=proprio,
+                camera=camera,
+            )
+        else:
+            points, valid_masks = geometry.depth_to_points(
+                depth=depth,
+                intrinsics = intrinsics,
+                mask=None,
+                flatten = True
+            )
+
+            spatial_tokens = self.point_cloud_spatial_encoder(
+                points = points,
+                proprio = proprio,
+                camera = camera,
+                point_mask = valid_masks
+            )
+            
         per_tokens = self._fuse_spatial_tokens(
             per_tokens=per_tokens,
             spatial_tokens=spatial_tokens,
@@ -735,6 +924,7 @@ class MemoryVLA(nn.Module):
         model_id: str,
         vision_backbone: VisionBackbone,
         llm_backbone: LLMBackbone,
+        device: Optional[torch.device] = None,
         enable_mixed_precision_training: bool = True,
         arch_specifier: str = "gelu-mlp",
         freeze_weights: bool = True,
@@ -759,7 +949,7 @@ class MemoryVLA(nn.Module):
 
         # Load from Checkpoint (Custom --> should load both *projector* and *llm* weights)
         if use_bf16:
-            raw_state = torch.load(pretrained_checkpoint, map_location="cpu")["model"]
+            raw_state = torch.load(pretrained_checkpoint, map_location=device)["model"]
             for k in raw_state:
                 for subk in raw_state[k]:
                     raw_state[k][subk] = raw_state[k][subk].to(torch.bfloat16)
@@ -767,7 +957,7 @@ class MemoryVLA(nn.Module):
             model_state_dict = raw_state
         else:
             model_state_dict = torch.load(
-                pretrained_checkpoint, map_location="cuda"
+                pretrained_checkpoint, map_location="cpu"
             )["model"]
 
         assert (
@@ -822,19 +1012,22 @@ class MemoryVLA(nn.Module):
             memory_vla = memory_vla.to("cuda", dtype=torch.bfloat16)
 
         return memory_vla
+    # [H, W, 1] -> [1, H, W]
 
     @torch.inference_mode()
     def predict_action(
         self, image: Image, 
         instruction: str,
+        depth: Optional[torch.FloatTensor] = None,
+        proprio: Optional[torch.FloatTensor] = None,
+        camera: Optional[torch.FloatTensor] = None,
+        intrinsics: Optional[torch.FloatTensor] = None,
         unnorm_key: Optional[str] = None, 
         cfg_scale: float = 1.5, 
         use_ddim: bool = False,
         num_ddim_steps: int = 10,
         episode_first_frame: str = 'False',
-        depth: Optional[torch.FloatTensor] = None,
-        proprio: Optional[torch.FloatTensor] = None,
-        camera: Optional[torch.FloatTensor] = None,
+
         **kwargs: str
     ) -> np.ndarray:
         """
@@ -922,11 +1115,31 @@ class MemoryVLA(nn.Module):
             episode_ids=episode_ids,
             timesteps=timesteps,
         )
-        spatial_tokens = self.spatial_encoder(
-            depth=depth,
-            proprio=proprio,
-            camera=camera,
-        )
+
+        if depth is None or intrinsics is None:
+            spatial_tokens = self.spatial_encoder(
+                    depth=depth,
+                    proprio=proprio,
+                    camera=camera,
+                )
+        else:
+            depth = self._add_batch_depth(depth)
+            intrinsics = self._add_batch_intrinsics(intrinsics)
+    
+
+            points, valid_masks = geometry.depth_to_points(
+                depth=depth,
+                intrinsics = intrinsics,
+                mask=None,
+                flatten = True
+            )
+            spatial_tokens = self.point_cloud_spatial_encoder(
+                points = points,
+                proprio = proprio,
+                camera= camera,
+                point_mask = valid_masks,
+            )
+
         per_tokens = self._fuse_spatial_tokens(
             per_tokens=per_tokens,
             spatial_tokens=spatial_tokens,
@@ -1022,3 +1235,4 @@ class MemoryVLA(nn.Module):
         """Dimensionality of the policy's action space."""
         unnorm_key = self._check_unnorm_key(self.norm_stats, unnorm_key)
         return self.norm_stats[unnorm_key]["action"]
+

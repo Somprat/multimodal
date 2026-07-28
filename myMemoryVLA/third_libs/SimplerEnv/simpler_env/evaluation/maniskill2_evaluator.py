@@ -8,7 +8,7 @@ import numpy as np
 from transforms3d.euler import quat2euler
 
 from simpler_env.utils.env.env_builder import build_maniskill2_env, get_robot_control_mode
-from simpler_env.utils.env.observation_utils import get_image_from_maniskill2_obs_dict
+from simpler_env.utils.env.observation_utils import get_image_depth_intrinsics_from_maniskill2_obs_dict
 from simpler_env.utils.visualization import write_video
 
 
@@ -95,8 +95,10 @@ def run_maniskill2_eval_single_episode(
     print(task_description)
 
     # Initialize logging
-    image = get_image_from_maniskill2_obs_dict(env, obs, camera_name=obs_camera_name)
+    image, depth, intrinsic = get_image_depth_intrinsics_from_maniskill2_obs_dict(env, obs, camera_name=obs_camera_name)
     images = [image]
+    depths = [depth]
+    intrinsics = [intrinsic]
     predicted_actions = []
     predicted_terminated, done, truncated = False, False, False
 
@@ -109,7 +111,7 @@ def run_maniskill2_eval_single_episode(
     # Step the environment
     while not (predicted_terminated or truncated):
         # step the model; "raw_action" is raw model action output; "action" is the processed action to be sent into maniskill env
-        raw_action, action = model.step(image, task_description)
+        raw_action, action = model.step(image, depth, intrinsic, task_description)
         predicted_actions.append(raw_action)
         predicted_terminated = bool(action["terminate_episode"][0] > 0)
         if predicted_terminated:
@@ -132,8 +134,10 @@ def run_maniskill2_eval_single_episode(
 
         print(timestep, info)
 
-        image = get_image_from_maniskill2_obs_dict(env, obs, camera_name=obs_camera_name)
+        image, depth, intrinsic = get_image_depth_intrinsics_from_maniskill2_obs_dict(env, obs, camera_name=obs_camera_name)
         images.append(image)
+        depths.append(depth)
+        intrinsics.append(intrinsic)
         timestep += 1
 
     episode_stats = info.get("episode_stats", {})
@@ -160,7 +164,7 @@ def run_maniskill2_eval_single_episode(
     r, p, y = quat2euler(robot_init_quat)
     video_path = f"{ckpt_path_basename}/{scene_name}/{control_mode}/{env_save_name}/rob_{robot_init_x}_{robot_init_y}_rot_{r:.3f}_{p:.3f}_{y:.3f}_rgb_overlay_{rgb_overlay_path_str}/{video_name}"
     video_path = os.path.join(logging_dir, video_path)
-    write_video(video_path, images, fps=5)
+    write_video(video_path, images , fps=5)
 
     # save action trajectory
     action_path = video_path.replace(".mp4", ".png")
