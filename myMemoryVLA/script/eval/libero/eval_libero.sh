@@ -31,7 +31,7 @@ find_free_port() {
     port=$(shuf -i"${min}"-"${max}" -n1)
     if ! lsof -iTCP:"${port}" -sTCP:LISTEN &>/dev/null; then
       echo "${port}"
-      return 0
+      return 
     fi
   done
 

@@ -19,7 +19,8 @@ from prismatic.models.backbones.vision import VisionBackbone
 from prismatic.models.vlms.prismatic import PrismaticVLM
 from prismatic.overwatch import initialize_overwatch
 from prismatic.util.nn_utils import FusedMLPProjector, LinearProjector, MLPProjector
-from spatial import geometry
+from .spatial import geometry
+from .spatial.encoder import PointCloudSpatialEncoder as SpatialPointCloudEncoder
 
 from action_model.action_model import ActionModel
 from action_model.models import DiT
@@ -574,11 +575,11 @@ class MemoryVLA(nn.Module):
         vlm: PrismaticVLM,
         # equivaletn to per_token_size
         # spatial_token_size: np.int16,
-        num_spatial_tokens: np.int16,
-        depth_patch_size: np.int16,
+        num_spatial_tokens: int = 16,
+        depth_patch_size: int = 16,
         camera_dim: Optional[np.int16] = None ,
         proprio_dim: Optional[np.int16] = None, # should be fixed but shouldn't be required
-        max_points_spatial: Optional[np.int16] = None, # this should be optional which is good
+        max_points_spatial: Optional[int] = 1024, # this should be optional which is good
         action_model_type: str = 'DiT-L',
         token_size: int = 4096,
         action_dim: int = 7,
@@ -661,7 +662,7 @@ class MemoryVLA(nn.Module):
             depth_patch_size = depth_patch_size
         )
 
-        self.point_cloud_spatial_encoder = PointCloudSpatialEncoder(
+        self.point_cloud_spatial_encoder = SpatialPointCloudEncoder(
                     spatial_token_size=self.per_token_size,
                     num_spatial_tokens=num_spatial_tokens,
                     point_dim = 3,
@@ -995,6 +996,18 @@ class MemoryVLA(nn.Module):
                 memory_vla.ema_diffusion.load_state_dict(model_state_dict["action_model"])
         else:
             overwatch.warning("No ActionModel found in the pretrained checkpoint. Initializing a new one.")
+
+        spatial_checkpoint_keys = {
+            "point_cloud_spatial_encoder", "spatial_mem_bank",
+            "spatial_to_per_fusion", "per_spatial_gate",
+        }
+        missing_spatial_keys = sorted(spatial_checkpoint_keys - model_state_dict.keys())
+        if missing_spatial_keys:
+            overwatch.warning(
+                "Checkpoint has no trained weights for spatial modules: "
+                + ", ".join(missing_spatial_keys)
+                + ". Those modules remain randomly initialized."
+            )
 
         # load other weights
         for key, sub_state in model_state_dict.items():

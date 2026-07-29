@@ -10,10 +10,18 @@ ckpt_paths=(
 "${CKPT_PATH:-${MEMORYVLA_MODEL_ROOT}/model_b/checkpoints/memvla-bridge.pt}"
 )
 
-gpu_id=0
+gpu_id="${GPU_ID:-0}"
+use_bf16="${USE_BF16:-true}"
+precision_args=()
+if [[ "${use_bf16}" == "true" ]]; then
+    precision_args+=(--use_bf16)
+fi
+spatial_mode="${SPATIAL_MODE:-pointcloud}"
+episode_start="${EPISODE_START:-0}"
+episode_end="${EPISODE_END:-24}"
 
 for ckpt_path in "${ckpt_paths[@]}"; do
-    eval_dir=$(dirname $(dirname ${ckpt_path}))/eval_simpler/$(basename ${ckpt_path})
+    eval_dir=$(dirname $(dirname ${ckpt_path}))/eval_simpler/$(basename ${ckpt_path})/${spatial_mode}
     mkdir -p ${eval_dir}
 
     scene_name=bridge_table_1_v1
@@ -22,28 +30,28 @@ for ckpt_path in "${ckpt_paths[@]}"; do
     robot_init_x=0.147
     robot_init_y=0.028
 
-    CUDA_VISIBLE_DEVICES=${gpu_id} .venv/bin/python evaluation/simpler_env/simpler_env_inference.py --ckpt-path ${ckpt_path} \
+    CUDA_VISIBLE_DEVICES=${gpu_id} .venv/bin/python evaluation/simpler_env/simpler_env_inference.py --ckpt-path ${ckpt_path} --spatial-mode ${spatial_mode} ${precision_args[@]} \
       --robot ${robot} --policy-setup widowx_bridge \
       --control-freq 5 --sim-freq 500 --max-episode-steps 120 \
       --env-name StackGreenCubeOnYellowCubeBakedTexInScene-v0 --scene-name ${scene_name} \
       --rgb-overlay-path ${rgb_overlay_path} \
-      --robot-init-x ${robot_init_x} ${robot_init_x} 1 --robot-init-y ${robot_init_y} ${robot_init_y} 1 --obj-variation-mode episode --obj-episode-range 0 24 \
+      --robot-init-x ${robot_init_x} ${robot_init_x} 1 --robot-init-y ${robot_init_y} ${robot_init_y} 1 --obj-variation-mode episode --obj-episode-range ${episode_start} ${episode_end} \
       --robot-init-rot-quat-center 0 0 0 1 --robot-init-rot-rpy-range 0 0 1 0 0 1 0 0 1 | tee ${eval_dir}/Cube.txt;
 
-    CUDA_VISIBLE_DEVICES=${gpu_id} .venv/bin/python evaluation/simpler_env/simpler_env_inference.py --ckpt-path ${ckpt_path} \
+    CUDA_VISIBLE_DEVICES=${gpu_id} .venv/bin/python evaluation/simpler_env/simpler_env_inference.py --ckpt-path ${ckpt_path} --spatial-mode ${spatial_mode} ${precision_args[@]} \
       --robot ${robot} --policy-setup widowx_bridge \
       --control-freq 5 --sim-freq 500 --max-episode-steps 120 \
       --env-name PutCarrotOnPlateInScene-v0 --scene-name ${scene_name} \
       --rgb-overlay-path ${rgb_overlay_path} \
-      --robot-init-x ${robot_init_x} ${robot_init_x} 1 --robot-init-y ${robot_init_y} ${robot_init_y} 1 --obj-variation-mode episode --obj-episode-range 0 24 \
+      --robot-init-x ${robot_init_x} ${robot_init_x} 1 --robot-init-y ${robot_init_y} ${robot_init_y} 1 --obj-variation-mode episode --obj-episode-range ${episode_start} ${episode_end} \
       --robot-init-rot-quat-center 0 0 0 1 --robot-init-rot-rpy-range 0 0 1 0 0 1 0 0 1 | tee ${eval_dir}/Carrot.txt;
 
-    CUDA_VISIBLE_DEVICES=${gpu_id} .venv/bin/python evaluation/simpler_env/simpler_env_inference.py --ckpt-path ${ckpt_path} \
+    CUDA_VISIBLE_DEVICES=${gpu_id} .venv/bin/python evaluation/simpler_env/simpler_env_inference.py --ckpt-path ${ckpt_path} --spatial-mode ${spatial_mode} ${precision_args[@]} \
       --robot ${robot} --policy-setup widowx_bridge \
       --control-freq 5 --sim-freq 500 --max-episode-steps 120 \
       --env-name PutSpoonOnTableClothInScene-v0 --scene-name ${scene_name} \
       --rgb-overlay-path ${rgb_overlay_path} \
-      --robot-init-x ${robot_init_x} ${robot_init_x} 1 --robot-init-y ${robot_init_y} ${robot_init_y} 1 --obj-variation-mode episode --obj-episode-range 0 24 \
+      --robot-init-x ${robot_init_x} ${robot_init_x} 1 --robot-init-y ${robot_init_y} ${robot_init_y} 1 --obj-variation-mode episode --obj-episode-range ${episode_start} ${episode_end} \
       --robot-init-rot-quat-center 0 0 0 1 --robot-init-rot-rpy-range 0 0 1 0 0 1 0 0 1 | tee ${eval_dir}/Spoon.txt;
 
     scene_name=bridge_table_1_v2
@@ -52,12 +60,12 @@ for ckpt_path in "${ckpt_paths[@]}"; do
     robot_init_x=0.127
     robot_init_y=0.06
 
-    CUDA_VISIBLE_DEVICES=${gpu_id} .venv/bin/python evaluation/simpler_env/simpler_env_inference.py --ckpt-path ${ckpt_path} \
+    CUDA_VISIBLE_DEVICES=${gpu_id} .venv/bin/python evaluation/simpler_env/simpler_env_inference.py --ckpt-path ${ckpt_path} --spatial-mode ${spatial_mode} ${precision_args[@]} \
       --robot ${robot} --policy-setup widowx_bridge \
       --control-freq 5 --sim-freq 500 --max-episode-steps 120 \
       --env-name PutEggplantInBasketScene-v0 --scene-name ${scene_name} \
       --rgb-overlay-path ${rgb_overlay_path} \
-      --robot-init-x ${robot_init_x} ${robot_init_x} 1 --robot-init-y ${robot_init_y} ${robot_init_y} 1 --obj-variation-mode episode --obj-episode-range 0 24 \
+      --robot-init-x ${robot_init_x} ${robot_init_x} 1 --robot-init-y ${robot_init_y} ${robot_init_y} 1 --obj-variation-mode episode --obj-episode-range ${episode_start} ${episode_end} \
       --robot-init-rot-quat-center 0 0 0 1 --robot-init-rot-rpy-range 0 0 1 0 0 1 0 0 1 | tee ${eval_dir}/Eggplant.txt;
 
 done

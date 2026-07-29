@@ -31,6 +31,7 @@ class VLAInference:
         use_bf16: bool = False,
         action_ensemble = True,
         adaptive_ensemble_alpha = 0.1,
+        spatial_mode: str = "pointcloud",
         **kwargs,
     ) -> None:
         os.environ["TOKENIZERS_PARALLELISM"] = "false"
@@ -56,8 +57,14 @@ class VLAInference:
             )
         self.policy_setup = policy_setup
         self.unnorm_key = unnorm_key
+        if spatial_mode not in {"baseline", "pointcloud"}:
+            raise ValueError(f"Unsupported spatial_mode={spatial_mode!r}; expected 'baseline' or 'pointcloud'.")
+        self.spatial_mode = spatial_mode
 
-        print(f"*** policy_setup: {policy_setup}, unnorm_key: {unnorm_key} ***")
+        print(
+            f"*** policy_setup: {policy_setup}, unnorm_key: {unnorm_key}, "
+            f"spatial_mode: {spatial_mode} ***"
+        )
         self.use_ddim = use_ddim
         self.num_ddim_steps = num_ddim_steps
         self.vla = load_vla(
@@ -158,14 +165,20 @@ class VLAInference:
         self._add_depth_to_history(depth)
         self._add_intrinsic_to_history(intrinsic)
         image: Image.Image = Image.fromarray(image)
+        spatial_inputs = (
+            {"depth": depth, "intrinsics": intrinsic}
+            if self.spatial_mode == "pointcloud"
+            else {}
+        )
         raw_actions, normalized_actions = self.vla.predict_action(
-            image=image, depth=depth, intrinsics=intrinsic,
+            image=image,
             instruction=self.task_description,
             unnorm_key=self.unnorm_key,
             cfg_scale=self.cfg_scale,
             use_ddim=self.use_ddim,
             num_ddim_steps=self.num_ddim_steps,
             episode_first_frame=episode_first_frame,
+            **spatial_inputs,
             )
 
         # binarize the gripper action

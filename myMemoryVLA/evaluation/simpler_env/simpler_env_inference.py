@@ -3,6 +3,7 @@ import argparse
 import sys
 import numpy as np
 import tensorflow as tf
+import torch
 import yaml
 from argparse import Namespace
 
@@ -36,6 +37,12 @@ def deep_update(base: dict, updates: dict):
 def parse_local_args(argv):
     parser = argparse.ArgumentParser(add_help=False)
     parser.add_argument("--use_bf16", action="store_true")
+    parser.add_argument(
+        "--spatial-mode",
+        choices=("baseline", "pointcloud"),
+        default="pointcloud",
+        help="Use simulator depth/intrinsics or evaluate the original RGB-only baseline path.",
+    )
     return parser.parse_known_args(argv)
 
 
@@ -57,8 +64,14 @@ if __name__ == "__main__":
     cli_args = vars(args)
     if local_args.use_bf16 is not None:
         cli_args["use_bf16"] = local_args.use_bf16
+    cli_args["spatial_mode"] = local_args.spatial_mode
     merged_args = deep_update(yaml_args.copy(), cli_args)
     args = Namespace(**merged_args)
+    np.random.seed(args.seed)
+    tf.random.set_seed(args.seed)
+    torch.manual_seed(args.seed)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed_all(args.seed)
     if not hasattr(args, "use_bf16"):
         args.use_bf16 = False
 
@@ -66,6 +79,11 @@ if __name__ == "__main__":
     filtered_args = {k: v for k, v in vars(args).items() if k not in exclude_keys}
 
     args.logging_dir = os.path.join(os.path.dirname(os.path.dirname(args.ckpt_path)), 'eval_simpler')
+    mode_tag = f"spatial_{args.spatial_mode}"
+    if args.additional_env_save_tags:
+        args.additional_env_save_tags = f"{args.additional_env_save_tags}_{mode_tag}"
+    else:
+        args.additional_env_save_tags = mode_tag
 
     # prevent a single jax process from taking up all the GPU memory
     os.environ["XLA_PYTHON_CLIENT_PREALLOCATE"] = "false"
