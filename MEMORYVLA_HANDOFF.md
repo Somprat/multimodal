@@ -1,6 +1,6 @@
 # MemoryVLA / SimplerEnv + LIBERO RunPod handoff
 
-Updated: 2026-07-25 UTC
+Updated: 2026-07-29 UTC
 
 All resumable source, metadata, setup scripts, and small test artifacts now live
 inside this repository. After cloning, set the repository root:
@@ -287,6 +287,117 @@ Added under `myMemoryVLA/script/setup/`:
 The tracked modification to
 `myMemoryVLA/evaluation/simpler_env/simpler_env_inference.py` predates this
 LIBERO pass and was deliberately left untouched.
+
+## Spatial dataset plumbing progress (2026-07-29)
+
+Goal: validate the new depth/intrinsics -> point cloud -> spatial encoder ->
+spatial memory/retrieval path without launching full VLA training.
+
+### Key contract confirmed
+
+- Raw RLDS configuration uses `depth_obs_keys["primary"]` for metric depth and
+  either `camera_intrinsics_key` for a per-step `[3, 3]` matrix or
+  `camera_intrinsics` for a static matrix.
+- The normalized observation names are `depth_primary` and
+  `camera_intrinsics`. `RLDSBatchTransform` emits model fields `depth` and
+  `intrinsic`; inference passes the latter to the model as `intrinsics`.
+- SimplerEnv runtime observations use
+  `obs["image"][camera_name]["depth"]` and
+  `obs["camera_param"][camera_name]["intrinsic_cv"]`, with
+  `sensor_param`/sensor lookup fallbacks. WidowX/Bridge uses
+  `camera_name="3rd_view_camera"`.
+- The bundled Bridge calibration is:
+
+```python
+[[623.588, 0.0, 319.501],
+ [0.0, 623.588, 239.545],
+ [0.0, 0.0, 1.0]]
+```
+
+### Tiny RLDS spatial fixture
+
+Added a deterministic, renderer-independent ManiSkill-shaped RLDS fixture:
+
+```text
+myMemoryVLA/artifacts/tiny_maniskill_rlds/tiny_maniskill_spatial/1.0.0
+```
+
+It contains two episodes with four steps each and raw observation keys
+`image`, `depth`, `camera_intrinsics`, and `proprio`. Added:
+
+```text
+myMemoryVLA/script/create_tiny_maniskill_rlds.py
+myMemoryVLA/script/inspect_rlds_observation.py
+myMemoryVLA/script/smoke_test_tiny_spatial_rlds.py
+```
+
+Registered `tiny_maniskill_spatial` in the OXE config with:
+
+```python
+"depth_obs_keys": {"primary": "depth", "secondary": None, "wrist": None},
+"camera_intrinsics_key": "camera_intrinsics",
+```
+
+The lightweight workflow passed:
+
+```text
+depth=(1, 64, 64, 1)
+intrinsics=(1, 3, 3)
+points=(1, 4096, 3), valid_points=4096
+spatial_tokens=(1, 4, 32)
+memory=(1, 1, 4, 32)
+retrieval=step_0, score=0.9750
+Tiny spatial RLDS workflow: OK
+```
+
+Regenerate and retest:
+
+```bash
+cd "$REPO_ROOT/myMemoryVLA"
+.venv/bin/python -m script.create_tiny_maniskill_rlds
+PYTHONPATH=. .venv/bin/python script/smoke_test_tiny_spatial_rlds.py \
+  artifacts/tiny_maniskill_rlds/tiny_maniskill_spatial/1.0.0
+```
+
+### RoboCasa investigation
+
+Downloaded the 100 smallest episodes (511 MiB locally) from
+`daixianjie/robocasa_human_lerobot`:
+
+```text
+myMemoryVLA/artifacts/robocasa_lerobot_100
+```
+
+Both `meta/info.json` and raw Parquet metadata were inspected. Actual stored
+keys are:
+
+```text
+image_left, image_right, wrist_image
+state, actions
+timestamp, frame_index, episode_index, index, task_index
+```
+
+There is no stored metric depth, camera intrinsic matrix, calibration field,
+MuJoCo state, or model XML in this LeRobot redistribution. Therefore there is
+no truthful `ACTUAL_DEPTH_KEY` or `ACTUAL_INTRINSICS_KEY`, and it cannot enter
+the point-cloud workflow as downloaded. Do not configure invented keys or use
+RGB intensity as depth.
+
+The official RoboCasa365 LeRobot format likewise documents RGB streams,
+low-dimensional state/action data, and language, but not depth/intrinsics.
+Creating usable spatial training data requires raw demonstrations retaining
+MuJoCo state/model metadata, installing RoboCasa assets, replaying states, and
+exporting rendered metric depth plus the matching camera matrix into a new
+RLDS conversion. Recommended explicit conversion keys are `depth` and
+`camera_intrinsics`, after which the tiny-fixture config applies.
+
+### Renderer note
+
+An attempted local SimplerEnv render during this pass exited with Vulkan
+incompatibility/code 139 even though CUDA sees the L40S and
+`NVIDIA_DRIVER_CAPABILITIES=all`. This conflicts with the earlier known-good
+renderer state documented above, so restore `script/setup/env.sh` and verify
+`vulkaninfo --summary` before attempting replay-based dataset generation.
 
 ## Recommended resume sequence
 

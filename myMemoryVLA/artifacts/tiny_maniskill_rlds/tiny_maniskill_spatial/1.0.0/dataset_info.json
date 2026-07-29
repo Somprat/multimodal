@@ -1,0 +1,16 @@
+{
+  "fileFormat": "tfrecord",
+  "moduleName": "__main__",
+  "name": "tiny_maniskill_spatial",
+  "splits": [
+    {
+      "filepathTemplate": "{DATASET}-{SPLIT}.{FILEFORMAT}-{SHARD_X_OF_Y}",
+      "name": "train",
+      "numBytes": "243537",
+      "shardLengths": [
+        "2"
+      ]
+    }
+  ],
+  "version": "1.0.0"
+}

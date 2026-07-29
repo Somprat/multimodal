@@ -642,7 +642,16 @@ OXE_DATASET_CONFIGS = {
         "action_encoding": ActionEncoding.EEF_POS,
     },
 
+
     ### Custom Finetuning Datasets
+    "tiny_maniskill_spatial": {
+        "image_obs_keys": {"primary": "image", "secondary": None, "wrist": None},
+        "depth_obs_keys": {"primary": "depth", "secondary": None, "wrist": None},
+        "camera_intrinsics_key": "camera_intrinsics",
+        "state_obs_keys": ["proprio"],
+        "state_encoding": StateEncoding.POS_EULER,
+        "action_encoding": ActionEncoding.EEF_POS,
+    },
     "custom_finetuning": {
         "image_obs_keys": {"primary": "image", "secondary": None, "wrist": None},
         "depth_obs_keys": {"primary": "depth", "secondary": None, "wrist": None},

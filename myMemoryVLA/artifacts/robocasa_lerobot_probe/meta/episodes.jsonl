@@ -1,0 +1,1382 @@
+{"episode_index": 0, "tasks": ["turn the sink spout to the right"], "length": 115}
+{"episode_index": 1, "tasks": ["pick the mug from the counter and place it under the coffee machine dispenser"], "length": 239}
+{"episode_index": 2, "tasks": ["close the microwave door"], "length": 282}
+{"episode_index": 3, "tasks": ["close the right drawer"], "length": 192}
+{"episode_index": 4, "tasks": ["pick the fish from the counter and place it in the microwave"], "length": 400}
+{"episode_index": 5, "tasks": ["pick the bell pepper from the cabinet and place it on the counter"], "length": 292}
+{"episode_index": 6, "tasks": ["turn on the front left burner of the stove"], "length": 106}
+{"episode_index": 7, "tasks": ["navigate to the dishwasher"], "length": 170}
+{"episode_index": 8, "tasks": ["close the cabinet doors"], "length": 397}
+{"episode_index": 9, "tasks": ["press the start button on the microwave"], "length": 223}
+{"episode_index": 10, "tasks": ["pick the carrot from the microwave and place it on plate located on the counter"], "length": 293}
+{"episode_index": 11, "tasks": ["pick the mug from the counter and place it under the coffee machine dispenser"], "length": 250}
+{"episode_index": 12, "tasks": ["open the cabinet door"], "length": 235}
+{"episode_index": 13, "tasks": ["press the start button on the microwave"], "length": 187}
+{"episode_index": 14, "tasks": ["open the right drawer"], "length": 197}
+{"episode_index": 15, "tasks": ["pick the sponge from the counter and place it in the sink"], "length": 437}
+{"episode_index": 16, "tasks": ["open the microwave door"], "length": 215}
+{"episode_index": 17, "tasks": ["pick the fish from the cabinet and place it on the counter"], "length": 304}
+{"episode_index": 18, "tasks": ["pick the mango from the pan and place it on the plate"], "length": 234}
+{"episode_index": 19, "tasks": ["press the stop button on the microwave"], "length": 179}
+{"episode_index": 20, "tasks": ["open the cabinet door"], "length": 404}
+{"episode_index": 21, "tasks": ["open the left drawer"], "length": 207}
+{"episode_index": 22, "tasks": ["pick the mug from the counter and place it under the coffee machine dispenser"], "length": 275}
+{"episode_index": 23, "tasks": ["open the cabinet door"], "length": 234}
+{"episode_index": 24, "tasks": ["press the start button on the microwave"], "length": 245}
+{"episode_index": 25, "tasks": ["close the cabinet doors"], "length": 395}
+{"episode_index": 26, "tasks": ["open the cabinet door"], "length": 240}
+{"episode_index": 27, "tasks": ["open the cabinet doors"], "length": 757}
+{"episode_index": 28, "tasks": ["turn on the sink faucet"], "length": 112}
+{"episode_index": 29, "tasks": ["pick the fish from the sink and place it on the plate located on the counter"], "length": 287}
+{"episode_index": 30, "tasks": ["turn the sink spout to the right"], "length": 101}
+{"episode_index": 31, "tasks": ["close the cabinet doors"], "length": 338}
+{"episode_index": 32, "tasks": ["open the cabinet door"], "length": 287}
+{"episode_index": 33, "tasks": ["open the cabinet door"], "length": 404}
+{"episode_index": 34, "tasks": ["pick the cheese from the microwave and place it on plate located on the counter"], "length": 221}
+{"episode_index": 35, "tasks": ["pick the baguette from the counter and place it in the cabinet"], "length": 214}
+{"episode_index": 36, "tasks": ["turn on the sink faucet"], "length": 191}
+{"episode_index": 37, "tasks": ["turn on the front right burner of the stove"], "length": 215}
+{"episode_index": 38, "tasks": ["open the left drawer"], "length": 172}
+{"episode_index": 39, "tasks": ["open the right drawer"], "length": 214}
+{"episode_index": 40, "tasks": ["pick the potato from the sink and place it on the plate located on the counter"], "length": 246}
+{"episode_index": 41, "tasks": ["pick the mug from under the coffee machine dispenser and place it on the counter"], "length": 321}
+{"episode_index": 42, "tasks": ["turn off the rear right burner of the stove"], "length": 167}
+{"episode_index": 43, "tasks": ["press the stop button on the microwave"], "length": 234}
+{"episode_index": 44, "tasks": ["pick the mug from under the coffee machine dispenser and place it on the counter"], "length": 311}
+{"episode_index": 45, "tasks": ["navigate to the coffee machine"], "length": 213}
+{"episode_index": 46, "tasks": ["pick the apple from the sink and place it on the plate located on the counter"], "length": 255}
+{"episode_index": 47, "tasks": ["turn off the front left burner of the stove"], "length": 119}
+{"episode_index": 48, "tasks": ["close the microwave door"], "length": 290}
+{"episode_index": 49, "tasks": ["turn on the rear right burner of the stove"], "length": 241}
+{"episode_index": 50, "tasks": ["press the start button on the microwave"], "length": 237}
+{"episode_index": 51, "tasks": ["turn on the sink faucet"], "length": 277}
+{"episode_index": 52, "tasks": ["pick the mug from under the coffee machine dispenser and place it on the counter"], "length": 337}
+{"episode_index": 53, "tasks": ["pick the lime from the sink and place it on the plate located on the counter"], "length": 215}
+{"episode_index": 54, "tasks": ["pick the tangerine from the counter and place it in the sink"], "length": 368}
+{"episode_index": 55, "tasks": ["pick the steak from the microwave and place it on plate located on the counter"], "length": 254}
+{"episode_index": 56, "tasks": ["pick the mug from under the coffee machine dispenser and place it on the counter"], "length": 323}
+{"episode_index": 57, "tasks": ["open the cabinet doors"], "length": 731}
+{"episode_index": 58, "tasks": ["pick the potato from the counter and place it in the microwave"], "length": 417}
+{"episode_index": 59, "tasks": ["turn the sink spout to the left"], "length": 130}
+{"episode_index": 60, "tasks": ["pick the kettle electric from the counter and place it in the cabinet"], "length": 270}
+{"episode_index": 61, "tasks": ["pick the mug from under the coffee machine dispenser and place it on the counter"], "length": 352}
+{"episode_index": 62, "tasks": ["close the right drawer"], "length": 167}
+{"episode_index": 63, "tasks": ["turn off the rear left burner of the stove"], "length": 192}
+{"episode_index": 64, "tasks": ["turn off the rear right burner of the stove"], "length": 159}
+{"episode_index": 65, "tasks": ["turn off the sink faucet"], "length": 336}
+{"episode_index": 66, "tasks": ["turn the sink spout to the right"], "length": 87}
+{"episode_index": 67, "tasks": ["close the left drawer"], "length": 183}
+{"episode_index": 68, "tasks": ["press the stop button on the microwave"], "length": 231}
+{"episode_index": 69, "tasks": ["pick the carrot from the microwave and place it on plate located on the counter"], "length": 256}
+{"episode_index": 70, "tasks": ["pick the beer from the counter and place it in the cabinet"], "length": 292}
+{"episode_index": 71, "tasks": ["close the right drawer"], "length": 198}
+{"episode_index": 72, "tasks": ["turn on the rear center burner of the stove"], "length": 289}
+{"episode_index": 73, "tasks": ["pick the lemon from the pan and place it in the bowl"], "length": 289}
+{"episode_index": 74, "tasks": ["navigate to the range hood"], "length": 189}
+{"episode_index": 75, "tasks": ["pick the mug from the counter and place it under the coffee machine dispenser"], "length": 231}
+{"episode_index": 76, "tasks": ["press the button on the coffee machine to serve coffee"], "length": 131}
+{"episode_index": 77, "tasks": ["turn on the rear center burner of the stove"], "length": 128}
+{"episode_index": 78, "tasks": ["pick the garlic from the counter and place it in the microwave"], "length": 422}
+{"episode_index": 79, "tasks": ["close the cabinet doors"], "length": 399}
+{"episode_index": 80, "tasks": ["pick the carrot from the plate and place it in the pan"], "length": 343}
+{"episode_index": 81, "tasks": ["pick the mug from under the coffee machine dispenser and place it on the counter"], "length": 286}
+{"episode_index": 82, "tasks": ["pick the mug from under the coffee machine dispenser and place it on the counter"], "length": 226}
+{"episode_index": 83, "tasks": ["pick the steak from the pan and place it on the plate"], "length": 255}
+{"episode_index": 84, "tasks": ["close the cabinet door"], "length": 231}
+{"episode_index": 85, "tasks": ["pick the mug from the counter and place it under the coffee machine dispenser"], "length": 300}
+{"episode_index": 86, "tasks": ["pick the yogurt from the sink and place it on the plate located on the counter"], "length": 226}
+{"episode_index": 87, "tasks": ["open the cabinet door"], "length": 233}
+{"episode_index": 88, "tasks": ["pick the mug from the counter and place it under the coffee machine dispenser"], "length": 370}
+{"episode_index": 89, "tasks": ["pick the tomato from the sink and place it on the plate located on the counter"], "length": 268}
+{"episode_index": 90, "tasks": ["close the microwave door"], "length": 222}
+{"episode_index": 91, "tasks": ["pick the soap dispenser from the counter and place it in the cabinet"], "length": 213}
+{"episode_index": 92, "tasks": ["pick the onion from the sink and place it on the plate located on the counter"], "length": 272}
+{"episode_index": 93, "tasks": ["pick the pear from the sink and place it on the plate located on the counter"], "length": 349}
+{"episode_index": 94, "tasks": ["pick the sponge from the counter and place it in the sink"], "length": 448}
+{"episode_index": 95, "tasks": ["press the button on the coffee machine to serve coffee"], "length": 94}
+{"episode_index": 96, "tasks": ["close the microwave door"], "length": 220}
+{"episode_index": 97, "tasks": ["pick the fish from the plate and place it in the pan"], "length": 267}
+{"episode_index": 98, "tasks": ["pick the squash from the counter and place it in the microwave"], "length": 454}
+{"episode_index": 99, "tasks": ["open the cabinet door"], "length": 199}
+{"episode_index": 100, "tasks": ["open the cabinet door"], "length": 351}
+{"episode_index": 101, "tasks": ["turn off the sink faucet"], "length": 181}
+{"episode_index": 102, "tasks": ["press the button on the coffee machine to serve coffee"], "length": 156}
+{"episode_index": 103, "tasks": ["turn off the sink faucet"], "length": 225}
+{"episode_index": 104, "tasks": ["close the left drawer"], "length": 188}
+{"episode_index": 105, "tasks": ["pick the mug from the counter and place it under the coffee machine dispenser"], "length": 238}
+{"episode_index": 106, "tasks": ["press the button on the coffee machine to serve coffee"], "length": 119}
+{"episode_index": 107, "tasks": ["close the right drawer"], "length": 177}
+{"episode_index": 108, "tasks": ["pick the pear from the counter and place it in the sink"], "length": 367}
+{"episode_index": 109, "tasks": ["pick the mug from the counter and place it under the coffee machine dispenser"], "length": 315}
+{"episode_index": 110, "tasks": ["pick the cucumber from the cabinet and place it on the counter"], "length": 269}
+{"episode_index": 111, "tasks": ["press the start button on the microwave"], "length": 225}
+{"episode_index": 112, "tasks": ["close the left drawer"], "length": 182}
+{"episode_index": 113, "tasks": ["press the stop button on the microwave"], "length": 183}
+{"episode_index": 114, "tasks": ["open the cabinet door"], "length": 200}
+{"episode_index": 115, "tasks": ["press the button on the coffee machine to serve coffee"], "length": 143}
+{"episode_index": 116, "tasks": ["open the right drawer"], "length": 214}
+{"episode_index": 117, "tasks": ["navigate to the toaster"], "length": 177}
+{"episode_index": 118, "tasks": ["pick the mug from the counter and place it under the coffee machine dispenser"], "length": 281}
+{"episode_index": 119, "tasks": ["pick the squash from the pan and place it on the plate"], "length": 264}
+{"episode_index": 120, "tasks": ["turn off the rear right burner of the stove"], "length": 157}
+{"episode_index": 121, "tasks": ["press the start button on the microwave"], "length": 236}
+{"episode_index": 122, "tasks": ["pick the squash from the counter and place it in the cabinet"], "length": 209}
+{"episode_index": 123, "tasks": ["pick the lemon from the plate and place it in the pan"], "length": 404}
+{"episode_index": 124, "tasks": ["close the cabinet doors"], "length": 324}
+{"episode_index": 125, "tasks": ["close the cabinet doors"], "length": 387}
+{"episode_index": 126, "tasks": ["pick the carrot from the sink and place it on the plate located on the counter"], "length": 247}
+{"episode_index": 127, "tasks": ["turn off the sink faucet"], "length": 195}
+{"episode_index": 128, "tasks": ["press the stop button on the microwave"], "length": 224}
+{"episode_index": 129, "tasks": ["pick the mug from under the coffee machine dispenser and place it on the counter"], "length": 393}
+{"episode_index": 130, "tasks": ["open the left drawer"], "length": 231}
+{"episode_index": 131, "tasks": ["pick the broccoli from the sink and place it on the plate located on the counter"], "length": 303}
+{"episode_index": 132, "tasks": ["pick the mug from under the coffee machine dispenser and place it on the counter"], "length": 382}
+{"episode_index": 133, "tasks": ["pick the jug from the cabinet and place it on the counter"], "length": 441}
+{"episode_index": 134, "tasks": ["turn on the rear left burner of the stove"], "length": 258}
+{"episode_index": 135, "tasks": ["turn on the front left burner of the stove"], "length": 138}
+{"episode_index": 136, "tasks": ["pick the carrot from the cabinet and place it on the counter"], "length": 281}
+{"episode_index": 137, "tasks": ["pick the soap dispenser from the counter and place it in the sink"], "length": 519}
+{"episode_index": 138, "tasks": ["press the button on the coffee machine to serve coffee"], "length": 144}
+{"episode_index": 139, "tasks": ["turn off the sink faucet"], "length": 186}
+{"episode_index": 140, "tasks": ["press the start button on the microwave"], "length": 220}
+{"episode_index": 141, "tasks": ["close the microwave door"], "length": 227}
+{"episode_index": 142, "tasks": ["pick the sweet potato from the counter and place it in the microwave"], "length": 384}
+{"episode_index": 143, "tasks": ["press the stop button on the microwave"], "length": 252}
+{"episode_index": 144, "tasks": ["open the cabinet doors"], "length": 810}
+{"episode_index": 145, "tasks": ["press the stop button on the microwave"], "length": 238}
+{"episode_index": 146, "tasks": ["navigate to the stove"], "length": 182}
+{"episode_index": 147, "tasks": ["turn off the center burner of the stove"], "length": 180}
+{"episode_index": 148, "tasks": ["close the cabinet doors"], "length": 388}
+{"episode_index": 149, "tasks": ["pick the carrot from the microwave and place it on plate located on the counter"], "length": 264}
+{"episode_index": 150, "tasks": ["turn the sink spout to the right"], "length": 102}
+{"episode_index": 151, "tasks": ["pick the mug from under the coffee machine dispenser and place it on the counter"], "length": 304}
+{"episode_index": 152, "tasks": ["pick the mug from under the coffee machine dispenser and place it on the counter"], "length": 353}
+{"episode_index": 153, "tasks": ["navigate to the microwave"], "length": 193}
+{"episode_index": 154, "tasks": ["close the left drawer"], "length": 184}
+{"episode_index": 155, "tasks": ["turn on the sink faucet"], "length": 198}
+{"episode_index": 156, "tasks": ["turn on the rear right burner of the stove"], "length": 250}
+{"episode_index": 157, "tasks": ["turn on the sink faucet"], "length": 213}
+{"episode_index": 158, "tasks": ["turn the sink spout to the right"], "length": 81}
+{"episode_index": 159, "tasks": ["turn off the sink faucet"], "length": 162}
+{"episode_index": 160, "tasks": ["pick the broccoli from the plate and place it in the pan"], "length": 239}
+{"episode_index": 161, "tasks": ["pick the steak from the counter and place it in the cabinet"], "length": 236}
+{"episode_index": 162, "tasks": ["turn on the sink faucet"], "length": 211}
+{"episode_index": 163, "tasks": ["pick the mango from the plate and place it in the pan"], "length": 315}
+{"episode_index": 164, "tasks": ["open the left drawer"], "length": 173}
+{"episode_index": 165, "tasks": ["pick the onion from the sink and place it on the plate located on the counter"], "length": 308}
+{"episode_index": 166, "tasks": ["pick the onion from the counter and place it in the microwave"], "length": 431}
+{"episode_index": 167, "tasks": ["turn on the rear center burner of the stove"], "length": 201}
+{"episode_index": 168, "tasks": ["close the microwave door"], "length": 254}
+{"episode_index": 169, "tasks": ["pick the mango from the sink and place it on the plate located on the counter"], "length": 256}
+{"episode_index": 170, "tasks": ["close the cabinet door"], "length": 186}
+{"episode_index": 171, "tasks": ["pick the fish from the counter and place it in the microwave"], "length": 402}
+{"episode_index": 172, "tasks": ["turn off the sink faucet"], "length": 141}
+{"episode_index": 173, "tasks": ["press the button on the coffee machine to serve coffee"], "length": 136}
+{"episode_index": 174, "tasks": ["close the right drawer"], "length": 203}
+{"episode_index": 175, "tasks": ["pick the shaker from the counter and place it in the cabinet"], "length": 310}
+{"episode_index": 176, "tasks": ["open the right drawer"], "length": 199}
+{"episode_index": 177, "tasks": ["turn the sink spout to the right"], "length": 171}
+{"episode_index": 178, "tasks": ["press the button on the coffee machine to serve coffee"], "length": 116}
+{"episode_index": 179, "tasks": ["turn on the sink faucet"], "length": 329}
+{"episode_index": 180, "tasks": ["open the left drawer"], "length": 260}
+{"episode_index": 181, "tasks": ["press the stop button on the microwave"], "length": 247}
+{"episode_index": 182, "tasks": ["pick the onion from the cabinet and place it on the counter"], "length": 328}
+{"episode_index": 183, "tasks": ["press the stop button on the microwave"], "length": 225}
+{"episode_index": 184, "tasks": ["press the stop button on the microwave"], "length": 209}
+{"episode_index": 185, "tasks": ["pick the sweet potato from the counter and place it in the cabinet"], "length": 242}
+{"episode_index": 186, "tasks": ["turn the sink spout to the left"], "length": 99}
+{"episode_index": 187, "tasks": ["open the cabinet doors"], "length": 872}
+{"episode_index": 188, "tasks": ["turn off the sink faucet"], "length": 187}
+{"episode_index": 189, "tasks": ["open the microwave door"], "length": 229}
+{"episode_index": 190, "tasks": ["pick the lime from the pan and place it in the bowl"], "length": 248}
+{"episode_index": 191, "tasks": ["turn on the sink faucet"], "length": 328}
+{"episode_index": 192, "tasks": ["pick the tomato from the counter and place it in the cabinet"], "length": 290}
+{"episode_index": 193, "tasks": ["close the cabinet doors"], "length": 359}
+{"episode_index": 194, "tasks": ["open the cabinet doors"], "length": 632}
+{"episode_index": 195, "tasks": ["close the cabinet doors"], "length": 421}
+{"episode_index": 196, "tasks": ["pick the mango from the cabinet and place it on the counter"], "length": 294}
+{"episode_index": 197, "tasks": ["pick the jam from the counter and place it in the sink"], "length": 411}
+{"episode_index": 198, "tasks": ["press the start button on the microwave"], "length": 221}
+{"episode_index": 199, "tasks": ["close the right drawer"], "length": 186}
+{"episode_index": 200, "tasks": ["navigate to the stove"], "length": 79}
+{"episode_index": 201, "tasks": ["close the right drawer"], "length": 218}
+{"episode_index": 202, "tasks": ["turn off the sink faucet"], "length": 125}
+{"episode_index": 203, "tasks": ["pick the shaker from the counter and place it in the cabinet"], "length": 220}
+{"episode_index": 204, "tasks": ["close the microwave door"], "length": 303}
+{"episode_index": 205, "tasks": ["pick the tomato from the counter and place it in the cabinet"], "length": 207}
+{"episode_index": 206, "tasks": ["press the start button on the microwave"], "length": 204}
+{"episode_index": 207, "tasks": ["turn the sink spout to the left"], "length": 110}
+{"episode_index": 208, "tasks": ["close the cabinet doors"], "length": 337}
+{"episode_index": 209, "tasks": ["open the right drawer"], "length": 182}
+{"episode_index": 210, "tasks": ["pick the bowl from the counter and place it in the cabinet"], "length": 186}
+{"episode_index": 211, "tasks": ["close the microwave door"], "length": 230}
+{"episode_index": 212, "tasks": ["pick the mushroom from the sink and place it on the plate located on the counter"], "length": 300}
+{"episode_index": 213, "tasks": ["press the start button on the microwave"], "length": 228}
+{"episode_index": 214, "tasks": ["press the stop button on the microwave"], "length": 318}
+{"episode_index": 215, "tasks": ["turn off the sink faucet"], "length": 235}
+{"episode_index": 216, "tasks": ["turn off the rear center burner of the stove"], "length": 127}
+{"episode_index": 217, "tasks": ["press the stop button on the microwave"], "length": 233}
+{"episode_index": 218, "tasks": ["pick the mug from the counter and place it under the coffee machine dispenser"], "length": 204}
+{"episode_index": 219, "tasks": ["turn off the rear left burner of the stove"], "length": 97}
+{"episode_index": 220, "tasks": ["pick the onion from the microwave and place it on plate located on the counter"], "length": 238}
+{"episode_index": 221, "tasks": ["open the right drawer"], "length": 223}
+{"episode_index": 222, "tasks": ["pick the tomato from the microwave and place it on plate located on the counter"], "length": 316}
+{"episode_index": 223, "tasks": ["turn on the sink faucet"], "length": 129}
+{"episode_index": 224, "tasks": ["pick the mug from the counter and place it under the coffee machine dispenser"], "length": 225}
+{"episode_index": 225, "tasks": ["pick the mug from the counter and place it under the coffee machine dispenser"], "length": 271}
+{"episode_index": 226, "tasks": ["turn on the sink faucet"], "length": 205}
+{"episode_index": 227, "tasks": ["open the cabinet doors"], "length": 685}
+{"episode_index": 228, "tasks": ["turn on the front right burner of the stove"], "length": 211}
+{"episode_index": 229, "tasks": ["navigate to the stove"], "length": 118}
+{"episode_index": 230, "tasks": ["pick the mug from the counter and place it under the coffee machine dispenser"], "length": 151}
+{"episode_index": 231, "tasks": ["pick the corn from the plate and place it in the pan"], "length": 376}
+{"episode_index": 232, "tasks": ["open the cabinet door"], "length": 414}
+{"episode_index": 233, "tasks": ["pick the mug from under the coffee machine dispenser and place it on the counter"], "length": 280}
+{"episode_index": 234, "tasks": ["press the stop button on the microwave"], "length": 237}
+{"episode_index": 235, "tasks": ["close the microwave door"], "length": 260}
+{"episode_index": 236, "tasks": ["pick the water bottle from the counter and place it in the cabinet"], "length": 311}
+{"episode_index": 237, "tasks": ["pick the onion from the plate and place it in the pan"], "length": 227}
+{"episode_index": 238, "tasks": ["pick the mango from the pan and place it in the bowl"], "length": 301}
+{"episode_index": 239, "tasks": ["close the microwave door"], "length": 270}
+{"episode_index": 240, "tasks": ["close the microwave door"], "length": 301}
+{"episode_index": 241, "tasks": ["close the left drawer"], "length": 185}
+{"episode_index": 242, "tasks": ["pick the mug from under the coffee machine dispenser and place it on the counter"], "length": 381}
+{"episode_index": 243, "tasks": ["pick the squash from the counter and place it in the cabinet"], "length": 245}
+{"episode_index": 244, "tasks": ["pick the cheese from the counter and place it in the cabinet"], "length": 304}
+{"episode_index": 245, "tasks": ["pick the mug from under the coffee machine dispenser and place it on the counter"], "length": 280}
+{"episode_index": 246, "tasks": ["turn on the front right burner of the stove"], "length": 195}
+{"episode_index": 247, "tasks": ["navigate to the shelves"], "length": 205}
+{"episode_index": 248, "tasks": ["open the cabinet door"], "length": 274}
+{"episode_index": 249, "tasks": ["turn off the front right burner of the stove"], "length": 125}
+{"episode_index": 250, "tasks": ["turn on the front right burner of the stove"], "length": 211}
+{"episode_index": 251, "tasks": ["pick the corn from the plate and place it in the pan"], "length": 223}
+{"episode_index": 252, "tasks": ["press the button on the coffee machine to serve coffee"], "length": 145}
+{"episode_index": 253, "tasks": ["turn off the rear right burner of the stove"], "length": 275}
+{"episode_index": 254, "tasks": ["turn the sink spout to the left"], "length": 175}
+{"episode_index": 255, "tasks": ["open the cabinet door"], "length": 310}
+{"episode_index": 256, "tasks": ["turn off the rear right burner of the stove"], "length": 137}
+{"episode_index": 257, "tasks": ["press the stop button on the microwave"], "length": 198}
+{"episode_index": 258, "tasks": ["turn on the sink faucet"], "length": 277}
+{"episode_index": 259, "tasks": ["press the start button on the microwave"], "length": 225}
+{"episode_index": 260, "tasks": ["open the left drawer"], "length": 186}
+{"episode_index": 261, "tasks": ["pick the lemon from the plate and place it in the pan"], "length": 261}
+{"episode_index": 262, "tasks": ["navigate to the shelves"], "length": 136}
+{"episode_index": 263, "tasks": ["close the left drawer"], "length": 176}
+{"episode_index": 264, "tasks": ["turn on the rear right burner of the stove"], "length": 226}
+{"episode_index": 265, "tasks": ["open the left drawer"], "length": 220}
+{"episode_index": 266, "tasks": ["navigate to the fridge"], "length": 201}
+{"episode_index": 267, "tasks": ["pick the cup from the counter and place it in the sink"], "length": 457}
+{"episode_index": 268, "tasks": ["close the cabinet doors"], "length": 392}
+{"episode_index": 269, "tasks": ["turn the sink spout to the right"], "length": 117}
+{"episode_index": 270, "tasks": ["navigate to the coffee machine"], "length": 231}
+{"episode_index": 271, "tasks": ["navigate to the sink"], "length": 161}
+{"episode_index": 272, "tasks": ["navigate to the fridge"], "length": 218}
+{"episode_index": 273, "tasks": ["open the right drawer"], "length": 225}
+{"episode_index": 274, "tasks": ["pick the apple from the plate and place it in the pan"], "length": 287}
+{"episode_index": 275, "tasks": ["pick the onion from the microwave and place it on plate located on the counter"], "length": 273}
+{"episode_index": 276, "tasks": ["pick the broccoli from the counter and place it in the cabinet"], "length": 244}
+{"episode_index": 277, "tasks": ["pick the bottled drink from the counter and place it in the sink"], "length": 290}
+{"episode_index": 278, "tasks": ["press the start button on the microwave"], "length": 258}
+{"episode_index": 279, "tasks": ["close the cabinet doors"], "length": 385}
+{"episode_index": 280, "tasks": ["pick the egg from the counter and place it in the cabinet"], "length": 202}
+{"episode_index": 281, "tasks": ["pick the mushroom from the counter and place it in the sink"], "length": 390}
+{"episode_index": 282, "tasks": ["navigate to the coffee machine"], "length": 84}
+{"episode_index": 283, "tasks": ["press the start button on the microwave"], "length": 202}
+{"episode_index": 284, "tasks": ["pick the mug from the counter and place it under the coffee machine dispenser"], "length": 241}
+{"episode_index": 285, "tasks": ["close the cabinet doors"], "length": 363}
+{"episode_index": 286, "tasks": ["close the cabinet doors"], "length": 410}
+{"episode_index": 287, "tasks": ["press the stop button on the microwave"], "length": 182}
+{"episode_index": 288, "tasks": ["pick the corn from the plate and place it in the pan"], "length": 317}
+{"episode_index": 289, "tasks": ["pick the mug from under the coffee machine dispenser and place it on the counter"], "length": 315}
+{"episode_index": 290, "tasks": ["pick the lime from the pan and place it in the bowl"], "length": 232}
+{"episode_index": 291, "tasks": ["press the button on the coffee machine to serve coffee"], "length": 116}
+{"episode_index": 292, "tasks": ["turn off the sink faucet"], "length": 166}
+{"episode_index": 293, "tasks": ["press the start button on the microwave"], "length": 279}
+{"episode_index": 294, "tasks": ["press the stop button on the microwave"], "length": 223}
+{"episode_index": 295, "tasks": ["turn on the rear left burner of the stove"], "length": 225}
+{"episode_index": 296, "tasks": ["pick the steak from the microwave and place it on plate located on the counter"], "length": 363}
+{"episode_index": 297, "tasks": ["pick the eggplant from the counter and place it in the microwave"], "length": 394}
+{"episode_index": 298, "tasks": ["pick the boxed drink from the counter and place it in the sink"], "length": 573}
+{"episode_index": 299, "tasks": ["pick the corn from the plate and place it in the pan"], "length": 320}
+{"episode_index": 300, "tasks": ["pick the tomato from the sink and place it on the plate located on the counter"], "length": 273}
+{"episode_index": 301, "tasks": ["open the cabinet doors"], "length": 687}
+{"episode_index": 302, "tasks": ["pick the carrot from the counter and place it in the cabinet"], "length": 227}
+{"episode_index": 303, "tasks": ["close the cabinet doors"], "length": 390}
+{"episode_index": 304, "tasks": ["turn on the rear right burner of the stove"], "length": 260}
+{"episode_index": 305, "tasks": ["turn off the sink faucet"], "length": 128}
+{"episode_index": 306, "tasks": ["press the button on the coffee machine to serve coffee"], "length": 132}
+{"episode_index": 307, "tasks": ["pick the mug from under the coffee machine dispenser and place it on the counter"], "length": 304}
+{"episode_index": 308, "tasks": ["close the cabinet doors"], "length": 315}
+{"episode_index": 309, "tasks": ["navigate to the coffee machine"], "length": 257}
+{"episode_index": 310, "tasks": ["pick the tomato from the sink and place it on the plate located on the counter"], "length": 269}
+{"episode_index": 311, "tasks": ["pick the mango from the pan and place it on the plate"], "length": 215}
+{"episode_index": 312, "tasks": ["pick the mushroom from the cabinet and place it on the counter"], "length": 297}
+{"episode_index": 313, "tasks": ["turn off the sink faucet"], "length": 135}
+{"episode_index": 314, "tasks": ["pick the onion from the cabinet and place it on the counter"], "length": 395}
+{"episode_index": 315, "tasks": ["pick the milk from the counter and place it in the sink"], "length": 416}
+{"episode_index": 316, "tasks": ["turn off the sink faucet"], "length": 135}
+{"episode_index": 317, "tasks": ["turn on the sink faucet"], "length": 226}
+{"episode_index": 318, "tasks": ["pick the mug from under the coffee machine dispenser and place it on the counter"], "length": 433}
+{"episode_index": 319, "tasks": ["pick the mug from the counter and place it under the coffee machine dispenser"], "length": 365}
+{"episode_index": 320, "tasks": ["pick the orange from the counter and place it in the cabinet"], "length": 246}
+{"episode_index": 321, "tasks": ["pick the avocado from the counter and place it in the cabinet"], "length": 243}
+{"episode_index": 322, "tasks": ["press the stop button on the microwave"], "length": 239}
+{"episode_index": 323, "tasks": ["pick the squash from the pan and place it on the plate"], "length": 220}
+{"episode_index": 324, "tasks": ["open the cabinet doors"], "length": 687}
+{"episode_index": 325, "tasks": ["open the cabinet doors"], "length": 747}
+{"episode_index": 326, "tasks": ["turn off the sink faucet"], "length": 143}
+{"episode_index": 327, "tasks": ["pick the apple from the cabinet and place it on the counter"], "length": 255}
+{"episode_index": 328, "tasks": ["navigate to the shelves"], "length": 175}
+{"episode_index": 329, "tasks": ["close the microwave door"], "length": 220}
+{"episode_index": 330, "tasks": ["turn off the rear center burner of the stove"], "length": 173}
+{"episode_index": 331, "tasks": ["press the start button on the microwave"], "length": 201}
+{"episode_index": 332, "tasks": ["open the cabinet doors"], "length": 861}
+{"episode_index": 333, "tasks": ["press the stop button on the microwave"], "length": 291}
+{"episode_index": 334, "tasks": ["pick the egg from the counter and place it in the microwave"], "length": 425}
+{"episode_index": 335, "tasks": ["pick the cake from the counter and place it in the cabinet"], "length": 217}
+{"episode_index": 336, "tasks": ["pick the steak from the sink and place it on the plate located on the counter"], "length": 240}
+{"episode_index": 337, "tasks": ["turn on the sink faucet"], "length": 272}
+{"episode_index": 338, "tasks": ["navigate to the coffee machine"], "length": 226}
+{"episode_index": 339, "tasks": ["pick the mug from the counter and place it under the coffee machine dispenser"], "length": 296}
+{"episode_index": 340, "tasks": ["press the button on the coffee machine to serve coffee"], "length": 121}
+{"episode_index": 341, "tasks": ["pick the mango from the sink and place it on the plate located on the counter"], "length": 254}
+{"episode_index": 342, "tasks": ["pick the cheese from the plate and place it in the pan"], "length": 292}
+{"episode_index": 343, "tasks": ["pick the apple from the counter and place it in the sink"], "length": 424}
+{"episode_index": 344, "tasks": ["pick the tomato from the plate and place it in the pan"], "length": 310}
+{"episode_index": 345, "tasks": ["navigate to the dishwasher"], "length": 154}
+{"episode_index": 346, "tasks": ["press the button on the coffee machine to serve coffee"], "length": 91}
+{"episode_index": 347, "tasks": ["press the button on the coffee machine to serve coffee"], "length": 134}
+{"episode_index": 348, "tasks": ["open the cabinet doors"], "length": 852}
+{"episode_index": 349, "tasks": ["pick the canned food from the counter and place it in the cabinet"], "length": 197}
+{"episode_index": 350, "tasks": ["navigate to the stove"], "length": 152}
+{"episode_index": 351, "tasks": ["turn off the sink faucet"], "length": 206}
+{"episode_index": 352, "tasks": ["pick the corn from the plate and place it in the pan"], "length": 298}
+{"episode_index": 353, "tasks": ["open the cabinet doors"], "length": 706}
+{"episode_index": 354, "tasks": ["turn on the rear left burner of the stove"], "length": 145}
+{"episode_index": 355, "tasks": ["open the cabinet door"], "length": 410}
+{"episode_index": 356, "tasks": ["pick the hot dog from the counter and place it in the microwave"], "length": 436}
+{"episode_index": 357, "tasks": ["close the right drawer"], "length": 181}
+{"episode_index": 358, "tasks": ["pick the hot dog from the microwave and place it on plate located on the counter"], "length": 280}
+{"episode_index": 359, "tasks": ["pick the rolling pin from the counter and place it in the sink"], "length": 348}
+{"episode_index": 360, "tasks": ["pick the candle from the counter and place it in the cabinet"], "length": 229}
+{"episode_index": 361, "tasks": ["navigate to the microwave"], "length": 158}
+{"episode_index": 362, "tasks": ["close the cabinet doors"], "length": 390}
+{"episode_index": 363, "tasks": ["turn off the rear left burner of the stove"], "length": 165}
+{"episode_index": 364, "tasks": ["press the stop button on the microwave"], "length": 181}
+{"episode_index": 365, "tasks": ["press the start button on the microwave"], "length": 246}
+{"episode_index": 366, "tasks": ["close the microwave door"], "length": 249}
+{"episode_index": 367, "tasks": ["pick the cup from the counter and place it in the cabinet"], "length": 249}
+{"episode_index": 368, "tasks": ["pick the boxed food from the cabinet and place it on the counter"], "length": 349}
+{"episode_index": 369, "tasks": ["turn off the sink faucet"], "length": 166}
+{"episode_index": 370, "tasks": ["close the microwave door"], "length": 218}
+{"episode_index": 371, "tasks": ["pick the avocado from the counter and place it in the cabinet"], "length": 221}
+{"episode_index": 372, "tasks": ["turn off the rear left burner of the stove"], "length": 136}
+{"episode_index": 373, "tasks": ["turn on the sink faucet"], "length": 239}
+{"episode_index": 374, "tasks": ["pick the potato from the microwave and place it on plate located on the counter"], "length": 430}
+{"episode_index": 375, "tasks": ["turn off the sink faucet"], "length": 224}
+{"episode_index": 376, "tasks": ["pick the banana from the cabinet and place it on the counter"], "length": 335}
+{"episode_index": 377, "tasks": ["turn off the front left burner of the stove"], "length": 132}
+{"episode_index": 378, "tasks": ["turn on the sink faucet"], "length": 114}
+{"episode_index": 379, "tasks": ["turn the sink spout to the right"], "length": 133}
+{"episode_index": 380, "tasks": ["pick the mug from under the coffee machine dispenser and place it on the counter"], "length": 299}
+{"episode_index": 381, "tasks": ["close the microwave door"], "length": 260}
+{"episode_index": 382, "tasks": ["close the cabinet doors"], "length": 361}
+{"episode_index": 383, "tasks": ["turn off the front right burner of the stove"], "length": 186}
+{"episode_index": 384, "tasks": ["turn on the sink faucet"], "length": 114}
+{"episode_index": 385, "tasks": ["open the left drawer"], "length": 184}
+{"episode_index": 386, "tasks": ["turn the sink spout to the left"], "length": 148}
+{"episode_index": 387, "tasks": ["turn on the sink faucet"], "length": 220}
+{"episode_index": 388, "tasks": ["open the cabinet doors"], "length": 762}
+{"episode_index": 389, "tasks": ["turn off the front right burner of the stove"], "length": 153}
+{"episode_index": 390, "tasks": ["close the microwave door"], "length": 298}
+{"episode_index": 391, "tasks": ["pick the mug from under the coffee machine dispenser and place it on the counter"], "length": 321}
+{"episode_index": 392, "tasks": ["pick the fish from the counter and place it in the sink"], "length": 402}
+{"episode_index": 393, "tasks": ["open the cabinet door"], "length": 302}
+{"episode_index": 394, "tasks": ["pick the corn from the microwave and place it on plate located on the counter"], "length": 316}
+{"episode_index": 395, "tasks": ["pick the bell pepper from the plate and place it in the pan"], "length": 316}
+{"episode_index": 396, "tasks": ["open the cabinet door"], "length": 376}
+{"episode_index": 397, "tasks": ["pick the carrot from the counter and place it in the microwave"], "length": 454}
+{"episode_index": 398, "tasks": ["press the button on the coffee machine to serve coffee"], "length": 135}
+{"episode_index": 399, "tasks": ["turn off the sink faucet"], "length": 138}
+{"episode_index": 400, "tasks": ["close the right drawer"], "length": 185}
+{"episode_index": 401, "tasks": ["turn on the sink faucet"], "length": 232}
+{"episode_index": 402, "tasks": ["pick the apple from the sink and place it on the plate located on the counter"], "length": 217}
+{"episode_index": 403, "tasks": ["turn on the front left burner of the stove"], "length": 342}
+{"episode_index": 404, "tasks": ["turn the sink spout to the left"], "length": 102}
+{"episode_index": 405, "tasks": ["close the microwave door"], "length": 239}
+{"episode_index": 406, "tasks": ["pick the broccoli from the microwave and place it on plate located on the counter"], "length": 305}
+{"episode_index": 407, "tasks": ["pick the onion from the microwave and place it on plate located on the counter"], "length": 214}
+{"episode_index": 408, "tasks": ["press the start button on the microwave"], "length": 267}
+{"episode_index": 409, "tasks": ["pick the broccoli from the counter and place it in the microwave"], "length": 446}
+{"episode_index": 410, "tasks": ["open the cabinet doors"], "length": 685}
+{"episode_index": 411, "tasks": ["open the cabinet doors"], "length": 553}
+{"episode_index": 412, "tasks": ["open the cabinet door"], "length": 283}
+{"episode_index": 413, "tasks": ["pick the mug from under the coffee machine dispenser and place it on the counter"], "length": 325}
+{"episode_index": 414, "tasks": ["turn on the rear left burner of the stove"], "length": 131}
+{"episode_index": 415, "tasks": ["pick the carrot from the sink and place it on the plate located on the counter"], "length": 234}
+{"episode_index": 416, "tasks": ["open the right drawer"], "length": 209}
+{"episode_index": 417, "tasks": ["pick the lemon from the counter and place it in the cabinet"], "length": 251}
+{"episode_index": 418, "tasks": ["pick the apple from the plate and place it in the pan"], "length": 283}
+{"episode_index": 419, "tasks": ["turn the sink spout to the right"], "length": 117}
+{"episode_index": 420, "tasks": ["pick the cheese from the counter and place it in the sink"], "length": 454}
+{"episode_index": 421, "tasks": ["pick the condiment bottle from the cabinet and place it on the counter"], "length": 369}
+{"episode_index": 422, "tasks": ["press the button on the coffee machine to serve coffee"], "length": 123}
+{"episode_index": 423, "tasks": ["close the right drawer"], "length": 199}
+{"episode_index": 424, "tasks": ["pick the mug from under the coffee machine dispenser and place it on the counter"], "length": 362}
+{"episode_index": 425, "tasks": ["navigate to the sink"], "length": 149}
+{"episode_index": 426, "tasks": ["pick the eggplant from the counter and place it in the sink"], "length": 369}
+{"episode_index": 427, "tasks": ["pick the garlic from the sink and place it on the plate located on the counter"], "length": 289}
+{"episode_index": 428, "tasks": ["turn the sink spout to the right"], "length": 109}
+{"episode_index": 429, "tasks": ["turn on the rear right burner of the stove"], "length": 125}
+{"episode_index": 430, "tasks": ["pick the onion from the plate and place it in the pan"], "length": 403}
+{"episode_index": 431, "tasks": ["press the button on the coffee machine to serve coffee"], "length": 113}
+{"episode_index": 432, "tasks": ["turn off the sink faucet"], "length": 180}
+{"episode_index": 433, "tasks": ["pick the fish from the counter and place it in the microwave"], "length": 384}
+{"episode_index": 434, "tasks": ["turn on the front right burner of the stove"], "length": 115}
+{"episode_index": 435, "tasks": ["close the microwave door"], "length": 254}
+{"episode_index": 436, "tasks": ["close the microwave door"], "length": 239}
+{"episode_index": 437, "tasks": ["press the button on the coffee machine to serve coffee"], "length": 108}
+{"episode_index": 438, "tasks": ["pick the mug from the counter and place it under the coffee machine dispenser"], "length": 370}
+{"episode_index": 439, "tasks": ["pick the mug from the counter and place it under the coffee machine dispenser"], "length": 337}
+{"episode_index": 440, "tasks": ["pick the lime from the cabinet and place it on the counter"], "length": 412}
+{"episode_index": 441, "tasks": ["turn off the rear left burner of the stove"], "length": 134}
+{"episode_index": 442, "tasks": ["pick the mushroom from the counter and place it in the microwave"], "length": 396}
+{"episode_index": 443, "tasks": ["press the start button on the microwave"], "length": 254}
+{"episode_index": 444, "tasks": ["pick the cheese from the plate and place it in the pan"], "length": 269}
+{"episode_index": 445, "tasks": ["press the start button on the microwave"], "length": 271}
+{"episode_index": 446, "tasks": ["open the cabinet door"], "length": 300}
+{"episode_index": 447, "tasks": ["press the start button on the microwave"], "length": 212}
+{"episode_index": 448, "tasks": ["press the button on the coffee machine to serve coffee"], "length": 116}
+{"episode_index": 449, "tasks": ["pick the garlic from the counter and place it in the sink"], "length": 410}
+{"episode_index": 450, "tasks": ["pick the mug from under the coffee machine dispenser and place it on the counter"], "length": 373}
+{"episode_index": 451, "tasks": ["pick the steak from the plate and place it in the pan"], "length": 321}
+{"episode_index": 452, "tasks": ["pick the bell pepper from the plate and place it in the pan"], "length": 388}
+{"episode_index": 453, "tasks": ["close the cabinet doors"], "length": 351}
+{"episode_index": 454, "tasks": ["pick the garlic from the plate and place it in the pan"], "length": 246}
+{"episode_index": 455, "tasks": ["pick the eggplant from the plate and place it in the pan"], "length": 215}
+{"episode_index": 456, "tasks": ["pick the potato from the counter and place it in the sink"], "length": 453}
+{"episode_index": 457, "tasks": ["close the cabinet doors"], "length": 343}
+{"episode_index": 458, "tasks": ["turn off the rear right burner of the stove"], "length": 175}
+{"episode_index": 459, "tasks": ["press the button on the coffee machine to serve coffee"], "length": 101}
+{"episode_index": 460, "tasks": ["turn on the sink faucet"], "length": 219}
+{"episode_index": 461, "tasks": ["press the stop button on the microwave"], "length": 174}
+{"episode_index": 462, "tasks": ["press the stop button on the microwave"], "length": 162}
+{"episode_index": 463, "tasks": ["close the microwave door"], "length": 211}
+{"episode_index": 464, "tasks": ["open the right drawer"], "length": 196}
+{"episode_index": 465, "tasks": ["pick the carrot from the pan and place it on the plate"], "length": 251}
+{"episode_index": 466, "tasks": ["turn off the center burner of the stove"], "length": 165}
+{"episode_index": 467, "tasks": ["pick the mug from the counter and place it under the coffee machine dispenser"], "length": 286}
+{"episode_index": 468, "tasks": ["turn on the rear left burner of the stove"], "length": 126}
+{"episode_index": 469, "tasks": ["press the stop button on the microwave"], "length": 225}
+{"episode_index": 470, "tasks": ["open the right drawer"], "length": 193}
+{"episode_index": 471, "tasks": ["pick the eggplant from the microwave and place it on plate located on the counter"], "length": 312}
+{"episode_index": 472, "tasks": ["press the button on the coffee machine to serve coffee"], "length": 138}
+{"episode_index": 473, "tasks": ["navigate to the dishwasher"], "length": 171}
+{"episode_index": 474, "tasks": ["pick the carrot from the counter and place it in the sink"], "length": 405}
+{"episode_index": 475, "tasks": ["open the cabinet doors"], "length": 704}
+{"episode_index": 476, "tasks": ["pick the mug from under the coffee machine dispenser and place it on the counter"], "length": 260}
+{"episode_index": 477, "tasks": ["turn off the front left burner of the stove"], "length": 151}
+{"episode_index": 478, "tasks": ["navigate to the sink"], "length": 185}
+{"episode_index": 479, "tasks": ["close the left drawer"], "length": 198}
+{"episode_index": 480, "tasks": ["turn the sink spout to the right"], "length": 92}
+{"episode_index": 481, "tasks": ["press the stop button on the microwave"], "length": 225}
+{"episode_index": 482, "tasks": ["pick the egg from the microwave and place it on plate located on the counter"], "length": 312}
+{"episode_index": 483, "tasks": ["pick the jam from the cabinet and place it on the counter"], "length": 248}
+{"episode_index": 484, "tasks": ["navigate to the fridge"], "length": 235}
+{"episode_index": 485, "tasks": ["pick the beer from the counter and place it in the cabinet"], "length": 247}
+{"episode_index": 486, "tasks": ["pick the pear from the sink and place it on the plate located on the counter"], "length": 267}
+{"episode_index": 487, "tasks": ["press the start button on the microwave"], "length": 238}
+{"episode_index": 488, "tasks": ["open the cabinet door"], "length": 233}
+{"episode_index": 489, "tasks": ["press the start button on the microwave"], "length": 241}
+{"episode_index": 490, "tasks": ["pick the tangerine from the counter and place it in the sink"], "length": 361}
+{"episode_index": 491, "tasks": ["pick the squash from the pan and place it on the plate"], "length": 327}
+{"episode_index": 492, "tasks": ["turn on the front right burner of the stove"], "length": 230}
+{"episode_index": 493, "tasks": ["pick the mug from under the coffee machine dispenser and place it on the counter"], "length": 332}
+{"episode_index": 494, "tasks": ["navigate to the fridge"], "length": 265}
+{"episode_index": 495, "tasks": ["pick the mug from under the coffee machine dispenser and place it on the counter"], "length": 332}
+{"episode_index": 496, "tasks": ["open the right drawer"], "length": 215}
+{"episode_index": 497, "tasks": ["open the cabinet doors"], "length": 699}
+{"episode_index": 498, "tasks": ["pick the kiwi from the sink and place it on the plate located on the counter"], "length": 240}
+{"episode_index": 499, "tasks": ["press the stop button on the microwave"], "length": 221}
+{"episode_index": 500, "tasks": ["turn off the rear center burner of the stove"], "length": 114}
+{"episode_index": 501, "tasks": ["press the start button on the microwave"], "length": 247}
+{"episode_index": 502, "tasks": ["turn on the sink faucet"], "length": 139}
+{"episode_index": 503, "tasks": ["pick the mushroom from the counter and place it in the microwave"], "length": 407}
+{"episode_index": 504, "tasks": ["open the cabinet door"], "length": 307}
+{"episode_index": 505, "tasks": ["close the microwave door"], "length": 223}
+{"episode_index": 506, "tasks": ["open the cabinet doors"], "length": 657}
+{"episode_index": 507, "tasks": ["pick the garlic from the sink and place it on the plate located on the counter"], "length": 262}
+{"episode_index": 508, "tasks": ["navigate to the fridge"], "length": 178}
+{"episode_index": 509, "tasks": ["turn the sink spout to the right"], "length": 117}
+{"episode_index": 510, "tasks": ["close the cabinet doors"], "length": 335}
+{"episode_index": 511, "tasks": ["turn on the sink faucet"], "length": 202}
+{"episode_index": 512, "tasks": ["close the microwave door"], "length": 262}
+{"episode_index": 513, "tasks": ["open the microwave door"], "length": 251}
+{"episode_index": 514, "tasks": ["pick the mug from the counter and place it under the coffee machine dispenser"], "length": 314}
+{"episode_index": 515, "tasks": ["pick the bar soap from the counter and place it in the sink"], "length": 358}
+{"episode_index": 516, "tasks": ["pick the mushroom from the pan and place it on the plate"], "length": 271}
+{"episode_index": 517, "tasks": ["turn the sink spout to the left"], "length": 87}
+{"episode_index": 518, "tasks": ["pick the yogurt from the cabinet and place it on the counter"], "length": 331}
+{"episode_index": 519, "tasks": ["turn the sink spout to the right"], "length": 137}
+{"episode_index": 520, "tasks": ["pick the tangerine from the sink and place it on the plate located on the counter"], "length": 271}
+{"episode_index": 521, "tasks": ["turn off the front right burner of the stove"], "length": 139}
+{"episode_index": 522, "tasks": ["turn on the rear right burner of the stove"], "length": 205}
+{"episode_index": 523, "tasks": ["pick the bell pepper from the counter and place it in the microwave"], "length": 430}
+{"episode_index": 524, "tasks": ["turn off the center burner of the stove"], "length": 162}
+{"episode_index": 525, "tasks": ["pick the garlic from the pan and place it in the bowl"], "length": 225}
+{"episode_index": 526, "tasks": ["press the stop button on the microwave"], "length": 252}
+{"episode_index": 527, "tasks": ["turn on the sink faucet"], "length": 173}
+{"episode_index": 528, "tasks": ["press the stop button on the microwave"], "length": 212}
+{"episode_index": 529, "tasks": ["turn off the front left burner of the stove"], "length": 188}
+{"episode_index": 530, "tasks": ["open the right drawer"], "length": 254}
+{"episode_index": 531, "tasks": ["pick the mug from under the coffee machine dispenser and place it on the counter"], "length": 362}
+{"episode_index": 532, "tasks": ["navigate to the toaster"], "length": 130}
+{"episode_index": 533, "tasks": ["turn the sink spout to the right"], "length": 143}
+{"episode_index": 534, "tasks": ["close the cabinet doors"], "length": 361}
+{"episode_index": 535, "tasks": ["open the cabinet door"], "length": 215}
+{"episode_index": 536, "tasks": ["open the cabinet door"], "length": 212}
+{"episode_index": 537, "tasks": ["turn the sink spout to the left"], "length": 187}
+{"episode_index": 538, "tasks": ["pick the cheese from the counter and place it in the microwave"], "length": 463}
+{"episode_index": 539, "tasks": ["pick the garlic from the pan and place it in the bowl"], "length": 275}
+{"episode_index": 540, "tasks": ["turn the sink spout to the right"], "length": 101}
+{"episode_index": 541, "tasks": ["pick the onion from the sink and place it on the plate located on the counter"], "length": 266}
+{"episode_index": 542, "tasks": ["open the cabinet doors"], "length": 699}
+{"episode_index": 543, "tasks": ["close the cabinet doors"], "length": 333}
+{"episode_index": 544, "tasks": ["pick the mug from under the coffee machine dispenser and place it on the counter"], "length": 380}
+{"episode_index": 545, "tasks": ["press the button on the coffee machine to serve coffee"], "length": 119}
+{"episode_index": 546, "tasks": ["open the cabinet doors"], "length": 798}
+{"episode_index": 547, "tasks": ["pick the hot dog from the counter and place it in the cabinet"], "length": 342}
+{"episode_index": 548, "tasks": ["turn the sink spout to the right"], "length": 113}
+{"episode_index": 549, "tasks": ["pick the mug from the counter and place it under the coffee machine dispenser"], "length": 328}
+{"episode_index": 550, "tasks": ["turn on the sink faucet"], "length": 218}
+{"episode_index": 551, "tasks": ["navigate to the stove"], "length": 224}
+{"episode_index": 552, "tasks": ["pick the mug from the counter and place it under the coffee machine dispenser"], "length": 234}
+{"episode_index": 553, "tasks": ["open the microwave door"], "length": 226}
+{"episode_index": 554, "tasks": ["turn off the sink faucet"], "length": 158}
+{"episode_index": 555, "tasks": ["turn off the front right burner of the stove"], "length": 247}
+{"episode_index": 556, "tasks": ["open the microwave door"], "length": 229}
+{"episode_index": 557, "tasks": ["turn off the front left burner of the stove"], "length": 189}
+{"episode_index": 558, "tasks": ["pick the mug from under the coffee machine dispenser and place it on the counter"], "length": 281}
+{"episode_index": 559, "tasks": ["open the cabinet door"], "length": 299}
+{"episode_index": 560, "tasks": ["pick the ketchup from the cabinet and place it on the counter"], "length": 288}
+{"episode_index": 561, "tasks": ["pick the mug from the counter and place it under the coffee machine dispenser"], "length": 239}
+{"episode_index": 562, "tasks": ["pick the mug from under the coffee machine dispenser and place it on the counter"], "length": 207}
+{"episode_index": 563, "tasks": ["open the right drawer"], "length": 176}
+{"episode_index": 564, "tasks": ["pick the squash from the microwave and place it on plate located on the counter"], "length": 252}
+{"episode_index": 565, "tasks": ["pick the canned food from the cabinet and place it on the counter"], "length": 461}
+{"episode_index": 566, "tasks": ["turn the sink spout to the right"], "length": 79}
+{"episode_index": 567, "tasks": ["turn off the sink faucet"], "length": 199}
+{"episode_index": 568, "tasks": ["open the cabinet door"], "length": 180}
+{"episode_index": 569, "tasks": ["pick the potato from the plate and place it in the pan"], "length": 305}
+{"episode_index": 570, "tasks": ["navigate to the microwave"], "length": 113}
+{"episode_index": 571, "tasks": ["press the button on the coffee machine to serve coffee"], "length": 82}
+{"episode_index": 572, "tasks": ["close the cabinet doors"], "length": 344}
+{"episode_index": 573, "tasks": ["turn off the front left burner of the stove"], "length": 234}
+{"episode_index": 574, "tasks": ["pick the ketchup from the cabinet and place it on the counter"], "length": 353}
+{"episode_index": 575, "tasks": ["close the cabinet door"], "length": 253}
+{"episode_index": 576, "tasks": ["pick the mushroom from the counter and place it in the cabinet"], "length": 345}
+{"episode_index": 577, "tasks": ["pick the cheese from the counter and place it in the microwave"], "length": 389}
+{"episode_index": 578, "tasks": ["pick the broccoli from the counter and place it in the microwave"], "length": 457}
+{"episode_index": 579, "tasks": ["press the button on the coffee machine to serve coffee"], "length": 138}
+{"episode_index": 580, "tasks": ["turn on the sink faucet"], "length": 246}
+{"episode_index": 581, "tasks": ["close the microwave door"], "length": 265}
+{"episode_index": 582, "tasks": ["close the left drawer"], "length": 194}
+{"episode_index": 583, "tasks": ["press the stop button on the microwave"], "length": 232}
+{"episode_index": 584, "tasks": ["open the microwave door"], "length": 209}
+{"episode_index": 585, "tasks": ["pick the shaker from the counter and place it in the cabinet"], "length": 314}
+{"episode_index": 586, "tasks": ["open the right drawer"], "length": 223}
+{"episode_index": 587, "tasks": ["pick the corn from the counter and place it in the sink"], "length": 382}
+{"episode_index": 588, "tasks": ["open the cabinet door"], "length": 301}
+{"episode_index": 589, "tasks": ["navigate to the dishwasher"], "length": 205}
+{"episode_index": 590, "tasks": ["pick the kettle non electric from the counter and place it in the sink"], "length": 527}
+{"episode_index": 591, "tasks": ["press the button on the coffee machine to serve coffee"], "length": 90}
+{"episode_index": 592, "tasks": ["pick the mug from under the coffee machine dispenser and place it on the counter"], "length": 277}
+{"episode_index": 593, "tasks": ["pick the sponge from the counter and place it in the cabinet"], "length": 275}
+{"episode_index": 594, "tasks": ["turn on the front right burner of the stove"], "length": 211}
+{"episode_index": 595, "tasks": ["open the left drawer"], "length": 208}
+{"episode_index": 596, "tasks": ["pick the steak from the cabinet and place it on the counter"], "length": 291}
+{"episode_index": 597, "tasks": ["pick the potato from the counter and place it in the microwave"], "length": 419}
+{"episode_index": 598, "tasks": ["turn on the front right burner of the stove"], "length": 148}
+{"episode_index": 599, "tasks": ["open the microwave door"], "length": 263}
+{"episode_index": 600, "tasks": ["close the microwave door"], "length": 220}
+{"episode_index": 601, "tasks": ["press the button on the coffee machine to serve coffee"], "length": 111}
+{"episode_index": 602, "tasks": ["turn off the sink faucet"], "length": 227}
+{"episode_index": 603, "tasks": ["close the right drawer"], "length": 196}
+{"episode_index": 604, "tasks": ["pick the corn from the counter and place it in the sink"], "length": 382}
+{"episode_index": 605, "tasks": ["pick the mango from the pan and place it on the plate"], "length": 180}
+{"episode_index": 606, "tasks": ["open the cabinet doors"], "length": 733}
+{"episode_index": 607, "tasks": ["close the microwave door"], "length": 307}
+{"episode_index": 608, "tasks": ["pick the mug from under the coffee machine dispenser and place it on the counter"], "length": 255}
+{"episode_index": 609, "tasks": ["pick the eggplant from the microwave and place it on plate located on the counter"], "length": 309}
+{"episode_index": 610, "tasks": ["turn off the sink faucet"], "length": 159}
+{"episode_index": 611, "tasks": ["press the start button on the microwave"], "length": 250}
+{"episode_index": 612, "tasks": ["navigate to the range hood"], "length": 125}
+{"episode_index": 613, "tasks": ["pick the squash from the sink and place it on the plate located on the counter"], "length": 248}
+{"episode_index": 614, "tasks": ["turn the sink spout to the right"], "length": 153}
+{"episode_index": 615, "tasks": ["turn on the sink faucet"], "length": 224}
+{"episode_index": 616, "tasks": ["press the start button on the microwave"], "length": 219}
+{"episode_index": 617, "tasks": ["open the left drawer"], "length": 196}
+{"episode_index": 618, "tasks": ["turn on the rear right burner of the stove"], "length": 130}
+{"episode_index": 619, "tasks": ["pick the apple from the pan and place it in the bowl"], "length": 255}
+{"episode_index": 620, "tasks": ["open the cabinet doors"], "length": 749}
+{"episode_index": 621, "tasks": ["open the cabinet doors"], "length": 722}
+{"episode_index": 622, "tasks": ["press the button on the coffee machine to serve coffee"], "length": 153}
+{"episode_index": 623, "tasks": ["close the left drawer"], "length": 191}
+{"episode_index": 624, "tasks": ["press the button on the coffee machine to serve coffee"], "length": 112}
+{"episode_index": 625, "tasks": ["pick the ladle from the cabinet and place it on the counter"], "length": 300}
+{"episode_index": 626, "tasks": ["close the cabinet doors"], "length": 365}
+{"episode_index": 627, "tasks": ["close the cabinet doors"], "length": 404}
+{"episode_index": 628, "tasks": ["open the right drawer"], "length": 193}
+{"episode_index": 629, "tasks": ["pick the yogurt from the sink and place it on the plate located on the counter"], "length": 262}
+{"episode_index": 630, "tasks": ["press the start button on the microwave"], "length": 269}
+{"episode_index": 631, "tasks": ["close the left drawer"], "length": 190}
+{"episode_index": 632, "tasks": ["pick the mug from the counter and place it under the coffee machine dispenser"], "length": 376}
+{"episode_index": 633, "tasks": ["pick the mango from the pan and place it in the bowl"], "length": 267}
+{"episode_index": 634, "tasks": ["pick the can from the counter and place it in the sink"], "length": 226}
+{"episode_index": 635, "tasks": ["open the cabinet doors"], "length": 700}
+{"episode_index": 636, "tasks": ["press the start button on the microwave"], "length": 258}
+{"episode_index": 637, "tasks": ["turn off the front right burner of the stove"], "length": 166}
+{"episode_index": 638, "tasks": ["close the cabinet doors"], "length": 367}
+{"episode_index": 639, "tasks": ["pick the egg from the microwave and place it on plate located on the counter"], "length": 242}
+{"episode_index": 640, "tasks": ["turn off the sink faucet"], "length": 152}
+{"episode_index": 641, "tasks": ["open the left drawer"], "length": 195}
+{"episode_index": 642, "tasks": ["open the microwave door"], "length": 223}
+{"episode_index": 643, "tasks": ["open the cabinet doors"], "length": 619}
+{"episode_index": 644, "tasks": ["open the cabinet door"], "length": 191}
+{"episode_index": 645, "tasks": ["close the microwave door"], "length": 250}
+{"episode_index": 646, "tasks": ["pick the mug from the counter and place it under the coffee machine dispenser"], "length": 232}
+{"episode_index": 647, "tasks": ["press the stop button on the microwave"], "length": 287}
+{"episode_index": 648, "tasks": ["navigate to the toaster"], "length": 203}
+{"episode_index": 649, "tasks": ["turn on the sink faucet"], "length": 255}
+{"episode_index": 650, "tasks": ["pick the wine from the counter and place it in the sink"], "length": 476}
+{"episode_index": 651, "tasks": ["pick the broccoli from the cabinet and place it on the counter"], "length": 274}
+{"episode_index": 652, "tasks": ["open the left drawer"], "length": 227}
+{"episode_index": 653, "tasks": ["press the start button on the microwave"], "length": 242}
+{"episode_index": 654, "tasks": ["close the right drawer"], "length": 173}
+{"episode_index": 655, "tasks": ["close the cabinet door"], "length": 237}
+{"episode_index": 656, "tasks": ["close the cabinet doors"], "length": 422}
+{"episode_index": 657, "tasks": ["pick the apple from the counter and place it in the sink"], "length": 317}
+{"episode_index": 658, "tasks": ["press the start button on the microwave"], "length": 206}
+{"episode_index": 659, "tasks": ["pick the yogurt from the counter and place it in the cabinet"], "length": 255}
+{"episode_index": 660, "tasks": ["pick the tomato from the counter and place it in the microwave"], "length": 407}
+{"episode_index": 661, "tasks": ["pick the egg from the pan and place it on the plate"], "length": 257}
+{"episode_index": 662, "tasks": ["close the cabinet doors"], "length": 458}
+{"episode_index": 663, "tasks": ["close the microwave door"], "length": 270}
+{"episode_index": 664, "tasks": ["turn off the sink faucet"], "length": 187}
+{"episode_index": 665, "tasks": ["press the button on the coffee machine to serve coffee"], "length": 137}
+{"episode_index": 666, "tasks": ["navigate to the sink"], "length": 203}
+{"episode_index": 667, "tasks": ["press the button on the coffee machine to serve coffee"], "length": 156}
+{"episode_index": 668, "tasks": ["open the cabinet doors"], "length": 738}
+{"episode_index": 669, "tasks": ["turn off the sink faucet"], "length": 239}
+{"episode_index": 670, "tasks": ["pick the carrot from the sink and place it on the plate located on the counter"], "length": 259}
+{"episode_index": 671, "tasks": ["pick the lemon from the sink and place it on the plate located on the counter"], "length": 237}
+{"episode_index": 672, "tasks": ["open the left drawer"], "length": 208}
+{"episode_index": 673, "tasks": ["turn on the sink faucet"], "length": 237}
+{"episode_index": 674, "tasks": ["pick the lime from the plate and place it in the pan"], "length": 334}
+{"episode_index": 675, "tasks": ["press the stop button on the microwave"], "length": 241}
+{"episode_index": 676, "tasks": ["press the button on the coffee machine to serve coffee"], "length": 96}
+{"episode_index": 677, "tasks": ["pick the potato from the plate and place it in the pan"], "length": 356}
+{"episode_index": 678, "tasks": ["press the stop button on the microwave"], "length": 256}
+{"episode_index": 679, "tasks": ["pick the jam from the counter and place it in the sink"], "length": 471}
+{"episode_index": 680, "tasks": ["pick the potato from the microwave and place it on plate located on the counter"], "length": 303}
+{"episode_index": 681, "tasks": ["pick the cheese from the microwave and place it on plate located on the counter"], "length": 278}
+{"episode_index": 682, "tasks": ["turn on the rear right burner of the stove"], "length": 193}
+{"episode_index": 683, "tasks": ["open the cabinet doors"], "length": 785}
+{"episode_index": 684, "tasks": ["turn the sink spout to the left"], "length": 169}
+{"episode_index": 685, "tasks": ["pick the bar soap from the cabinet and place it on the counter"], "length": 269}
+{"episode_index": 686, "tasks": ["press the stop button on the microwave"], "length": 244}
+{"episode_index": 687, "tasks": ["navigate to the coffee machine"], "length": 88}
+{"episode_index": 688, "tasks": ["pick the carrot from the sink and place it on the plate located on the counter"], "length": 285}
+{"episode_index": 689, "tasks": ["turn on the sink faucet"], "length": 303}
+{"episode_index": 690, "tasks": ["close the left drawer"], "length": 204}
+{"episode_index": 691, "tasks": ["pick the mug from under the coffee machine dispenser and place it on the counter"], "length": 413}
+{"episode_index": 692, "tasks": ["open the microwave door"], "length": 228}
+{"episode_index": 693, "tasks": ["turn off the center burner of the stove"], "length": 196}
+{"episode_index": 694, "tasks": ["navigate to the toaster"], "length": 171}
+{"episode_index": 695, "tasks": ["pick the hot dog from the cabinet and place it on the counter"], "length": 276}
+{"episode_index": 696, "tasks": ["turn the sink spout to the right"], "length": 96}
+{"episode_index": 697, "tasks": ["pick the mug from the counter and place it under the coffee machine dispenser"], "length": 277}
+{"episode_index": 698, "tasks": ["close the right drawer"], "length": 197}
+{"episode_index": 699, "tasks": ["open the cabinet doors"], "length": 722}
+{"episode_index": 700, "tasks": ["turn off the front right burner of the stove"], "length": 129}
+{"episode_index": 701, "tasks": ["turn off the rear left burner of the stove"], "length": 338}
+{"episode_index": 702, "tasks": ["pick the jam from the cabinet and place it on the counter"], "length": 332}
+{"episode_index": 703, "tasks": ["pick the eggplant from the microwave and place it on plate located on the counter"], "length": 251}
+{"episode_index": 704, "tasks": ["turn off the front left burner of the stove"], "length": 219}
+{"episode_index": 705, "tasks": ["navigate to the sink"], "length": 212}
+{"episode_index": 706, "tasks": ["close the microwave door"], "length": 278}
+{"episode_index": 707, "tasks": ["pick the onion from the counter and place it in the cabinet"], "length": 200}
+{"episode_index": 708, "tasks": ["pick the garlic from the microwave and place it on plate located on the counter"], "length": 275}
+{"episode_index": 709, "tasks": ["close the cabinet doors"], "length": 363}
+{"episode_index": 710, "tasks": ["open the left drawer"], "length": 217}
+{"episode_index": 711, "tasks": ["navigate to the stove"], "length": 176}
+{"episode_index": 712, "tasks": ["close the right drawer"], "length": 224}
+{"episode_index": 713, "tasks": ["press the stop button on the microwave"], "length": 221}
+{"episode_index": 714, "tasks": ["pick the broccoli from the microwave and place it on plate located on the counter"], "length": 232}
+{"episode_index": 715, "tasks": ["pick the potato from the pan and place it on the plate"], "length": 248}
+{"episode_index": 716, "tasks": ["close the cabinet doors"], "length": 341}
+{"episode_index": 717, "tasks": ["close the cabinet doors"], "length": 448}
+{"episode_index": 718, "tasks": ["close the right drawer"], "length": 185}
+{"episode_index": 719, "tasks": ["turn off the sink faucet"], "length": 136}
+{"episode_index": 720, "tasks": ["open the microwave door"], "length": 221}
+{"episode_index": 721, "tasks": ["open the right drawer"], "length": 190}
+{"episode_index": 722, "tasks": ["open the cabinet doors"], "length": 775}
+{"episode_index": 723, "tasks": ["pick the apple from the counter and place it in the sink"], "length": 503}
+{"episode_index": 724, "tasks": ["turn on the rear center burner of the stove"], "length": 135}
+{"episode_index": 725, "tasks": ["press the button on the coffee machine to serve coffee"], "length": 91}
+{"episode_index": 726, "tasks": ["turn on the sink faucet"], "length": 233}
+{"episode_index": 727, "tasks": ["open the right drawer"], "length": 216}
+{"episode_index": 728, "tasks": ["close the cabinet door"], "length": 193}
+{"episode_index": 729, "tasks": ["close the cabinet doors"], "length": 307}
+{"episode_index": 730, "tasks": ["navigate to the range hood"], "length": 105}
+{"episode_index": 731, "tasks": ["pick the lemon from the pan and place it on the plate"], "length": 219}
+{"episode_index": 732, "tasks": ["pick the soap dispenser from the counter and place it in the cabinet"], "length": 300}
+{"episode_index": 733, "tasks": ["press the start button on the microwave"], "length": 191}
+{"episode_index": 734, "tasks": ["press the stop button on the microwave"], "length": 229}
+{"episode_index": 735, "tasks": ["pick the tomato from the sink and place it on the plate located on the counter"], "length": 255}
+{"episode_index": 736, "tasks": ["close the cabinet doors"], "length": 354}
+{"episode_index": 737, "tasks": ["pick the squash from the microwave and place it on plate located on the counter"], "length": 280}
+{"episode_index": 738, "tasks": ["pick the tangerine from the counter and place it in the sink"], "length": 503}
+{"episode_index": 739, "tasks": ["pick the mug from the counter and place it under the coffee machine dispenser"], "length": 374}
+{"episode_index": 740, "tasks": ["turn off the sink faucet"], "length": 251}
+{"episode_index": 741, "tasks": ["turn the sink spout to the right"], "length": 78}
+{"episode_index": 742, "tasks": ["pick the mug from under the coffee machine dispenser and place it on the counter"], "length": 292}
+{"episode_index": 743, "tasks": ["open the microwave door"], "length": 330}
+{"episode_index": 744, "tasks": ["navigate to the dishwasher"], "length": 125}
+{"episode_index": 745, "tasks": ["turn off the front left burner of the stove"], "length": 111}
+{"episode_index": 746, "tasks": ["pick the avocado from the counter and place it in the sink"], "length": 395}
+{"episode_index": 747, "tasks": ["close the cabinet doors"], "length": 376}
+{"episode_index": 748, "tasks": ["close the left drawer"], "length": 186}
+{"episode_index": 749, "tasks": ["open the left drawer"], "length": 231}
+{"episode_index": 750, "tasks": ["turn off the sink faucet"], "length": 154}
+{"episode_index": 751, "tasks": ["pick the bell pepper from the cabinet and place it on the counter"], "length": 334}
+{"episode_index": 752, "tasks": ["pick the bar soap from the counter and place it in the sink"], "length": 380}
+{"episode_index": 753, "tasks": ["navigate to the coffee machine"], "length": 103}
+{"episode_index": 754, "tasks": ["turn off the front right burner of the stove"], "length": 150}
+{"episode_index": 755, "tasks": ["press the stop button on the microwave"], "length": 235}
+{"episode_index": 756, "tasks": ["open the cabinet door"], "length": 245}
+{"episode_index": 757, "tasks": ["open the cabinet door"], "length": 343}
+{"episode_index": 758, "tasks": ["press the start button on the microwave"], "length": 190}
+{"episode_index": 759, "tasks": ["press the stop button on the microwave"], "length": 236}
+{"episode_index": 760, "tasks": ["close the cabinet doors"], "length": 412}
+{"episode_index": 761, "tasks": ["pick the cheese from the pan and place it on the plate"], "length": 417}
+{"episode_index": 762, "tasks": ["pick the mango from the counter and place it in the cabinet"], "length": 256}
+{"episode_index": 763, "tasks": ["turn on the rear center burner of the stove"], "length": 275}
+{"episode_index": 764, "tasks": ["open the left drawer"], "length": 199}
+{"episode_index": 765, "tasks": ["close the cabinet doors"], "length": 369}
+{"episode_index": 766, "tasks": ["close the right drawer"], "length": 165}
+{"episode_index": 767, "tasks": ["pick the corn from the plate and place it in the pan"], "length": 255}
+{"episode_index": 768, "tasks": ["open the cabinet door"], "length": 245}
+{"episode_index": 769, "tasks": ["pick the lemon from the pan and place it in the bowl"], "length": 246}
+{"episode_index": 770, "tasks": ["turn on the sink faucet"], "length": 242}
+{"episode_index": 771, "tasks": ["pick the cheese from the counter and place it in the microwave"], "length": 370}
+{"episode_index": 772, "tasks": ["open the cabinet doors"], "length": 820}
+{"episode_index": 773, "tasks": ["pick the bar soap from the counter and place it in the sink"], "length": 333}
+{"episode_index": 774, "tasks": ["pick the carrot from the plate and place it in the pan"], "length": 314}
+{"episode_index": 775, "tasks": ["turn the sink spout to the right"], "length": 89}
+{"episode_index": 776, "tasks": ["pick the mug from the counter and place it under the coffee machine dispenser"], "length": 176}
+{"episode_index": 777, "tasks": ["open the left drawer"], "length": 229}
+{"episode_index": 778, "tasks": ["pick the squash from the pan and place it on the plate"], "length": 343}
+{"episode_index": 779, "tasks": ["press the stop button on the microwave"], "length": 218}
+{"episode_index": 780, "tasks": ["press the button on the coffee machine to serve coffee"], "length": 143}
+{"episode_index": 781, "tasks": ["pick the lemon from the counter and place it in the sink"], "length": 424}
+{"episode_index": 782, "tasks": ["turn on the sink faucet"], "length": 164}
+{"episode_index": 783, "tasks": ["pick the cheese from the pan and place it on the plate"], "length": 248}
+{"episode_index": 784, "tasks": ["close the right drawer"], "length": 187}
+{"episode_index": 785, "tasks": ["press the button on the coffee machine to serve coffee"], "length": 115}
+{"episode_index": 786, "tasks": ["close the cabinet door"], "length": 229}
+{"episode_index": 787, "tasks": ["turn off the center burner of the stove"], "length": 183}
+{"episode_index": 788, "tasks": ["pick the potato from the microwave and place it on plate located on the counter"], "length": 289}
+{"episode_index": 789, "tasks": ["navigate to the fridge"], "length": 235}
+{"episode_index": 790, "tasks": ["turn off the front right burner of the stove"], "length": 242}
+{"episode_index": 791, "tasks": ["pick the mug from the counter and place it under the coffee machine dispenser"], "length": 246}
+{"episode_index": 792, "tasks": ["turn on the front center burner of the stove"], "length": 110}
+{"episode_index": 793, "tasks": ["pick the mushroom from the pan and place it on the plate"], "length": 288}
+{"episode_index": 794, "tasks": ["pick the mug from the counter and place it under the coffee machine dispenser"], "length": 257}
+{"episode_index": 795, "tasks": ["pick the steak from the pan and place it on the plate"], "length": 270}
+{"episode_index": 796, "tasks": ["close the cabinet doors"], "length": 413}
+{"episode_index": 797, "tasks": ["close the left drawer"], "length": 193}
+{"episode_index": 798, "tasks": ["navigate to the oven"], "length": 148}
+{"episode_index": 799, "tasks": ["close the cabinet doors"], "length": 474}
+{"episode_index": 800, "tasks": ["turn off the front right burner of the stove"], "length": 138}
+{"episode_index": 801, "tasks": ["pick the tomato from the counter and place it in the microwave"], "length": 422}
+{"episode_index": 802, "tasks": ["pick the carrot from the counter and place it in the sink"], "length": 464}
+{"episode_index": 803, "tasks": ["turn the sink spout to the right"], "length": 98}
+{"episode_index": 804, "tasks": ["pick the potato from the counter and place it in the cabinet"], "length": 251}
+{"episode_index": 805, "tasks": ["pick the lime from the pan and place it in the bowl"], "length": 355}
+{"episode_index": 806, "tasks": ["pick the eggplant from the pan and place it in the bowl"], "length": 258}
+{"episode_index": 807, "tasks": ["pick the shaker from the counter and place it in the cabinet"], "length": 298}
+{"episode_index": 808, "tasks": ["pick the mug from the counter and place it under the coffee machine dispenser"], "length": 267}
+{"episode_index": 809, "tasks": ["pick the lime from the sink and place it on the plate located on the counter"], "length": 241}
+{"episode_index": 810, "tasks": ["close the cabinet doors"], "length": 392}
+{"episode_index": 811, "tasks": ["close the microwave door"], "length": 213}
+{"episode_index": 812, "tasks": ["turn on the sink faucet"], "length": 165}
+{"episode_index": 813, "tasks": ["pick the mug from under the coffee machine dispenser and place it on the counter"], "length": 321}
+{"episode_index": 814, "tasks": ["pick the canned food from the cabinet and place it on the counter"], "length": 252}
+{"episode_index": 815, "tasks": ["pick the tomato from the plate and place it in the pan"], "length": 269}
+{"episode_index": 816, "tasks": ["open the cabinet doors"], "length": 793}
+{"episode_index": 817, "tasks": ["turn off the sink faucet"], "length": 209}
+{"episode_index": 818, "tasks": ["turn off the sink faucet"], "length": 232}
+{"episode_index": 819, "tasks": ["pick the corn from the plate and place it in the pan"], "length": 327}
+{"episode_index": 820, "tasks": ["open the left drawer"], "length": 232}
+{"episode_index": 821, "tasks": ["open the right drawer"], "length": 202}
+{"episode_index": 822, "tasks": ["pick the peach from the sink and place it on the plate located on the counter"], "length": 285}
+{"episode_index": 823, "tasks": ["pick the potato from the plate and place it in the pan"], "length": 326}
+{"episode_index": 824, "tasks": ["close the microwave door"], "length": 237}
+{"episode_index": 825, "tasks": ["press the start button on the microwave"], "length": 216}
+{"episode_index": 826, "tasks": ["pick the croissant from the cabinet and place it on the counter"], "length": 270}
+{"episode_index": 827, "tasks": ["pick the tomato from the counter and place it in the microwave"], "length": 360}
+{"episode_index": 828, "tasks": ["turn off the sink faucet"], "length": 126}
+{"episode_index": 829, "tasks": ["pick the orange from the counter and place it in the sink"], "length": 374}
+{"episode_index": 830, "tasks": ["open the cabinet doors"], "length": 859}
+{"episode_index": 831, "tasks": ["navigate to the microwave"], "length": 250}
+{"episode_index": 832, "tasks": ["press the button on the coffee machine to serve coffee"], "length": 154}
+{"episode_index": 833, "tasks": ["navigate to the fridge"], "length": 120}
+{"episode_index": 834, "tasks": ["pick the cupcake from the counter and place it in the cabinet"], "length": 205}
+{"episode_index": 835, "tasks": ["close the microwave door"], "length": 267}
+{"episode_index": 836, "tasks": ["navigate to the shelves"], "length": 206}
+{"episode_index": 837, "tasks": ["open the microwave door"], "length": 224}
+{"episode_index": 838, "tasks": ["pick the corn from the counter and place it in the microwave"], "length": 447}
+{"episode_index": 839, "tasks": ["pick the corn from the plate and place it in the pan"], "length": 336}
+{"episode_index": 840, "tasks": ["open the cabinet doors"], "length": 867}
+{"episode_index": 841, "tasks": ["turn off the front right burner of the stove"], "length": 193}
+{"episode_index": 842, "tasks": ["turn off the sink faucet"], "length": 250}
+{"episode_index": 843, "tasks": ["pick the cheese from the plate and place it in the pan"], "length": 299}
+{"episode_index": 844, "tasks": ["pick the eggplant from the counter and place it in the microwave"], "length": 361}
+{"episode_index": 845, "tasks": ["press the button on the coffee machine to serve coffee"], "length": 127}
+{"episode_index": 846, "tasks": ["turn off the front right burner of the stove"], "length": 165}
+{"episode_index": 847, "tasks": ["press the stop button on the microwave"], "length": 236}
+{"episode_index": 848, "tasks": ["turn off the sink faucet"], "length": 261}
+{"episode_index": 849, "tasks": ["press the button on the coffee machine to serve coffee"], "length": 119}
+{"episode_index": 850, "tasks": ["turn on the rear center burner of the stove"], "length": 127}
+{"episode_index": 851, "tasks": ["pick the mug from under the coffee machine dispenser and place it on the counter"], "length": 304}
+{"episode_index": 852, "tasks": ["press the start button on the microwave"], "length": 260}
+{"episode_index": 853, "tasks": ["pick the egg from the cabinet and place it on the counter"], "length": 365}
+{"episode_index": 854, "tasks": ["pick the onion from the counter and place it in the microwave"], "length": 385}
+{"episode_index": 855, "tasks": ["navigate to the microwave"], "length": 200}
+{"episode_index": 856, "tasks": ["turn the sink spout to the left"], "length": 111}
+{"episode_index": 857, "tasks": ["turn the sink spout to the right"], "length": 84}
+{"episode_index": 858, "tasks": ["navigate to the oven"], "length": 180}
+{"episode_index": 859, "tasks": ["turn on the sink faucet"], "length": 241}
+{"episode_index": 860, "tasks": ["open the left drawer"], "length": 171}
+{"episode_index": 861, "tasks": ["turn the sink spout to the right"], "length": 111}
+{"episode_index": 862, "tasks": ["turn off the sink faucet"], "length": 224}
+{"episode_index": 863, "tasks": ["pick the corn from the plate and place it in the pan"], "length": 318}
+{"episode_index": 864, "tasks": ["pick the mug from the counter and place it under the coffee machine dispenser"], "length": 340}
+{"episode_index": 865, "tasks": ["close the microwave door"], "length": 296}
+{"episode_index": 866, "tasks": ["pick the carrot from the counter and place it in the microwave"], "length": 356}
+{"episode_index": 867, "tasks": ["turn on the front right burner of the stove"], "length": 138}
+{"episode_index": 868, "tasks": ["press the button on the coffee machine to serve coffee"], "length": 130}
+{"episode_index": 869, "tasks": ["turn on the sink faucet"], "length": 226}
+{"episode_index": 870, "tasks": ["open the cabinet doors"], "length": 720}
+{"episode_index": 871, "tasks": ["pick the egg from the microwave and place it on plate located on the counter"], "length": 306}
+{"episode_index": 872, "tasks": ["turn on the front center burner of the stove"], "length": 120}
+{"episode_index": 873, "tasks": ["close the microwave door"], "length": 256}
+{"episode_index": 874, "tasks": ["turn on the sink faucet"], "length": 120}
+{"episode_index": 875, "tasks": ["open the microwave door"], "length": 260}
+{"episode_index": 876, "tasks": ["turn off the sink faucet"], "length": 185}
+{"episode_index": 877, "tasks": ["turn the sink spout to the left"], "length": 155}
+{"episode_index": 878, "tasks": ["open the cabinet doors"], "length": 760}
+{"episode_index": 879, "tasks": ["open the left drawer"], "length": 253}
+{"episode_index": 880, "tasks": ["pick the sweet potato from the pan and place it on the plate"], "length": 268}
+{"episode_index": 881, "tasks": ["open the right drawer"], "length": 182}
+{"episode_index": 882, "tasks": ["turn off the rear right burner of the stove"], "length": 161}
+{"episode_index": 883, "tasks": ["pick the lime from the plate and place it in the pan"], "length": 327}
+{"episode_index": 884, "tasks": ["open the cabinet door"], "length": 207}
+{"episode_index": 885, "tasks": ["pick the orange from the sink and place it on the plate located on the counter"], "length": 334}
+{"episode_index": 886, "tasks": ["navigate to the toaster"], "length": 180}
+{"episode_index": 887, "tasks": ["open the cabinet doors"], "length": 681}
+{"episode_index": 888, "tasks": ["pick the corn from the plate and place it in the pan"], "length": 228}
+{"episode_index": 889, "tasks": ["pick the lemon from the pan and place it on the plate"], "length": 268}
+{"episode_index": 890, "tasks": ["turn on the rear left burner of the stove"], "length": 106}
+{"episode_index": 891, "tasks": ["pick the corn from the counter and place it in the microwave"], "length": 445}
+{"episode_index": 892, "tasks": ["pick the corn from the counter and place it in the microwave"], "length": 436}
+{"episode_index": 893, "tasks": ["pick the apple from the sink and place it on the plate located on the counter"], "length": 228}
+{"episode_index": 894, "tasks": ["pick the squash from the microwave and place it on plate located on the counter"], "length": 358}
+{"episode_index": 895, "tasks": ["navigate to the shelves"], "length": 185}
+{"episode_index": 896, "tasks": ["press the start button on the microwave"], "length": 222}
+{"episode_index": 897, "tasks": ["close the left drawer"], "length": 189}
+{"episode_index": 898, "tasks": ["pick the mug from the counter and place it under the coffee machine dispenser"], "length": 333}
+{"episode_index": 899, "tasks": ["close the left drawer"], "length": 207}
+{"episode_index": 900, "tasks": ["turn the sink spout to the right"], "length": 103}
+{"episode_index": 901, "tasks": ["open the left drawer"], "length": 216}
+{"episode_index": 902, "tasks": ["press the stop button on the microwave"], "length": 223}
+{"episode_index": 903, "tasks": ["pick the potato from the microwave and place it on plate located on the counter"], "length": 276}
+{"episode_index": 904, "tasks": ["pick the squash from the pan and place it on the plate"], "length": 309}
+{"episode_index": 905, "tasks": ["open the cabinet door"], "length": 359}
+{"episode_index": 906, "tasks": ["pick the milk from the sink and place it on the plate located on the counter"], "length": 279}
+{"episode_index": 907, "tasks": ["open the right drawer"], "length": 210}
+{"episode_index": 908, "tasks": ["close the right drawer"], "length": 176}
+{"episode_index": 909, "tasks": ["close the cabinet doors"], "length": 363}
+{"episode_index": 910, "tasks": ["pick the carrot from the counter and place it in the microwave"], "length": 421}
+{"episode_index": 911, "tasks": ["open the cabinet doors"], "length": 717}
+{"episode_index": 912, "tasks": ["press the button on the coffee machine to serve coffee"], "length": 89}
+{"episode_index": 913, "tasks": ["turn off the front left burner of the stove"], "length": 175}
+{"episode_index": 914, "tasks": ["pick the hot dog from the microwave and place it on plate located on the counter"], "length": 348}
+{"episode_index": 915, "tasks": ["open the cabinet doors"], "length": 782}
+{"episode_index": 916, "tasks": ["close the cabinet doors"], "length": 322}
+{"episode_index": 917, "tasks": ["pick the teapot from the cabinet and place it on the counter"], "length": 323}
+{"episode_index": 918, "tasks": ["pick the mug from under the coffee machine dispenser and place it on the counter"], "length": 372}
+{"episode_index": 919, "tasks": ["close the right drawer"], "length": 185}
+{"episode_index": 920, "tasks": ["press the start button on the microwave"], "length": 218}
+{"episode_index": 921, "tasks": ["pick the broccoli from the sink and place it on the plate located on the counter"], "length": 227}
+{"episode_index": 922, "tasks": ["turn off the sink faucet"], "length": 117}
+{"episode_index": 923, "tasks": ["pick the carrot from the counter and place it in the microwave"], "length": 405}
+{"episode_index": 924, "tasks": ["pick the mushroom from the microwave and place it on plate located on the counter"], "length": 413}
+{"episode_index": 925, "tasks": ["pick the onion from the counter and place it in the microwave"], "length": 386}
+{"episode_index": 926, "tasks": ["press the start button on the microwave"], "length": 190}
+{"episode_index": 927, "tasks": ["pick the carrot from the counter and place it in the sink"], "length": 518}
+{"episode_index": 928, "tasks": ["pick the hot dog from the microwave and place it on plate located on the counter"], "length": 285}
+{"episode_index": 929, "tasks": ["pick the sweet potato from the microwave and place it on plate located on the counter"], "length": 301}
+{"episode_index": 930, "tasks": ["turn on the sink faucet"], "length": 203}
+{"episode_index": 931, "tasks": ["close the right drawer"], "length": 189}
+{"episode_index": 932, "tasks": ["close the microwave door"], "length": 254}
+{"episode_index": 933, "tasks": ["turn on the front left burner of the stove"], "length": 277}
+{"episode_index": 934, "tasks": ["close the cabinet doors"], "length": 394}
+{"episode_index": 935, "tasks": ["navigate to the range hood"], "length": 123}
+{"episode_index": 936, "tasks": ["pick the cheese from the counter and place it in the cabinet"], "length": 235}
+{"episode_index": 937, "tasks": ["navigate to the toaster"], "length": 109}
+{"episode_index": 938, "tasks": ["pick the onion from the cabinet and place it on the counter"], "length": 300}
+{"episode_index": 939, "tasks": ["press the stop button on the microwave"], "length": 203}
+{"episode_index": 940, "tasks": ["pick the broccoli from the counter and place it in the microwave"], "length": 392}
+{"episode_index": 941, "tasks": ["pick the lemon from the counter and place it in the cabinet"], "length": 268}
+{"episode_index": 942, "tasks": ["navigate to the oven"], "length": 119}
+{"episode_index": 943, "tasks": ["pick the mug from under the coffee machine dispenser and place it on the counter"], "length": 331}
+{"episode_index": 944, "tasks": ["turn off the sink faucet"], "length": 275}
+{"episode_index": 945, "tasks": ["open the left drawer"], "length": 194}
+{"episode_index": 946, "tasks": ["pick the mug from the counter and place it under the coffee machine dispenser"], "length": 345}
+{"episode_index": 947, "tasks": ["open the cabinet doors"], "length": 762}
+{"episode_index": 948, "tasks": ["pick the rolling pin from the counter and place it in the sink"], "length": 455}
+{"episode_index": 949, "tasks": ["pick the sweet potato from the plate and place it in the pan"], "length": 260}
+{"episode_index": 950, "tasks": ["pick the mug from under the coffee machine dispenser and place it on the counter"], "length": 287}
+{"episode_index": 951, "tasks": ["pick the apple from the pan and place it in the bowl"], "length": 248}
+{"episode_index": 952, "tasks": ["open the cabinet doors"], "length": 798}
+{"episode_index": 953, "tasks": ["pick the yogurt from the sink and place it on the plate located on the counter"], "length": 351}
+{"episode_index": 954, "tasks": ["pick the bell pepper from the counter and place it in the microwave"], "length": 408}
+{"episode_index": 955, "tasks": ["pick the kettle non electric from the counter and place it in the cabinet"], "length": 226}
+{"episode_index": 956, "tasks": ["press the start button on the microwave"], "length": 207}
+{"episode_index": 957, "tasks": ["turn on the rear left burner of the stove"], "length": 157}
+{"episode_index": 958, "tasks": ["pick the banana from the cabinet and place it on the counter"], "length": 320}
+{"episode_index": 959, "tasks": ["open the right drawer"], "length": 229}
+{"episode_index": 960, "tasks": ["pick the onion from the microwave and place it on plate located on the counter"], "length": 296}
+{"episode_index": 961, "tasks": ["turn off the front right burner of the stove"], "length": 203}
+{"episode_index": 962, "tasks": ["pick the corn from the counter and place it in the microwave"], "length": 439}
+{"episode_index": 963, "tasks": ["close the left drawer"], "length": 222}
+{"episode_index": 964, "tasks": ["open the cabinet doors"], "length": 681}
+{"episode_index": 965, "tasks": ["open the cabinet doors"], "length": 767}
+{"episode_index": 966, "tasks": ["pick the onion from the microwave and place it on plate located on the counter"], "length": 343}
+{"episode_index": 967, "tasks": ["pick the avocado from the cabinet and place it on the counter"], "length": 263}
+{"episode_index": 968, "tasks": ["close the cabinet doors"], "length": 468}
+{"episode_index": 969, "tasks": ["pick the hot dog from the cabinet and place it on the counter"], "length": 237}
+{"episode_index": 970, "tasks": ["pick the mug from under the coffee machine dispenser and place it on the counter"], "length": 330}
+{"episode_index": 971, "tasks": ["pick the rolling pin from the counter and place it in the sink"], "length": 458}
+{"episode_index": 972, "tasks": ["press the start button on the microwave"], "length": 181}
+{"episode_index": 973, "tasks": ["pick the corn from the microwave and place it on plate located on the counter"], "length": 277}
+{"episode_index": 974, "tasks": ["navigate to the toaster"], "length": 144}
+{"episode_index": 975, "tasks": ["navigate to the stove"], "length": 187}
+{"episode_index": 976, "tasks": ["turn on the sink faucet"], "length": 241}
+{"episode_index": 977, "tasks": ["turn on the sink faucet"], "length": 208}
+{"episode_index": 978, "tasks": ["pick the sweet potato from the counter and place it in the microwave"], "length": 408}
+{"episode_index": 979, "tasks": ["pick the corn from the counter and place it in the microwave"], "length": 385}
+{"episode_index": 980, "tasks": ["pick the apple from the counter and place it in the sink"], "length": 484}
+{"episode_index": 981, "tasks": ["pick the onion from the pan and place it on the plate"], "length": 243}
+{"episode_index": 982, "tasks": ["close the right drawer"], "length": 188}
+{"episode_index": 983, "tasks": ["pick the mug from the counter and place it under the coffee machine dispenser"], "length": 322}
+{"episode_index": 984, "tasks": ["close the cabinet doors"], "length": 384}
+{"episode_index": 985, "tasks": ["turn off the sink faucet"], "length": 214}
+{"episode_index": 986, "tasks": ["navigate to the range hood"], "length": 191}
+{"episode_index": 987, "tasks": ["pick the broccoli from the microwave and place it on plate located on the counter"], "length": 281}
+{"episode_index": 988, "tasks": ["turn on the front right burner of the stove"], "length": 116}
+{"episode_index": 989, "tasks": ["press the stop button on the microwave"], "length": 280}
+{"episode_index": 990, "tasks": ["turn off the front right burner of the stove"], "length": 216}
+{"episode_index": 991, "tasks": ["close the left drawer"], "length": 168}
+{"episode_index": 992, "tasks": ["pick the banana from the cabinet and place it on the counter"], "length": 477}
+{"episode_index": 993, "tasks": ["open the microwave door"], "length": 224}
+{"episode_index": 994, "tasks": ["turn on the sink faucet"], "length": 291}
+{"episode_index": 995, "tasks": ["pick the potato from the sink and place it on the plate located on the counter"], "length": 229}
+{"episode_index": 996, "tasks": ["open the microwave door"], "length": 225}
+{"episode_index": 997, "tasks": ["pick the carrot from the cabinet and place it on the counter"], "length": 318}
+{"episode_index": 998, "tasks": ["open the right drawer"], "length": 219}
+{"episode_index": 999, "tasks": ["press the stop button on the microwave"], "length": 264}
+{"episode_index": 1000, "tasks": ["pick the cheese from the pan and place it on the plate"], "length": 289}
+{"episode_index": 1001, "tasks": ["pick the mug from the counter and place it under the coffee machine dispenser"], "length": 307}
+{"episode_index": 1002, "tasks": ["close the cabinet doors"], "length": 444}
+{"episode_index": 1003, "tasks": ["pick the mug from the counter and place it under the coffee machine dispenser"], "length": 252}
+{"episode_index": 1004, "tasks": ["pick the mug from under the coffee machine dispenser and place it on the counter"], "length": 302}
+{"episode_index": 1005, "tasks": ["navigate to the microwave"], "length": 199}
+{"episode_index": 1006, "tasks": ["pick the mango from the plate and place it in the pan"], "length": 243}
+{"episode_index": 1007, "tasks": ["pick the carrot from the counter and place it in the microwave"], "length": 494}
+{"episode_index": 1008, "tasks": ["press the button on the coffee machine to serve coffee"], "length": 111}
+{"episode_index": 1009, "tasks": ["turn the sink spout to the right"], "length": 133}
+{"episode_index": 1010, "tasks": ["pick the mug from the counter and place it under the coffee machine dispenser"], "length": 273}
+{"episode_index": 1011, "tasks": ["turn on the rear right burner of the stove"], "length": 157}
+{"episode_index": 1012, "tasks": ["pick the kiwi from the counter and place it in the sink"], "length": 345}
+{"episode_index": 1013, "tasks": ["close the left drawer"], "length": 220}
+{"episode_index": 1014, "tasks": ["pick the corn from the microwave and place it on plate located on the counter"], "length": 269}
+{"episode_index": 1015, "tasks": ["pick the orange from the sink and place it on the plate located on the counter"], "length": 269}
+{"episode_index": 1016, "tasks": ["pick the tomato from the microwave and place it on plate located on the counter"], "length": 308}
+{"episode_index": 1017, "tasks": ["pick the cheese from the counter and place it in the microwave"], "length": 428}
+{"episode_index": 1018, "tasks": ["open the cabinet doors"], "length": 745}
+{"episode_index": 1019, "tasks": ["press the button on the coffee machine to serve coffee"], "length": 94}
+{"episode_index": 1020, "tasks": ["press the stop button on the microwave"], "length": 247}
+{"episode_index": 1021, "tasks": ["navigate to the sink"], "length": 197}
+{"episode_index": 1022, "tasks": ["navigate to the fridge"], "length": 129}
+{"episode_index": 1023, "tasks": ["navigate to the coffee machine"], "length": 322}
+{"episode_index": 1024, "tasks": ["close the microwave door"], "length": 271}
+{"episode_index": 1025, "tasks": ["open the cabinet doors"], "length": 707}
+{"episode_index": 1026, "tasks": ["press the start button on the microwave"], "length": 180}
+{"episode_index": 1027, "tasks": ["pick the potato from the counter and place it in the microwave"], "length": 419}
+{"episode_index": 1028, "tasks": ["turn off the rear right burner of the stove"], "length": 209}
+{"episode_index": 1029, "tasks": ["open the cabinet door"], "length": 352}
+{"episode_index": 1030, "tasks": ["turn off the rear right burner of the stove"], "length": 219}
+{"episode_index": 1031, "tasks": ["open the cabinet door"], "length": 389}
+{"episode_index": 1032, "tasks": ["pick the sweet potato from the pan and place it on the plate"], "length": 251}
+{"episode_index": 1033, "tasks": ["navigate to the sink"], "length": 141}
+{"episode_index": 1034, "tasks": ["close the right drawer"], "length": 135}
+{"episode_index": 1035, "tasks": ["pick the apple from the counter and place it in the sink"], "length": 336}
+{"episode_index": 1036, "tasks": ["pick the broccoli from the plate and place it in the pan"], "length": 234}
+{"episode_index": 1037, "tasks": ["press the stop button on the microwave"], "length": 12}
+{"episode_index": 1038, "tasks": ["pick the tomato from the pan and place it on the plate"], "length": 265}
+{"episode_index": 1039, "tasks": ["turn on the sink faucet"], "length": 342}
+{"episode_index": 1040, "tasks": ["pick the onion from the cabinet and place it on the counter"], "length": 276}
+{"episode_index": 1041, "tasks": ["pick the can from the counter and place it in the sink"], "length": 445}
+{"episode_index": 1042, "tasks": ["open the cabinet door"], "length": 366}
+{"episode_index": 1043, "tasks": ["press the start button on the microwave"], "length": 246}
+{"episode_index": 1044, "tasks": ["pick the mango from the counter and place it in the cabinet"], "length": 186}
+{"episode_index": 1045, "tasks": ["turn the sink spout to the right"], "length": 113}
+{"episode_index": 1046, "tasks": ["pick the bar from the cabinet and place it on the counter"], "length": 381}
+{"episode_index": 1047, "tasks": ["pick the steak from the pan and place it on the plate"], "length": 351}
+{"episode_index": 1048, "tasks": ["close the cabinet doors"], "length": 346}
+{"episode_index": 1049, "tasks": ["pick the tangerine from the counter and place it in the sink"], "length": 490}
+{"episode_index": 1050, "tasks": ["open the left drawer"], "length": 234}
+{"episode_index": 1051, "tasks": ["turn on the rear center burner of the stove"], "length": 95}
+{"episode_index": 1052, "tasks": ["navigate to the oven"], "length": 190}
+{"episode_index": 1053, "tasks": ["navigate to the coffee machine"], "length": 115}
+{"episode_index": 1054, "tasks": ["turn on the front right burner of the stove"], "length": 349}
+{"episode_index": 1055, "tasks": ["navigate to the sink"], "length": 160}
+{"episode_index": 1056, "tasks": ["pick the egg from the pan and place it on the plate"], "length": 227}
+{"episode_index": 1057, "tasks": ["pick the tomato from the pan and place it on the plate"], "length": 255}
+{"episode_index": 1058, "tasks": ["open the microwave door"], "length": 245}
+{"episode_index": 1059, "tasks": ["press the stop button on the microwave"], "length": 12}
+{"episode_index": 1060, "tasks": ["close the microwave door"], "length": 257}
+{"episode_index": 1061, "tasks": ["close the microwave door"], "length": 237}
+{"episode_index": 1062, "tasks": ["open the left drawer"], "length": 222}
+{"episode_index": 1063, "tasks": ["pick the cheese from the plate and place it in the pan"], "length": 308}
+{"episode_index": 1064, "tasks": ["turn off the front left burner of the stove"], "length": 192}
+{"episode_index": 1065, "tasks": ["turn the sink spout to the left"], "length": 123}
+{"episode_index": 1066, "tasks": ["turn the sink spout to the right"], "length": 91}
+{"episode_index": 1067, "tasks": ["close the microwave door"], "length": 229}
+{"episode_index": 1068, "tasks": ["pick the mug from the counter and place it under the coffee machine dispenser"], "length": 236}
+{"episode_index": 1069, "tasks": ["navigate to the toaster"], "length": 247}
+{"episode_index": 1070, "tasks": ["press the button on the coffee machine to serve coffee"], "length": 103}
+{"episode_index": 1071, "tasks": ["navigate to the oven"], "length": 162}
+{"episode_index": 1072, "tasks": ["pick the ketchup from the counter and place it in the cabinet"], "length": 364}
+{"episode_index": 1073, "tasks": ["pick the pear from the sink and place it on the plate located on the counter"], "length": 215}
+{"episode_index": 1074, "tasks": ["open the cabinet doors"], "length": 800}
+{"episode_index": 1075, "tasks": ["close the right drawer"], "length": 150}
+{"episode_index": 1076, "tasks": ["pick the canned food from the counter and place it in the cabinet"], "length": 231}
+{"episode_index": 1077, "tasks": ["press the start button on the microwave"], "length": 268}
+{"episode_index": 1078, "tasks": ["pick the egg from the sink and place it on the plate located on the counter"], "length": 313}
+{"episode_index": 1079, "tasks": ["pick the garlic from the cabinet and place it on the counter"], "length": 307}
+{"episode_index": 1080, "tasks": ["turn on the rear right burner of the stove"], "length": 245}
+{"episode_index": 1081, "tasks": ["navigate to the microwave"], "length": 88}
+{"episode_index": 1082, "tasks": ["navigate to the microwave"], "length": 246}
+{"episode_index": 1083, "tasks": ["press the start button on the microwave"], "length": 178}
+{"episode_index": 1084, "tasks": ["press the stop button on the microwave"], "length": 209}
+{"episode_index": 1085, "tasks": ["turn on the sink faucet"], "length": 323}
+{"episode_index": 1086, "tasks": ["pick the cheese from the plate and place it in the pan"], "length": 302}
+{"episode_index": 1087, "tasks": ["pick the bell pepper from the microwave and place it on plate located on the counter"], "length": 324}
+{"episode_index": 1088, "tasks": ["pick the mug from the counter and place it under the coffee machine dispenser"], "length": 305}
+{"episode_index": 1089, "tasks": ["open the cabinet doors"], "length": 759}
+{"episode_index": 1090, "tasks": ["close the right drawer"], "length": 187}
+{"episode_index": 1091, "tasks": ["turn the sink spout to the left"], "length": 106}
+{"episode_index": 1092, "tasks": ["press the stop button on the microwave"], "length": 205}
+{"episode_index": 1093, "tasks": ["turn off the sink faucet"], "length": 304}
+{"episode_index": 1094, "tasks": ["press the stop button on the microwave"], "length": 218}
+{"episode_index": 1095, "tasks": ["turn off the rear right burner of the stove"], "length": 145}
+{"episode_index": 1096, "tasks": ["turn on the sink faucet"], "length": 170}
+{"episode_index": 1097, "tasks": ["turn off the rear right burner of the stove"], "length": 142}
+{"episode_index": 1098, "tasks": ["pick the mug from the counter and place it in the cabinet"], "length": 253}
+{"episode_index": 1099, "tasks": ["turn on the rear left burner of the stove"], "length": 243}
+{"episode_index": 1100, "tasks": ["turn on the center burner of the stove"], "length": 203}
+{"episode_index": 1101, "tasks": ["pick the broccoli from the microwave and place it on plate located on the counter"], "length": 277}
+{"episode_index": 1102, "tasks": ["pick the mug from under the coffee machine dispenser and place it on the counter"], "length": 343}
+{"episode_index": 1103, "tasks": ["press the button on the coffee machine to serve coffee"], "length": 138}
+{"episode_index": 1104, "tasks": ["turn off the sink faucet"], "length": 256}
+{"episode_index": 1105, "tasks": ["navigate to the coffee machine"], "length": 208}
+{"episode_index": 1106, "tasks": ["pick the mug from under the coffee machine dispenser and place it on the counter"], "length": 290}
+{"episode_index": 1107, "tasks": ["pick the mango from the plate and place it in the pan"], "length": 299}
+{"episode_index": 1108, "tasks": ["close the right drawer"], "length": 176}
+{"episode_index": 1109, "tasks": ["turn on the rear left burner of the stove"], "length": 178}
+{"episode_index": 1110, "tasks": ["pick the mug from under the coffee machine dispenser and place it on the counter"], "length": 257}
+{"episode_index": 1111, "tasks": ["pick the mug from under the coffee machine dispenser and place it on the counter"], "length": 344}
+{"episode_index": 1112, "tasks": ["pick the sweet potato from the pan and place it on the plate"], "length": 335}
+{"episode_index": 1113, "tasks": ["turn off the sink faucet"], "length": 134}
+{"episode_index": 1114, "tasks": ["pick the mug from the counter and place it under the coffee machine dispenser"], "length": 301}
+{"episode_index": 1115, "tasks": ["close the left drawer"], "length": 194}
+{"episode_index": 1116, "tasks": ["pick the broccoli from the pan and place it on the plate"], "length": 253}
+{"episode_index": 1117, "tasks": ["close the cabinet doors"], "length": 355}
+{"episode_index": 1118, "tasks": ["turn the sink spout to the left"], "length": 94}
+{"episode_index": 1119, "tasks": ["open the cabinet doors"], "length": 759}
+{"episode_index": 1120, "tasks": ["navigate to the sink"], "length": 178}
+{"episode_index": 1121, "tasks": ["press the stop button on the microwave"], "length": 219}
+{"episode_index": 1122, "tasks": ["open the cabinet doors"], "length": 729}
+{"episode_index": 1123, "tasks": ["pick the egg from the microwave and place it on plate located on the counter"], "length": 244}
+{"episode_index": 1124, "tasks": ["pick the mug from under the coffee machine dispenser and place it on the counter"], "length": 324}
+{"episode_index": 1125, "tasks": ["pick the broccoli from the microwave and place it on plate located on the counter"], "length": 345}
+{"episode_index": 1126, "tasks": ["pick the jam from the counter and place it in the cabinet"], "length": 213}
+{"episode_index": 1127, "tasks": ["pick the mushroom from the sink and place it on the plate located on the counter"], "length": 251}
+{"episode_index": 1128, "tasks": ["pick the mug from the counter and place it under the coffee machine dispenser"], "length": 366}
+{"episode_index": 1129, "tasks": ["close the left drawer"], "length": 192}
+{"episode_index": 1130, "tasks": ["pick the mug from the counter and place it under the coffee machine dispenser"], "length": 200}
+{"episode_index": 1131, "tasks": ["press the start button on the microwave"], "length": 277}
+{"episode_index": 1132, "tasks": ["turn off the sink faucet"], "length": 101}
+{"episode_index": 1133, "tasks": ["pick the mug from under the coffee machine dispenser and place it on the counter"], "length": 341}
+{"episode_index": 1134, "tasks": ["pick the corn from the counter and place it in the microwave"], "length": 411}
+{"episode_index": 1135, "tasks": ["press the start button on the microwave"], "length": 250}
+{"episode_index": 1136, "tasks": ["pick the spray from the counter and place it in the cabinet"], "length": 218}
+{"episode_index": 1137, "tasks": ["pick the bell pepper from the counter and place it in the cabinet"], "length": 255}
+{"episode_index": 1138, "tasks": ["navigate to the dishwasher"], "length": 187}
+{"episode_index": 1139, "tasks": ["navigate to the coffee machine"], "length": 92}
+{"episode_index": 1140, "tasks": ["pick the lime from the plate and place it in the pan"], "length": 358}
+{"episode_index": 1141, "tasks": ["press the stop button on the microwave"], "length": 210}
+{"episode_index": 1142, "tasks": ["navigate to the fridge"], "length": 289}
+{"episode_index": 1143, "tasks": ["turn on the rear left burner of the stove"], "length": 290}
+{"episode_index": 1144, "tasks": ["pick the carrot from the counter and place it in the microwave"], "length": 420}
+{"episode_index": 1145, "tasks": ["turn on the sink faucet"], "length": 181}
+{"episode_index": 1146, "tasks": ["turn on the sink faucet"], "length": 224}
+{"episode_index": 1147, "tasks": ["close the cabinet doors"], "length": 460}
+{"episode_index": 1148, "tasks": ["pick the mug from under the coffee machine dispenser and place it on the counter"], "length": 304}
+{"episode_index": 1149, "tasks": ["turn off the sink faucet"], "length": 192}
+{"episode_index": 1150, "tasks": ["close the right drawer"], "length": 193}
+{"episode_index": 1151, "tasks": ["close the cabinet doors"], "length": 395}
+{"episode_index": 1152, "tasks": ["open the right drawer"], "length": 194}
+{"episode_index": 1153, "tasks": ["close the microwave door"], "length": 291}
+{"episode_index": 1154, "tasks": ["pick the steak from the pan and place it in the bowl"], "length": 248}
+{"episode_index": 1155, "tasks": ["pick the garlic from the plate and place it in the pan"], "length": 356}
+{"episode_index": 1156, "tasks": ["pick the mug from under the coffee machine dispenser and place it on the counter"], "length": 353}
+{"episode_index": 1157, "tasks": ["pick the cucumber from the cabinet and place it on the counter"], "length": 260}
+{"episode_index": 1158, "tasks": ["turn the sink spout to the left"], "length": 148}
+{"episode_index": 1159, "tasks": ["pick the squash from the counter and place it in the microwave"], "length": 482}
+{"episode_index": 1160, "tasks": ["pick the mug from the counter and place it under the coffee machine dispenser"], "length": 323}
+{"episode_index": 1161, "tasks": ["pick the tomato from the sink and place it on the plate located on the counter"], "length": 270}
+{"episode_index": 1162, "tasks": ["turn the sink spout to the left"], "length": 159}
+{"episode_index": 1163, "tasks": ["pick the sweet potato from the plate and place it in the pan"], "length": 243}
+{"episode_index": 1164, "tasks": ["open the left drawer"], "length": 216}
+{"episode_index": 1165, "tasks": ["pick the mug from the counter and place it under the coffee machine dispenser"], "length": 247}
+{"episode_index": 1166, "tasks": ["pick the cheese from the counter and place it in the microwave"], "length": 399}
+{"episode_index": 1167, "tasks": ["pick the tomato from the cabinet and place it on the counter"], "length": 286}
+{"episode_index": 1168, "tasks": ["turn on the front center burner of the stove"], "length": 101}
+{"episode_index": 1169, "tasks": ["open the microwave door"], "length": 271}
+{"episode_index": 1170, "tasks": ["open the right drawer"], "length": 191}
+{"episode_index": 1171, "tasks": ["close the cabinet door"], "length": 261}
+{"episode_index": 1172, "tasks": ["pick the bell pepper from the sink and place it on the plate located on the counter"], "length": 275}
+{"episode_index": 1173, "tasks": ["open the cabinet doors"], "length": 756}
+{"episode_index": 1174, "tasks": ["pick the tomato from the pan and place it on the plate"], "length": 252}
+{"episode_index": 1175, "tasks": ["turn on the rear right burner of the stove"], "length": 253}
+{"episode_index": 1176, "tasks": ["pick the garlic from the microwave and place it on plate located on the counter"], "length": 266}
+{"episode_index": 1177, "tasks": ["turn on the sink faucet"], "length": 271}
+{"episode_index": 1178, "tasks": ["press the stop button on the microwave"], "length": 217}
+{"episode_index": 1179, "tasks": ["press the stop button on the microwave"], "length": 176}
+{"episode_index": 1180, "tasks": ["turn on the rear right burner of the stove"], "length": 253}
+{"episode_index": 1181, "tasks": ["close the cabinet doors"], "length": 356}
+{"episode_index": 1182, "tasks": ["close the right drawer"], "length": 205}
+{"episode_index": 1183, "tasks": ["pick the steak from the counter and place it in the microwave"], "length": 416}
+{"episode_index": 1184, "tasks": ["pick the rolling pin from the counter and place it in the sink"], "length": 344}
+{"episode_index": 1185, "tasks": ["open the left drawer"], "length": 198}
+{"episode_index": 1186, "tasks": ["pick the carrot from the microwave and place it on plate located on the counter"], "length": 271}
+{"episode_index": 1187, "tasks": ["pick the kettle electric from the counter and place it in the cabinet"], "length": 277}
+{"episode_index": 1188, "tasks": ["turn on the sink faucet"], "length": 210}
+{"episode_index": 1189, "tasks": ["turn off the sink faucet"], "length": 178}
+{"episode_index": 1190, "tasks": ["pick the avocado from the sink and place it on the plate located on the counter"], "length": 262}
+{"episode_index": 1191, "tasks": ["pick the coffee cup from the cabinet and place it on the counter"], "length": 283}
+{"episode_index": 1192, "tasks": ["pick the sweet potato from the microwave and place it on plate located on the counter"], "length": 311}
+{"episode_index": 1193, "tasks": ["pick the soap dispenser from the counter and place it in the sink"], "length": 343}
+{"episode_index": 1194, "tasks": ["navigate to the stove"], "length": 107}
+{"episode_index": 1195, "tasks": ["navigate to the toaster"], "length": 176}
+{"episode_index": 1196, "tasks": ["press the start button on the microwave"], "length": 256}
+{"episode_index": 1197, "tasks": ["turn off the sink faucet"], "length": 240}
+{"episode_index": 1198, "tasks": ["turn off the sink faucet"], "length": 154}
+{"episode_index": 1199, "tasks": ["close the cabinet doors"], "length": 358}
+{"episode_index": 1200, "tasks": ["pick the can from the counter and place it in the sink"], "length": 503}
+{"episode_index": 1201, "tasks": ["pick the mug from under the coffee machine dispenser and place it on the counter"], "length": 313}
+{"episode_index": 1202, "tasks": ["pick the mushroom from the pan and place it on the plate"], "length": 262}
+{"episode_index": 1203, "tasks": ["open the right drawer"], "length": 202}
+{"episode_index": 1204, "tasks": ["pick the cheese from the counter and place it in the microwave"], "length": 384}
+{"episode_index": 1205, "tasks": ["turn off the sink faucet"], "length": 261}
+{"episode_index": 1206, "tasks": ["pick the sweet potato from the sink and place it on the plate located on the counter"], "length": 227}
+{"episode_index": 1207, "tasks": ["pick the bar from the cabinet and place it on the counter"], "length": 293}
+{"episode_index": 1208, "tasks": ["pick the sweet potato from the counter and place it in the microwave"], "length": 370}
+{"episode_index": 1209, "tasks": ["pick the boxed drink from the cabinet and place it on the counter"], "length": 318}
+{"episode_index": 1210, "tasks": ["press the start button on the microwave"], "length": 217}
+{"episode_index": 1211, "tasks": ["turn on the sink faucet"], "length": 212}
+{"episode_index": 1212, "tasks": ["pick the fish from the pan and place it on the plate"], "length": 311}
+{"episode_index": 1213, "tasks": ["turn on the center burner of the stove"], "length": 161}
+{"episode_index": 1214, "tasks": ["pick the mug from the counter and place it under the coffee machine dispenser"], "length": 352}
+{"episode_index": 1215, "tasks": ["pick the steak from the cabinet and place it on the counter"], "length": 332}
+{"episode_index": 1216, "tasks": ["turn off the rear right burner of the stove"], "length": 148}
+{"episode_index": 1217, "tasks": ["press the stop button on the microwave"], "length": 231}
+{"episode_index": 1218, "tasks": ["turn the sink spout to the right"], "length": 120}
+{"episode_index": 1219, "tasks": ["pick the mug from the counter and place it under the coffee machine dispenser"], "length": 237}
+{"episode_index": 1220, "tasks": ["turn on the sink faucet"], "length": 265}
+{"episode_index": 1221, "tasks": ["pick the sweet potato from the plate and place it in the pan"], "length": 301}
+{"episode_index": 1222, "tasks": ["close the left drawer"], "length": 191}
+{"episode_index": 1223, "tasks": ["pick the lime from the pan and place it on the plate"], "length": 255}
+{"episode_index": 1224, "tasks": ["close the cabinet doors"], "length": 469}
+{"episode_index": 1225, "tasks": ["turn off the front right burner of the stove"], "length": 200}
+{"episode_index": 1226, "tasks": ["press the stop button on the microwave"], "length": 180}
+{"episode_index": 1227, "tasks": ["open the cabinet doors"], "length": 606}
+{"episode_index": 1228, "tasks": ["press the button on the coffee machine to serve coffee"], "length": 118}
+{"episode_index": 1229, "tasks": ["open the cabinet doors"], "length": 694}
+{"episode_index": 1230, "tasks": ["open the cabinet doors"], "length": 889}
+{"episode_index": 1231, "tasks": ["pick the banana from the sink and place it on the plate located on the counter"], "length": 284}
+{"episode_index": 1232, "tasks": ["pick the yogurt from the cabinet and place it on the counter"], "length": 349}
+{"episode_index": 1233, "tasks": ["pick the fish from the microwave and place it on plate located on the counter"], "length": 366}
+{"episode_index": 1234, "tasks": ["close the microwave door"], "length": 210}
+{"episode_index": 1235, "tasks": ["pick the bell pepper from the counter and place it in the microwave"], "length": 501}
+{"episode_index": 1236, "tasks": ["turn on the sink faucet"], "length": 260}
+{"episode_index": 1237, "tasks": ["pick the corn from the sink and place it on the plate located on the counter"], "length": 259}
+{"episode_index": 1238, "tasks": ["pick the tomato from the pan and place it in the bowl"], "length": 302}
+{"episode_index": 1239, "tasks": ["turn off the front right burner of the stove"], "length": 196}
+{"episode_index": 1240, "tasks": ["press the start button on the microwave"], "length": 210}
+{"episode_index": 1241, "tasks": ["navigate to the toaster"], "length": 194}
+{"episode_index": 1242, "tasks": ["pick the bar soap from the counter and place it in the cabinet"], "length": 204}
+{"episode_index": 1243, "tasks": ["pick the corn from the microwave and place it on plate located on the counter"], "length": 340}
+{"episode_index": 1244, "tasks": ["open the cabinet doors"], "length": 746}
+{"episode_index": 1245, "tasks": ["turn the sink spout to the right"], "length": 118}
+{"episode_index": 1246, "tasks": ["pick the bottled drink from the counter and place it in the sink"], "length": 403}
+{"episode_index": 1247, "tasks": ["close the cabinet doors"], "length": 325}
+{"episode_index": 1248, "tasks": ["close the cabinet door"], "length": 202}
+{"episode_index": 1249, "tasks": ["navigate to the stove"], "length": 111}
+{"episode_index": 1250, "tasks": ["turn on the front right burner of the stove"], "length": 225}
+{"episode_index": 1251, "tasks": ["pick the broccoli from the plate and place it in the pan"], "length": 352}
+{"episode_index": 1252, "tasks": ["open the cabinet door"], "length": 291}
+{"episode_index": 1253, "tasks": ["pick the broccoli from the microwave and place it on plate located on the counter"], "length": 301}
+{"episode_index": 1254, "tasks": ["pick the milk from the sink and place it on the plate located on the counter"], "length": 250}
+{"episode_index": 1255, "tasks": ["pick the bell pepper from the pan and place it in the bowl"], "length": 247}
+{"episode_index": 1256, "tasks": ["close the left drawer"], "length": 227}
+{"episode_index": 1257, "tasks": ["pick the garlic from the sink and place it on the plate located on the counter"], "length": 259}
+{"episode_index": 1258, "tasks": ["press the button on the coffee machine to serve coffee"], "length": 149}
+{"episode_index": 1259, "tasks": ["pick the banana from the cabinet and place it on the counter"], "length": 304}
+{"episode_index": 1260, "tasks": ["close the cabinet door"], "length": 212}
+{"episode_index": 1261, "tasks": ["pick the mug from the counter and place it under the coffee machine dispenser"], "length": 202}
+{"episode_index": 1262, "tasks": ["pick the fish from the microwave and place it on plate located on the counter"], "length": 239}
+{"episode_index": 1263, "tasks": ["navigate to the shelves"], "length": 154}
+{"episode_index": 1264, "tasks": ["close the cabinet door"], "length": 245}
+{"episode_index": 1265, "tasks": ["turn on the sink faucet"], "length": 236}
+{"episode_index": 1266, "tasks": ["turn on the sink faucet"], "length": 237}
+{"episode_index": 1267, "tasks": ["open the cabinet door"], "length": 350}
+{"episode_index": 1268, "tasks": ["open the left drawer"], "length": 212}
+{"episode_index": 1269, "tasks": ["navigate to the dishwasher"], "length": 222}
+{"episode_index": 1270, "tasks": ["press the button on the coffee machine to serve coffee"], "length": 117}
+{"episode_index": 1271, "tasks": ["close the left drawer"], "length": 183}
+{"episode_index": 1272, "tasks": ["pick the condiment bottle from the counter and place it in the sink"], "length": 359}
+{"episode_index": 1273, "tasks": ["turn off the sink faucet"], "length": 146}
+{"episode_index": 1274, "tasks": ["navigate to the oven"], "length": 130}
+{"episode_index": 1275, "tasks": ["pick the tomato from the counter and place it in the microwave"], "length": 441}
+{"episode_index": 1276, "tasks": ["pick the squash from the microwave and place it on plate located on the counter"], "length": 326}
+{"episode_index": 1277, "tasks": ["pick the potato from the pan and place it on the plate"], "length": 248}
+{"episode_index": 1278, "tasks": ["pick the fish from the microwave and place it on plate located on the counter"], "length": 292}
+{"episode_index": 1279, "tasks": ["turn on the sink faucet"], "length": 285}
+{"episode_index": 1280, "tasks": ["pick the jug from the counter and place it in the cabinet"], "length": 318}
+{"episode_index": 1281, "tasks": ["pick the carrot from the microwave and place it on plate located on the counter"], "length": 264}
+{"episode_index": 1282, "tasks": ["pick the mug from the counter and place it under the coffee machine dispenser"], "length": 243}
+{"episode_index": 1283, "tasks": ["turn off the sink faucet"], "length": 114}
+{"episode_index": 1284, "tasks": ["pick the banana from the sink and place it on the plate located on the counter"], "length": 259}
+{"episode_index": 1285, "tasks": ["press the button on the coffee machine to serve coffee"], "length": 110}
+{"episode_index": 1286, "tasks": ["pick the squash from the microwave and place it on plate located on the counter"], "length": 202}
+{"episode_index": 1287, "tasks": ["close the cabinet door"], "length": 252}
+{"episode_index": 1288, "tasks": ["pick the egg from the pan and place it in the bowl"], "length": 289}
+{"episode_index": 1289, "tasks": ["pick the potato from the plate and place it in the pan"], "length": 371}
+{"episode_index": 1290, "tasks": ["open the left drawer"], "length": 225}
+{"episode_index": 1291, "tasks": ["pick the water bottle from the counter and place it in the cabinet"], "length": 188}
+{"episode_index": 1292, "tasks": ["close the microwave door"], "length": 250}
+{"episode_index": 1293, "tasks": ["press the button on the coffee machine to serve coffee"], "length": 120}
+{"episode_index": 1294, "tasks": ["close the right drawer"], "length": 192}
+{"episode_index": 1295, "tasks": ["pick the teapot from the counter and place it in the sink"], "length": 409}
+{"episode_index": 1296, "tasks": ["press the start button on the microwave"], "length": 195}
+{"episode_index": 1297, "tasks": ["turn on the sink faucet"], "length": 214}
+{"episode_index": 1298, "tasks": ["press the start button on the microwave"], "length": 249}
+{"episode_index": 1299, "tasks": ["pick the mug from the counter and place it under the coffee machine dispenser"], "length": 232}
+{"episode_index": 1300, "tasks": ["pick the fish from the plate and place it in the pan"], "length": 360}
+{"episode_index": 1301, "tasks": ["navigate to the stove"], "length": 122}
+{"episode_index": 1302, "tasks": ["turn the sink spout to the right"], "length": 88}
+{"episode_index": 1303, "tasks": ["turn on the rear left burner of the stove"], "length": 146}
+{"episode_index": 1304, "tasks": ["pick the kiwi from the cabinet and place it on the counter"], "length": 282}
+{"episode_index": 1305, "tasks": ["pick the soap dispenser from the counter and place it in the sink"], "length": 521}
+{"episode_index": 1306, "tasks": ["navigate to the toaster"], "length": 177}
+{"episode_index": 1307, "tasks": ["turn the sink spout to the right"], "length": 103}
+{"episode_index": 1308, "tasks": ["navigate to the shelves"], "length": 151}
+{"episode_index": 1309, "tasks": ["press the button on the coffee machine to serve coffee"], "length": 90}
+{"episode_index": 1310, "tasks": ["open the right drawer"], "length": 201}
+{"episode_index": 1311, "tasks": ["pick the mug from under the coffee machine dispenser and place it on the counter"], "length": 355}
+{"episode_index": 1312, "tasks": ["turn the sink spout to the left"], "length": 116}
+{"episode_index": 1313, "tasks": ["turn the sink spout to the left"], "length": 149}
+{"episode_index": 1314, "tasks": ["pick the canned food from the counter and place it in the sink"], "length": 680}
+{"episode_index": 1315, "tasks": ["pick the tomato from the cabinet and place it on the counter"], "length": 270}
+{"episode_index": 1316, "tasks": ["press the button on the coffee machine to serve coffee"], "length": 142}
+{"episode_index": 1317, "tasks": ["pick the fish from the sink and place it on the plate located on the counter"], "length": 270}
+{"episode_index": 1318, "tasks": ["pick the mug from under the coffee machine dispenser and place it on the counter"], "length": 350}
+{"episode_index": 1319, "tasks": ["navigate to the microwave"], "length": 169}
+{"episode_index": 1320, "tasks": ["pick the mug from the counter and place it under the coffee machine dispenser"], "length": 250}
+{"episode_index": 1321, "tasks": ["navigate to the oven"], "length": 140}
+{"episode_index": 1322, "tasks": ["press the button on the coffee machine to serve coffee"], "length": 116}
+{"episode_index": 1323, "tasks": ["pick the steak from the pan and place it on the plate"], "length": 234}
+{"episode_index": 1324, "tasks": ["turn the sink spout to the right"], "length": 83}
+{"episode_index": 1325, "tasks": ["navigate to the coffee machine"], "length": 244}
+{"episode_index": 1326, "tasks": ["press the button on the coffee machine to serve coffee"], "length": 89}
+{"episode_index": 1327, "tasks": ["turn off the sink faucet"], "length": 232}
+{"episode_index": 1328, "tasks": ["navigate to the toaster"], "length": 105}
+{"episode_index": 1329, "tasks": ["navigate to the shelves"], "length": 154}
+{"episode_index": 1330, "tasks": ["navigate to the dishwasher"], "length": 170}
+{"episode_index": 1331, "tasks": ["pick the mug from the counter and place it under the coffee machine dispenser"], "length": 285}
+{"episode_index": 1332, "tasks": ["pick the lime from the plate and place it in the pan"], "length": 327}
+{"episode_index": 1333, "tasks": ["pick the can from the counter and place it in the cabinet"], "length": 214}
+{"episode_index": 1334, "tasks": ["open the microwave door"], "length": 220}
+{"episode_index": 1335, "tasks": ["pick the potato from the counter and place it in the microwave"], "length": 440}
+{"episode_index": 1336, "tasks": ["pick the bar soap from the cabinet and place it on the counter"], "length": 361}
+{"episode_index": 1337, "tasks": ["pick the eggplant from the pan and place it in the bowl"], "length": 251}
+{"episode_index": 1338, "tasks": ["press the start button on the microwave"], "length": 217}
+{"episode_index": 1339, "tasks": ["pick the carrot from the plate and place it in the pan"], "length": 335}
+{"episode_index": 1340, "tasks": ["pick the broccoli from the cabinet and place it on the counter"], "length": 306}
+{"episode_index": 1341, "tasks": ["pick the egg from the counter and place it in the sink"], "length": 357}
+{"episode_index": 1342, "tasks": ["turn the sink spout to the right"], "length": 124}
+{"episode_index": 1343, "tasks": ["pick the water bottle from the counter and place it in the sink"], "length": 449}
+{"episode_index": 1344, "tasks": ["pick the water bottle from the cabinet and place it on the counter"], "length": 372}
+{"episode_index": 1345, "tasks": ["pick the mug from under the coffee machine dispenser and place it on the counter"], "length": 386}
+{"episode_index": 1346, "tasks": ["turn off the front right burner of the stove"], "length": 119}
+{"episode_index": 1347, "tasks": ["close the left drawer"], "length": 201}
+{"episode_index": 1348, "tasks": ["turn on the front left burner of the stove"], "length": 118}
+{"episode_index": 1349, "tasks": ["turn off the sink faucet"], "length": 146}
+{"episode_index": 1350, "tasks": ["turn on the sink faucet"], "length": 203}
+{"episode_index": 1351, "tasks": ["press the button on the coffee machine to serve coffee"], "length": 85}
+{"episode_index": 1352, "tasks": ["turn off the sink faucet"], "length": 164}
+{"episode_index": 1353, "tasks": ["pick the apple from the plate and place it in the pan"], "length": 355}
+{"episode_index": 1354, "tasks": ["press the start button on the microwave"], "length": 217}
+{"episode_index": 1355, "tasks": ["close the left drawer"], "length": 179}
+{"episode_index": 1356, "tasks": ["pick the lime from the sink and place it on the plate located on the counter"], "length": 298}
+{"episode_index": 1357, "tasks": ["pick the potato from the pan and place it on the plate"], "length": 220}
+{"episode_index": 1358, "tasks": ["close the right drawer"], "length": 187}
+{"episode_index": 1359, "tasks": ["pick the mug from under the coffee machine dispenser and place it on the counter"], "length": 272}
+{"episode_index": 1360, "tasks": ["press the button on the coffee machine to serve coffee"], "length": 106}
+{"episode_index": 1361, "tasks": ["pick the bread from the cabinet and place it on the counter"], "length": 305}
+{"episode_index": 1362, "tasks": ["pick the mug from under the coffee machine dispenser and place it on the counter"], "length": 344}
+{"episode_index": 1363, "tasks": ["pick the carrot from the pan and place it on the plate"], "length": 241}
+{"episode_index": 1364, "tasks": ["pick the mug from the counter and place it under the coffee machine dispenser"], "length": 261}
+{"episode_index": 1365, "tasks": ["pick the mug from the counter and place it under the coffee machine dispenser"], "length": 294}
+{"episode_index": 1366, "tasks": ["turn off the front left burner of the stove"], "length": 250}
+{"episode_index": 1367, "tasks": ["press the start button on the microwave"], "length": 207}
+{"episode_index": 1368, "tasks": ["press the start button on the microwave"], "length": 226}
+{"episode_index": 1369, "tasks": ["turn the sink spout to the left"], "length": 158}
+{"episode_index": 1370, "tasks": ["close the cabinet door"], "length": 322}
+{"episode_index": 1371, "tasks": ["turn on the rear center burner of the stove"], "length": 146}
+{"episode_index": 1372, "tasks": ["pick the carrot from the counter and place it in the microwave"], "length": 509}
+{"episode_index": 1373, "tasks": ["close the microwave door"], "length": 289}
+{"episode_index": 1374, "tasks": ["turn the sink spout to the right"], "length": 136}
+{"episode_index": 1375, "tasks": ["pick the liquor from the counter and place it in the cabinet"], "length": 214}
+{"episode_index": 1376, "tasks": ["pick the egg from the plate and place it in the pan"], "length": 290}
+{"episode_index": 1377, "tasks": ["pick the avocado from the cabinet and place it on the counter"], "length": 357}
+{"episode_index": 1378, "tasks": ["press the start button on the microwave"], "length": 232}
+{"episode_index": 1379, "tasks": ["press the stop button on the microwave"], "length": 291}
+{"episode_index": 1380, "tasks": ["pick the potato from the counter and place it in the microwave"], "length": 429}
+{"episode_index": 1381, "tasks": ["pick the hot dog from the counter and place it in the microwave"], "length": 410}
