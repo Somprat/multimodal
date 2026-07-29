@@ -54,7 +54,7 @@ class ActionEncoding(IntEnum):
 OXE_DATASET_CONFIGS = {
     "fractal20220817_data": {
         "image_obs_keys": {"primary": "image", "secondary": None, "wrist": None},
-        "depth_obs_keys": {"primary": None, "secondary": None, "wrist": None},
+        "depth_obs_keys": {"primary": "depth", "secondary": None, "wrist": None},
         "state_obs_keys": ["base_pose_tool_reached", "gripper_closed"],
         "state_encoding": StateEncoding.POS_QUAT,
         "action_encoding": ActionEncoding.EEF_POS,
@@ -197,7 +197,7 @@ OXE_DATASET_CONFIGS = {
     },
     "nyu_rot_dataset_converted_externally_to_rlds": {
         "image_obs_keys": {"primary": "image", "secondary": None, "wrist": None},
-        "depth_obs_keys": {"primary": None, "secondary": None, "wrist": None},
+        "depth_obs_keys": {"primary": "depth_image", "secondary": None, "wrist": None},
         "state_obs_keys": ["eef_state", None, "gripper_state"],
         "state_encoding": StateEncoding.POS_EULER,
         "action_encoding": ActionEncoding.EEF_POS,

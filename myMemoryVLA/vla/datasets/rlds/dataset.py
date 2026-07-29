@@ -8,7 +8,7 @@ import copy
 import inspect
 import json
 from functools import partial
-from typing import Callable, Dict, List, Optional, Tuple, Union
+from typing import Callable, Dict, List, Optional, Sequence, Tuple, Union
 
 import dlimp as dl
 import numpy as np
@@ -44,6 +44,8 @@ def make_dataset_from_rlds(
     shuffle: bool = True,
     image_obs_keys: Dict[str, Optional[str]] = {},
     depth_obs_keys: Dict[str, Optional[str]] = {},
+    camera_intrinsics_key: Optional[str] = None,
+    camera_intrinsics: Optional[Sequence[Sequence[float]]] = None,
     state_obs_keys: List[Optional[str]] = (),
     language_key: Optional[str] = None,
     action_proprio_normalization_type: NormalizationType = NormalizationType.NORMAL,
@@ -127,6 +129,8 @@ def make_dataset_from_rlds(
     REQUIRED_KEYS = {"observation", "action"}
     if language_key is not None:
         REQUIRED_KEYS.add(language_key)
+    if camera_intrinsics_key is not None and camera_intrinsics is not None:
+        raise ValueError("Specify camera_intrinsics_key or camera_intrinsics, not both")
 
     def restructure(traj):
         # apply a standardization function, if provided
@@ -153,6 +157,21 @@ def make_dataset_from_rlds(
                 new_obs[f"depth_{new}"] = tf.repeat("", traj_len)  # padding
             else:
                 new_obs[f"depth_{new}"] = old_obs[old]
+
+        if camera_intrinsics_key is not None:
+            intrinsics = tf.cast(old_obs[camera_intrinsics_key], tf.float32)
+            if intrinsics.shape.rank == 2:
+                intrinsics = tf.repeat(intrinsics[None], traj_len, axis=0)
+            elif intrinsics.shape.rank != 3:
+                raise ValueError(
+                    f"{camera_intrinsics_key} must have shape [3, 3] or [T, 3, 3]"
+                )
+            new_obs["camera_intrinsics"] = intrinsics
+        elif camera_intrinsics is not None:
+            intrinsics = tf.convert_to_tensor(camera_intrinsics, dtype=tf.float32)
+            if intrinsics.shape != (3, 3):
+                raise ValueError("camera_intrinsics must have shape [3, 3]")
+            new_obs["camera_intrinsics"] = tf.repeat(intrinsics[None], traj_len, axis=0)
 
         if state_obs_keys:
             new_obs["proprio"] = tf.concat(

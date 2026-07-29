@@ -17,6 +17,13 @@ from absl import logging
 def augment(obs: Dict, seed: tf.Tensor, augment_kwargs: Union[Dict, Dict[str, Dict]]) -> Dict:
     """Augments images, skipping padding images."""
     image_names = {key[6:] for key in obs if key.startswith("image_")}
+    geometric_augmentations = {
+        "random_resized_crop",
+        "random_crop",
+        "random_flip_left_right",
+        "random_flip_up_down",
+        "random_rotation",
+    }
 
     # "augment_order" is required in augment_kwargs, so if it's there, we can assume that the user has passed
     # in a single augmentation dict (otherwise, we assume that the user has passed in a mapping from image
@@ -28,6 +35,12 @@ def augment(obs: Dict, seed: tf.Tensor, augment_kwargs: Union[Dict, Dict[str, Di
         if name not in augment_kwargs:
             continue
         kwargs = augment_kwargs[name]
+        unsupported = geometric_augmentations.intersection(kwargs)
+        if unsupported and "camera_intrinsics" in obs:
+            raise ValueError(
+                "Geometric image augmentation must transform RGB, depth, and intrinsics together; "
+                f"unsupported operations: {sorted(unsupported)}"
+            )
         logging.debug(f"Augmenting image_{name} with kwargs {kwargs}")
         obs[f"image_{name}"] = tf.cond(
             obs["pad_mask_dict"][f"image_{name}"],
@@ -56,6 +69,7 @@ def decode_and_resize(
     if isinstance(depth_resize_size, tuple):
         depth_resize_size = {name: depth_resize_size for name in depth_names}
 
+    primary_source_hw = None
     for name in image_names:
         if name not in resize_size:
             logging.warning(
@@ -71,6 +85,8 @@ def decode_and_resize(
                 image = tf.io.decode_image(image, expand_animations=False, dtype=tf.uint8)
         elif image.dtype != tf.uint8:
             raise ValueError(f"Unsupported image dtype: found image_{name} with dtype {image.dtype}")
+        if name == "primary":
+            primary_source_hw = tf.cast(tf.shape(image)[:2], tf.float32)
         if name in resize_size:
             image = dl.transforms.resize_image(image, size=resize_size[name])
         obs[f"image_{name}"] = image
@@ -95,5 +111,24 @@ def decode_and_resize(
             depth = dl.transforms.resize_depth_image(depth, size=depth_resize_size[name])
 
         obs[f"depth_{name}"] = depth
+
+    if "camera_intrinsics" in obs and "primary" in resize_size:
+        if primary_source_hw is None:
+            raise ValueError("camera_intrinsics requires image_primary")
+        target_height, target_width = resize_size["primary"]
+        source_height, source_width = primary_source_hw[0], primary_source_hw[1]
+        scale = tf.linalg.diag(
+            tf.stack(
+                [
+                    tf.cast(target_width, tf.float32) / source_width,
+                    tf.cast(target_height, tf.float32) / source_height,
+                    tf.constant(1.0, dtype=tf.float32),
+                ]
+            )
+        )
+        obs["camera_intrinsics"] = tf.matmul(
+            scale,
+            tf.cast(obs["camera_intrinsics"], tf.float32),
+        )
 
     return obs

@@ -56,6 +56,7 @@ class RLDSBatchTransform:
             {"from": "human", "value": f"What action should the robot take to {lang}?"},
             {"from": "gpt", "value": ""},
         ]
+
         for turn in conversation:
             prompt_builder.add_turn(turn["from"], turn["value"])
 
@@ -83,12 +84,12 @@ class RLDSBatchTransform:
 
         timesteps = rlds_batch["observation"]["timestep"]
         observation = rlds_batch["observation"]
-        print(observation.keys())
 
         output = dict(
             pixel_values=pixel_values,
             input_ids=input_ids,
             labels=labels,
+            instruction=lang,
             dataset_name=dataset_name,
             actions=action,
             action_masks=action_mask,
@@ -119,6 +120,15 @@ class RLDSBatchTransform:
         intrinsic = None
         if "camera_intrinsics" in observation:
             intrinsic = torch.tensor(observation["camera_intrinsics"][0], dtype = torch.float32)
+
+        if (depth is None) != (intrinsic is None):
+            raise ValueError(
+                "Point-cloud training samples must provide both depth_primary and camera_intrinsics"
+            )
+        if intrinsic is not None and intrinsic.shape != (3, 3):
+            raise ValueError(
+                f"camera_intrinsics must have shape [3, 3], got {tuple(intrinsic.shape)}"
+            )
 
         if depth is not None:
             output["depth"] = depth
@@ -170,6 +180,21 @@ class RLDSDataset(IterableDataset):
             load_language=True,
             action_proprio_normalization_type=NormalizationType.BOUNDS_Q99,
         )
+        if self.use_spatial_features:
+            for dataset_kwargs in per_dataset_kwargs:
+                dataset_name = dataset_kwargs["name"]
+                primary_depth_key = dataset_kwargs.get("depth_obs_keys", {}).get("primary")
+                if primary_depth_key is None:
+                    raise ValueError(
+                        f"{dataset_name} has no primary depth key configured for point-cloud training"
+                    )
+                if (
+                    dataset_kwargs.get("camera_intrinsics_key") is None
+                    and dataset_kwargs.get("camera_intrinsics") is None
+                ):
+                    raise ValueError(
+                        f"{dataset_name} must configure camera_intrinsics_key or a static camera_intrinsics matrix"
+                    )
         rlds_config = dict(
             traj_transform_kwargs=dict(
                 window_size=1,                                    # If we wanted to feed / predict more than one step
@@ -179,6 +204,7 @@ class RLDSDataset(IterableDataset):
             ),
             frame_transform_kwargs=dict(
                 resize_size=resize_resolution,
+                depth_resize_size=resize_resolution,
                 num_parallel_calls=16,                          # For CPU-intensive ops (decoding, resizing, etc.)
             ),
             dataset_kwargs_list=per_dataset_kwargs,
@@ -194,13 +220,11 @@ class RLDSDataset(IterableDataset):
         # If applicable, enable image augmentations
         if image_aug:
             rlds_config["frame_transform_kwargs"].update({"image_augment_kwargs" : dict(
-                random_resized_crop=dict(scale=[0.9, 0.9], ratio=[1.0, 1.0]),
                 random_brightness=[0.2],
                 random_contrast=[0.8, 1.2],
                 random_saturation=[0.8, 1.2], # real not, TODO
                 random_hue=[0.05], # TODO
                 augment_order=[
-                    "random_resized_crop",
                     "random_brightness",
                     "random_contrast",
                     "random_saturation",

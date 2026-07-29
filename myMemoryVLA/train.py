@@ -74,6 +74,8 @@ class TrainConfig:
     per_token_size: int = 256 # Token size for perception compression
     mem_length: int = 16 # Memory length
     retrieval_layers: int = 2 # Number of layers of memory retrieval
+    query_retrieval_mode: str = "query" # One of: off, query, shuffled
+    query_retrieval_top_k: int = 4 # Historical cognition records selected per query
     use_timestep_pe: bool = True # Whether to use timestep positional encoding
     fusion_type: str = 'gate' # Memory fusion type, chose from ['gate', 'add']
     consolidate_type: str = 'tome' # Memory consolidate type, chose from ['fifo', 'tome']

@@ -86,6 +86,14 @@ class PointCloudSpatialEncoder(nn.Module):
 
         points = torch.nan_to_num(points, nan=0.0, posinf=0.0, neginf=0.0)
         points, point_mask = self._maybe_subsample(points, point_mask)
+        if point_mask is not None:
+            point_mask = point_mask.bool()
+            invalid_batches = ~point_mask.any(dim=1)
+            if invalid_batches.any():
+                indices = invalid_batches.nonzero(as_tuple=False).flatten().tolist()
+                raise ValueError(
+                    f"point cloud contains no valid depth points for batch indices {indices}"
+                )
 
         point_tokens = self.point_mlp(points)
 

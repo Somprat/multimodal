@@ -161,6 +161,11 @@ class VLAInference:
                 self.reset(task_description)
 
         assert image.dtype == np.uint8
+        if self.spatial_mode == "pointcloud":
+            if depth is None:
+                raise ValueError("pointcloud mode requires depth")
+            if intrinsic is None:
+                raise ValueError("pointcloud mode requires camera intrinsics")
         self._add_image_to_history(self._resize_image(image))
         self._add_depth_to_history(depth)
         self._add_intrinsic_to_history(intrinsic)

@@ -21,6 +21,7 @@ from prismatic.overwatch import initialize_overwatch
 from prismatic.util.nn_utils import FusedMLPProjector, LinearProjector, MLPProjector
 from .spatial import geometry
 from .spatial.encoder import PointCloudSpatialEncoder as SpatialPointCloudEncoder
+from .spatial import retrieval
 
 from action_model.action_model import ActionModel
 from action_model.models import DiT
@@ -173,11 +174,19 @@ class CogMemBank(nn.Module):
                  fusion_type: str = 'gate',
                  consolidate_type: str = 'tome',
                  update_fused: bool = False,
+                 query_retrieval_mode: str = "off",
+                 query_retrieval_top_k: int = 4,
                  ):
         super().__init__()
         assert dataloader_type in ('stream', 'group')
         assert fusion_type in ('gate', 'add')
         assert consolidate_type in ('fifo', 'tome')
+        if query_retrieval_mode not in ("off", "query", "shuffled"):
+            raise ValueError(
+                "query_retrieval_mode must be one of: off, query, shuffled"
+            )
+        if query_retrieval_top_k < 1:
+            raise ValueError("query_retrieval_top_k must be at least 1")
 
         self.dataloader_type = dataloader_type
         self.group_size = group_size
@@ -188,6 +197,9 @@ class CogMemBank(nn.Module):
         self.fusion_type = fusion_type
         self.consolidate_type = consolidate_type
         self.update_fused = update_fused
+        self.query_retrieval_mode = query_retrieval_mode
+        self.query_retrieval_top_k = query_retrieval_top_k
+        self.query_retriever = retrieval.MemoryRetriever()
 
         self.retrieval_blocks = nn.ModuleList([
             CrossTransformerBlock(self.token_size)
@@ -262,6 +274,7 @@ class CogMemBank(nn.Module):
         tokens: torch.Tensor, # [B, N, D_role]
         episode_ids: np.array,
         timesteps: np.array,
+        instructions: Optional[List[str]] = None,
     ) -> torch.Tensor:
         assert episode_ids is not None, "episode_ids must be provided during training"
 
@@ -299,6 +312,17 @@ class CogMemBank(nn.Module):
 
             hist = self.bank.get(eid, [])
             if len(hist) > 0:
+                instruction = (
+                    instructions[i]
+                    if instructions is not None and i < len(instructions)
+                    else ""
+                )
+                hist = self._select_history(
+                    hist=hist,
+                    working_mem=working_mem,
+                    instruction=instruction,
+                    timestep=timesteps[i],
+                )
                 hist_feats = [feat for _, feat in hist]
                 episode_mem = torch.stack(hist_feats, dim=0).reshape(-1, D).unsqueeze(0)  # (1, T*N, D)
 
@@ -337,6 +361,49 @@ class CogMemBank(nn.Module):
                 self._memory_consolidate(eid, tokens[i], timestep_i)
 
         return torch.cat(outputs, dim=0)  # [B, N, D_role]
+
+    def _select_history(
+        self,
+        hist, # hist = history of one episode. saved as (time_step, feature_tokenss)
+        working_mem: torch.Tensor,
+        instruction: str,
+        timestep,
+    ):
+        if self.query_retrieval_mode == "off" or len(hist) <= self.query_retrieval_top_k:
+            return hist
+
+        if self.query_retrieval_mode == "shuffled":
+            indices = torch.randperm(len(hist))[:self.query_retrieval_top_k].tolist()
+            return [hist[index] for index in indices]
+
+        query = retrieval.RetrievalQuery(
+            text=instruction,
+            embedding=working_mem.detach().mean(dim=(0, 1)),
+            current_time=self._as_float_timestep(timestep),
+        )
+        records = [
+            retrieval.MemoryRecord(
+                id=str(index),
+                embedding=feat.detach().mean(dim=0),
+                timestamp=self._as_float_timestep(hist_timestep),
+                modality="cognition",
+            )
+            for index, (hist_timestep, feat) in enumerate(hist)
+        ]
+        results = self.query_retriever.retrieve(
+            query=query,
+            memories=records,
+            top_k=self.query_retrieval_top_k,
+        )
+        return [hist[int(result.memory.id)] for result in results]
+
+    @staticmethod
+    def _as_float_timestep(timestep) -> Optional[float]:
+        if timestep is None:
+            return None
+        if torch.is_tensor(timestep):
+            return float(timestep.detach().cpu().item())
+        return float(timestep)
 
 
 class PerMemBank(CogMemBank):
@@ -439,6 +506,7 @@ class SpatialEncoder(nn.Module):
             return None
 
         return torch.cat(spatial_tokens, dim=1)
+
 
 
 class PointCloudSpatialEncoder(nn.Module):
@@ -595,6 +663,8 @@ class MemoryVLA(nn.Module):
         fusion_type: str = 'gate',
         consolidate_type: str = 'tome',
         update_fused: bool = False,
+        query_retrieval_mode: str = "query",
+        query_retrieval_top_k: int = 4,
 
 
         **kwargs,
@@ -617,6 +687,8 @@ class MemoryVLA(nn.Module):
         self.fusion_type = fusion_type
         self.consolidate_type = consolidate_type
         self.update_fused = update_fused
+        self.query_retrieval_mode = query_retrieval_mode
+        self.query_retrieval_top_k = query_retrieval_top_k
 
         self.cur_timestep = 0
 
@@ -640,6 +712,8 @@ class MemoryVLA(nn.Module):
             fusion_type=self.fusion_type,
             consolidate_type=self.consolidate_type,
             update_fused=self.update_fused,
+            query_retrieval_mode=self.query_retrieval_mode,
+            query_retrieval_top_k=self.query_retrieval_top_k,
         )
 
         self.per_mem_bank = PerMemBank(
@@ -784,6 +858,7 @@ class MemoryVLA(nn.Module):
         action_masks: Optional[torch.FloatTensor] = None,
         timesteps: np.array = None,
         episode_ids: np.array = None,
+        instructions: Optional[List[str]] = None,
         inputs_embeds: Optional[torch.FloatTensor] = None,
         past_key_values: Optional[List[torch.FloatTensor]] = None,
         use_cache: Optional[bool] = None,
@@ -834,6 +909,7 @@ class MemoryVLA(nn.Module):
             tokens=cog_tokens,
             episode_ids=episode_ids,
             timesteps=timesteps,
+            instructions=instructions,
         )
 
         per_tokens = self.per_mem_bank.process_batch(
@@ -841,27 +917,24 @@ class MemoryVLA(nn.Module):
             episode_ids=episode_ids,
             timesteps=timesteps,
         )
+        if depth is None:
+            raise ValueError("The depth value is missing")
+        if intrinsics is None:
+            raise ValueError("The intrinsics value is missing")
 
-        if depth is None or intrinsics is None:
-            spatial_tokens = self.spatial_encoder(
-                depth=depth,
-                proprio=proprio,
-                camera=camera,
-            )
-        else:
-            points, valid_masks = geometry.depth_to_points(
-                depth=depth,
-                intrinsics = intrinsics,
-                mask=None,
-                flatten = True
-            )
+        points, valid_masks = geometry.depth_to_points(
+            depth=depth,
+            intrinsics=intrinsics,
+            mask=None,
+            flatten=True,
+        )
 
-            spatial_tokens = self.point_cloud_spatial_encoder(
-                points = points,
-                proprio = proprio,
-                camera = camera,
-                point_mask = valid_masks
-            )
+        spatial_tokens = self.point_cloud_spatial_encoder(
+            points=points,
+            proprio=proprio,
+            camera=camera,
+            point_mask=valid_masks,
+        )
             
         per_tokens = self._fuse_spatial_tokens(
             per_tokens=per_tokens,
@@ -1014,7 +1087,13 @@ class MemoryVLA(nn.Module):
             if key not in {"projector", "llm_backbone", "vision_backbone",
                            "action_model", "ema_diffusion"}:
                 module = getattr(memory_vla, key, None)
-                module.load_state_dict(sub_state, strict=False)
+                if module is None:
+                    overwatch.warning(f"Ignoring unknown checkpoint module: {key}")
+                    continue
+                module.load_state_dict(
+                    sub_state,
+                    strict=key in spatial_checkpoint_keys,
+                )
 
         del model_state_dict
         import gc
@@ -1121,6 +1200,7 @@ class MemoryVLA(nn.Module):
             tokens=cog_tokens,
             episode_ids=episode_ids,
             timesteps=timesteps,
+            instructions=[instruction],
         )
 
         per_tokens = self.per_mem_bank.process_batch(
@@ -1131,26 +1211,26 @@ class MemoryVLA(nn.Module):
 
         if depth is None or intrinsics is None:
             spatial_tokens = self.spatial_encoder(
-                    depth=depth,
-                    proprio=proprio,
-                    camera=camera,
-                )
+                depth=depth,
+                proprio=proprio,
+                camera=camera,
+            )
         else:
             depth = self._add_batch_depth(depth)
             intrinsics = self._add_batch_intrinsics(intrinsics)
-    
 
             points, valid_masks = geometry.depth_to_points(
                 depth=depth,
-                intrinsics = intrinsics,
+                intrinsics=intrinsics,
                 mask=None,
-                flatten = True
+                flatten=True,
             )
+
             spatial_tokens = self.point_cloud_spatial_encoder(
-                points = points,
-                proprio = proprio,
-                camera= camera,
-                point_mask = valid_masks,
+                points=points,
+                proprio=proprio,
+                camera=camera,
+                point_mask=valid_masks,
             )
 
         per_tokens = self._fuse_spatial_tokens(
@@ -1248,4 +1328,3 @@ class MemoryVLA(nn.Module):
         """Dimensionality of the policy's action space."""
         unnorm_key = self._check_unnorm_key(self.norm_stats, unnorm_key)
         return self.norm_stats[unnorm_key]["action"]
-

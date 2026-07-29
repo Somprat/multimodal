@@ -107,6 +107,7 @@ class PaddedCollatorForActionPrediction:
             dataset_names = [instance["dataset_name"] for instance in instances]
         else:
             dataset_names = None
+        instructions = [instance.get("instruction", "") for instance in instances]
 
         if "episode_ids" in instances[0]:
             episode_ids = np.concatenate([
@@ -154,9 +155,19 @@ class PaddedCollatorForActionPrediction:
         action_masks = torch.stack(action_masks)
 
         optional_modalities = {}
-        for key in ("depth", "proprio", "spatial_featurese", "intrinsic"):
-            if all(key in instance for instance in instances):
+        for key in ("depth", "proprio", "spatial_features", "intrinsic"):
+            presence = [key in instance for instance in instances]
+            if any(presence) and not all(presence):
+                raise ValueError(f"Optional modality {key!r} is missing from part of the batch")
+            if all(presence):
                 optional_modalities[key] = torch.stack([instance[key] for instance in instances])
+
+        if ("depth" in optional_modalities) != ("intrinsic" in optional_modalities):
+            raise ValueError("Point-cloud batches must provide both depth and intrinsic tensors")
+        if "intrinsic" in optional_modalities and optional_modalities["intrinsic"].shape[-2:] != (3, 3):
+            raise ValueError(
+                "Batched camera intrinsics must have shape [B, 3, 3]"
+            )
 
         output = dict(
             pixel_values=pixel_values,
@@ -166,6 +177,7 @@ class PaddedCollatorForActionPrediction:
             actions=actions,
             action_masks=action_masks,
             dataset_names=dataset_names,
+            instructions=instructions,
             episode_ids=episode_ids,
             timesteps=timesteps,
         )
