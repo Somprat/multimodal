@@ -250,6 +250,7 @@ OXE_DATASET_CONFIGS = {
             "secondary": None,
             "wrist": "wrist_depth",
         },
+        "camera_intrinsics_key": "main_camera_intrinsic_cv",
         "state_obs_keys": ["tcp_pose", "gripper_state"],
         "state_encoding": StateEncoding.POS_QUAT,
         "action_encoding": ActionEncoding.EEF_POS,

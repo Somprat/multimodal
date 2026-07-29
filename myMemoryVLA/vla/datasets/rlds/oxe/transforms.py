@@ -414,6 +414,23 @@ def nyu_franka_play_dataset_transform(trajectory: Dict[str, Any]) -> Dict[str, A
 
 def maniskill_dataset_transform(trajectory: Dict[str, Any]) -> Dict[str, Any]:
     trajectory["observation"]["gripper_state"] = trajectory["observation"]["state"][..., 7:8]
+
+    def decode_metric_depth(depth):
+        # DLimp keeps TFDS Image features encoded while the regular TFDS API
+        # yields decoded uint16 tensors. Support both representations.
+        if depth.dtype == tf.string:
+            depth = tf.map_fn(
+                lambda frame: tf.io.decode_png(frame, channels=1, dtype=tf.uint16),
+                depth,
+                fn_output_signature=tf.TensorSpec((256, 256, 1), tf.uint16),
+            )
+        return tf.cast(depth, tf.float32) / 1024.0
+
+    # ManiSkill fixed-point depth uses stored_value / 2**10 = meters.
+    trajectory["observation"]["depth"] = decode_metric_depth(trajectory["observation"]["depth"])
+    trajectory["observation"]["wrist_depth"] = decode_metric_depth(
+        trajectory["observation"]["wrist_depth"]
+    )
     return trajectory
 
 

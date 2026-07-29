@@ -1,0 +1,754 @@
+{
+  "source": "gs://gresearch/robotics/maniskill_dataset_converted_externally_to_rlds/0.1.0",
+  "split": "train[:100]",
+  "depth_encoding": {
+    "dtype": "uint16",
+    "meters": "stored_value / 1024.0"
+  },
+  "array_shapes_per_episode": {
+    "depth": [
+      "steps",
+      256,
+      256,
+      1
+    ],
+    "main_camera_intrinsic_cv": [
+      "steps",
+      3,
+      3
+    ],
+    "main_camera_extrinsic_cv": [
+      "steps",
+      4,
+      4
+    ],
+    "main_camera_cam2world_gl": [
+      "steps",
+      4,
+      4
+    ],
+    "wrist_depth": [
+      "steps",
+      256,
+      256,
+      1
+    ],
+    "wrist_camera_intrinsic_cv": [
+      "steps",
+      3,
+      3
+    ],
+    "wrist_camera_extrinsic_cv": [
+      "steps",
+      4,
+      4
+    ],
+    "wrist_camera_cam2world_gl": [
+      "steps",
+      4,
+      4
+    ]
+  },
+  "episodes": [
+    {
+      "index": 0,
+      "episode_id": "PickSingleYCB-v0_traj_4275",
+      "original_file_path": "/home/xuanlin/maniskill2_dev/ManiSkill2/demos/rigid_body/PickSingleYCB-v0/trajectory_merged.rgbd.pd_base_ee_target_delta_pose.h5",
+      "num_steps": 134,
+      "file": "episode_000.npz"
+    },
+    {
+      "index": 1,
+      "episode_id": "PickSingleYCB-v0_traj_136",
+      "original_file_path": "/home/xuanlin/maniskill2_dev/ManiSkill2/demos/rigid_body/PickSingleYCB-v0/trajectory_merged.rgbd.pd_base_ee_target_delta_pose.h5",
+      "num_steps": 133,
+      "file": "episode_001.npz"
+    },
+    {
+      "index": 2,
+      "episode_id": "PegInsertionSide-v0_traj_189",
+      "original_file_path": "/home/xuanlin/maniskill2_dev/ManiSkill2/demos/rigid_body/PegInsertionSide-v0/trajectory.rgbd.pd_base_ee_target_delta_pose.h5",
+      "num_steps": 187,
+      "file": "episode_002.npz"
+    },
+    {
+      "index": 3,
+      "episode_id": "PickClutterYCB-v0_traj_3414",
+      "original_file_path": "/home/xuanlin/maniskill2_dev/ManiSkill2/demos/rigid_body/PickClutterYCB-v0/trajectory_merged.rgbd.pd_base_ee_target_delta_pose.h5",
+      "num_steps": 144,
+      "file": "episode_003.npz"
+    },
+    {
+      "index": 4,
+      "episode_id": "AssemblingKits-v0_traj_319",
+      "original_file_path": "/home/xuanlin/maniskill2_dev/ManiSkill2/demos/rigid_body/AssemblingKits-v0/trajectory.rgbd.pd_base_ee_target_delta_pose.h5",
+      "num_steps": 176,
+      "file": "episode_004.npz"
+    },
+    {
+      "index": 5,
+      "episode_id": "PickSingleEGAD-v0_traj_2538",
+      "original_file_path": "/home/xuanlin/maniskill2_dev/ManiSkill2/demos/rigid_body/PickSingleEGAD-v0/trajectory_merged.rgbd.pd_base_ee_target_delta_pose.h5",
+      "num_steps": 172,
+      "file": "episode_005.npz"
+    },
+    {
+      "index": 6,
+      "episode_id": "PickSingleEGAD-v0_traj_5335",
+      "original_file_path": "/home/xuanlin/maniskill2_dev/ManiSkill2/demos/rigid_body/PickSingleEGAD-v0/trajectory_merged.rgbd.pd_base_ee_target_delta_pose.h5",
+      "num_steps": 145,
+      "file": "episode_006.npz"
+    },
+    {
+      "index": 7,
+      "episode_id": "PickSingleYCB-v0_traj_868",
+      "original_file_path": "/home/xuanlin/maniskill2_dev/ManiSkill2/demos/rigid_body/PickSingleYCB-v0/trajectory_merged.rgbd.pd_base_ee_target_delta_pose.h5",
+      "num_steps": 136,
+      "file": "episode_007.npz"
+    },
+    {
+      "index": 8,
+      "episode_id": "PickSingleEGAD-v0_traj_1676",
+      "original_file_path": "/home/xuanlin/maniskill2_dev/ManiSkill2/demos/rigid_body/PickSingleEGAD-v0/trajectory_merged.rgbd.pd_base_ee_target_delta_pose.h5",
+      "num_steps": 144,
+      "file": "episode_008.npz"
+    },
+    {
+      "index": 9,
+      "episode_id": "PickSingleYCB-v0_traj_756",
+      "original_file_path": "/home/xuanlin/maniskill2_dev/ManiSkill2/demos/rigid_body/PickSingleYCB-v0/trajectory_merged.rgbd.pd_base_ee_target_delta_pose.h5",
+      "num_steps": 166,
+      "file": "episode_009.npz"
+    },
+    {
+      "index": 10,
+      "episode_id": "PickClutterYCB-v0_traj_166",
+      "original_file_path": "/home/xuanlin/maniskill2_dev/ManiSkill2/demos/rigid_body/PickClutterYCB-v0/trajectory_merged.rgbd.pd_base_ee_target_delta_pose.h5",
+      "num_steps": 170,
+      "file": "episode_010.npz"
+    },
+    {
+      "index": 11,
+      "episode_id": "PickSingleYCB-v0_traj_1998",
+      "original_file_path": "/home/xuanlin/maniskill2_dev/ManiSkill2/demos/rigid_body/PickSingleYCB-v0/trajectory_merged.rgbd.pd_base_ee_target_delta_pose.h5",
+      "num_steps": 160,
+      "file": "episode_011.npz"
+    },
+    {
+      "index": 12,
+      "episode_id": "PickSingleYCB-v0_traj_934",
+      "original_file_path": "/home/xuanlin/maniskill2_dev/ManiSkill2/demos/rigid_body/PickSingleYCB-v0/trajectory_merged.rgbd.pd_base_ee_target_delta_pose.h5",
+      "num_steps": 124,
+      "file": "episode_012.npz"
+    },
+    {
+      "index": 13,
+      "episode_id": "PegInsertionSide-v0_traj_224",
+      "original_file_path": "/home/xuanlin/maniskill2_dev/ManiSkill2/demos/rigid_body/PegInsertionSide-v0/trajectory.rgbd.pd_base_ee_target_delta_pose.h5",
+      "num_steps": 136,
+      "file": "episode_013.npz"
+    },
+    {
+      "index": 14,
+      "episode_id": "PickSingleEGAD-v0_traj_5361",
+      "original_file_path": "/home/xuanlin/maniskill2_dev/ManiSkill2/demos/rigid_body/PickSingleEGAD-v0/trajectory_merged.rgbd.pd_base_ee_target_delta_pose.h5",
+      "num_steps": 167,
+      "file": "episode_014.npz"
+    },
+    {
+      "index": 15,
+      "episode_id": "PickClutterYCB-v0_traj_4725",
+      "original_file_path": "/home/xuanlin/maniskill2_dev/ManiSkill2/demos/rigid_body/PickClutterYCB-v0/trajectory_merged.rgbd.pd_base_ee_target_delta_pose.h5",
+      "num_steps": 148,
+      "file": "episode_015.npz"
+    },
+    {
+      "index": 16,
+      "episode_id": "PickClutterYCB-v0_traj_1784",
+      "original_file_path": "/home/xuanlin/maniskill2_dev/ManiSkill2/demos/rigid_body/PickClutterYCB-v0/trajectory_merged.rgbd.pd_base_ee_target_delta_pose.h5",
+      "num_steps": 150,
+      "file": "episode_016.npz"
+    },
+    {
+      "index": 17,
+      "episode_id": "PickClutterYCB-v0_traj_1141",
+      "original_file_path": "/home/xuanlin/maniskill2_dev/ManiSkill2/demos/rigid_body/PickClutterYCB-v0/trajectory_merged.rgbd.pd_base_ee_target_delta_pose.h5",
+      "num_steps": 177,
+      "file": "episode_017.npz"
+    },
+    {
+      "index": 18,
+      "episode_id": "PickSingleEGAD-v0_traj_4988",
+      "original_file_path": "/home/xuanlin/maniskill2_dev/ManiSkill2/demos/rigid_body/PickSingleEGAD-v0/trajectory_merged.rgbd.pd_base_ee_target_delta_pose.h5",
+      "num_steps": 142,
+      "file": "episode_018.npz"
+    },
+    {
+      "index": 19,
+      "episode_id": "PickSingleYCB-v0_traj_3850",
+      "original_file_path": "/home/xuanlin/maniskill2_dev/ManiSkill2/demos/rigid_body/PickSingleYCB-v0/trajectory_merged.rgbd.pd_base_ee_target_delta_pose.h5",
+      "num_steps": 135,
+      "file": "episode_019.npz"
+    },
+    {
+      "index": 20,
+      "episode_id": "PickSingleYCB-v0_traj_1085",
+      "original_file_path": "/home/xuanlin/maniskill2_dev/ManiSkill2/demos/rigid_body/PickSingleYCB-v0/trajectory_merged.rgbd.pd_base_ee_target_delta_pose.h5",
+      "num_steps": 102,
+      "file": "episode_020.npz"
+    },
+    {
+      "index": 21,
+      "episode_id": "PickClutterYCB-v0_traj_257",
+      "original_file_path": "/home/xuanlin/maniskill2_dev/ManiSkill2/demos/rigid_body/PickClutterYCB-v0/trajectory_merged.rgbd.pd_base_ee_target_delta_pose.h5",
+      "num_steps": 157,
+      "file": "episode_021.npz"
+    },
+    {
+      "index": 22,
+      "episode_id": "PickSingleYCB-v0_traj_256",
+      "original_file_path": "/home/xuanlin/maniskill2_dev/ManiSkill2/demos/rigid_body/PickSingleYCB-v0/trajectory_merged.rgbd.pd_base_ee_target_delta_pose.h5",
+      "num_steps": 168,
+      "file": "episode_022.npz"
+    },
+    {
+      "index": 23,
+      "episode_id": "PlugCharger-v0_traj_105",
+      "original_file_path": "/home/xuanlin/maniskill2_dev/ManiSkill2/demos/rigid_body/PlugCharger-v0/trajectory.rgbd.pd_base_ee_target_delta_pose.h5",
+      "num_steps": 143,
+      "file": "episode_023.npz"
+    },
+    {
+      "index": 24,
+      "episode_id": "PickSingleEGAD-v0_traj_3191",
+      "original_file_path": "/home/xuanlin/maniskill2_dev/ManiSkill2/demos/rigid_body/PickSingleEGAD-v0/trajectory_merged.rgbd.pd_base_ee_target_delta_pose.h5",
+      "num_steps": 122,
+      "file": "episode_024.npz"
+    },
+    {
+      "index": 25,
+      "episode_id": "PickSingleEGAD-v0_traj_929",
+      "original_file_path": "/home/xuanlin/maniskill2_dev/ManiSkill2/demos/rigid_body/PickSingleEGAD-v0/trajectory_merged.rgbd.pd_base_ee_target_delta_pose.h5",
+      "num_steps": 145,
+      "file": "episode_025.npz"
+    },
+    {
+      "index": 26,
+      "episode_id": "PickSingleYCB-v0_traj_5482",
+      "original_file_path": "/home/xuanlin/maniskill2_dev/ManiSkill2/demos/rigid_body/PickSingleYCB-v0/trajectory_merged.rgbd.pd_base_ee_target_delta_pose.h5",
+      "num_steps": 145,
+      "file": "episode_026.npz"
+    },
+    {
+      "index": 27,
+      "episode_id": "PickClutterYCB-v0_traj_4878",
+      "original_file_path": "/home/xuanlin/maniskill2_dev/ManiSkill2/demos/rigid_body/PickClutterYCB-v0/trajectory_merged.rgbd.pd_base_ee_target_delta_pose.h5",
+      "num_steps": 192,
+      "file": "episode_027.npz"
+    },
+    {
+      "index": 28,
+      "episode_id": "PickClutterYCB-v0_traj_1690",
+      "original_file_path": "/home/xuanlin/maniskill2_dev/ManiSkill2/demos/rigid_body/PickClutterYCB-v0/trajectory_merged.rgbd.pd_base_ee_target_delta_pose.h5",
+      "num_steps": 194,
+      "file": "episode_028.npz"
+    },
+    {
+      "index": 29,
+      "episode_id": "AssemblingKits-v0_traj_787",
+      "original_file_path": "/home/xuanlin/maniskill2_dev/ManiSkill2/demos/rigid_body/AssemblingKits-v0/trajectory.rgbd.pd_base_ee_target_delta_pose.h5",
+      "num_steps": 148,
+      "file": "episode_029.npz"
+    },
+    {
+      "index": 30,
+      "episode_id": "PickSingleEGAD-v0_traj_678",
+      "original_file_path": "/home/xuanlin/maniskill2_dev/ManiSkill2/demos/rigid_body/PickSingleEGAD-v0/trajectory_merged.rgbd.pd_base_ee_target_delta_pose.h5",
+      "num_steps": 93,
+      "file": "episode_030.npz"
+    },
+    {
+      "index": 31,
+      "episode_id": "PegInsertionSide-v0_traj_708",
+      "original_file_path": "/home/xuanlin/maniskill2_dev/ManiSkill2/demos/rigid_body/PegInsertionSide-v0/trajectory.rgbd.pd_base_ee_target_delta_pose.h5",
+      "num_steps": 186,
+      "file": "episode_031.npz"
+    },
+    {
+      "index": 32,
+      "episode_id": "PlugCharger-v0_traj_502",
+      "original_file_path": "/home/xuanlin/maniskill2_dev/ManiSkill2/demos/rigid_body/PlugCharger-v0/trajectory.rgbd.pd_base_ee_target_delta_pose.h5",
+      "num_steps": 154,
+      "file": "episode_032.npz"
+    },
+    {
+      "index": 33,
+      "episode_id": "TurnFaucet-v0_traj_3888",
+      "original_file_path": "/home/xuanlin/maniskill2_dev/ManiSkill2/demos/rigid_body/TurnFaucet-v0/trajectory_merged.rgbd.pd_base_ee_target_delta_pose.h5",
+      "num_steps": 138,
+      "file": "episode_033.npz"
+    },
+    {
+      "index": 34,
+      "episode_id": "PickSingleYCB-v0_traj_5656",
+      "original_file_path": "/home/xuanlin/maniskill2_dev/ManiSkill2/demos/rigid_body/PickSingleYCB-v0/trajectory_merged.rgbd.pd_base_ee_target_delta_pose.h5",
+      "num_steps": 144,
+      "file": "episode_034.npz"
+    },
+    {
+      "index": 35,
+      "episode_id": "TurnFaucet-v0_traj_124",
+      "original_file_path": "/home/xuanlin/maniskill2_dev/ManiSkill2/demos/rigid_body/TurnFaucet-v0/trajectory_merged.rgbd.pd_base_ee_target_delta_pose.h5",
+      "num_steps": 127,
+      "file": "episode_035.npz"
+    },
+    {
+      "index": 36,
+      "episode_id": "PickSingleYCB-v0_traj_5384",
+      "original_file_path": "/home/xuanlin/maniskill2_dev/ManiSkill2/demos/rigid_body/PickSingleYCB-v0/trajectory_merged.rgbd.pd_base_ee_target_delta_pose.h5",
+      "num_steps": 200,
+      "file": "episode_036.npz"
+    },
+    {
+      "index": 37,
+      "episode_id": "TurnFaucet-v0_traj_883",
+      "original_file_path": "/home/xuanlin/maniskill2_dev/ManiSkill2/demos/rigid_body/TurnFaucet-v0/trajectory_merged.rgbd.pd_base_ee_target_delta_pose.h5",
+      "num_steps": 148,
+      "file": "episode_037.npz"
+    },
+    {
+      "index": 38,
+      "episode_id": "TurnFaucet-v0_traj_1024",
+      "original_file_path": "/home/xuanlin/maniskill2_dev/ManiSkill2/demos/rigid_body/TurnFaucet-v0/trajectory_merged.rgbd.pd_base_ee_target_delta_pose.h5",
+      "num_steps": 218,
+      "file": "episode_038.npz"
+    },
+    {
+      "index": 39,
+      "episode_id": "PickSingleEGAD-v0_traj_788",
+      "original_file_path": "/home/xuanlin/maniskill2_dev/ManiSkill2/demos/rigid_body/PickSingleEGAD-v0/trajectory_merged.rgbd.pd_base_ee_target_delta_pose.h5",
+      "num_steps": 161,
+      "file": "episode_039.npz"
+    },
+    {
+      "index": 40,
+      "episode_id": "PickSingleEGAD-v0_traj_3657",
+      "original_file_path": "/home/xuanlin/maniskill2_dev/ManiSkill2/demos/rigid_body/PickSingleEGAD-v0/trajectory_merged.rgbd.pd_base_ee_target_delta_pose.h5",
+      "num_steps": 144,
+      "file": "episode_040.npz"
+    },
+    {
+      "index": 41,
+      "episode_id": "PickClutterYCB-v0_traj_1587",
+      "original_file_path": "/home/xuanlin/maniskill2_dev/ManiSkill2/demos/rigid_body/PickClutterYCB-v0/trajectory_merged.rgbd.pd_base_ee_target_delta_pose.h5",
+      "num_steps": 159,
+      "file": "episode_041.npz"
+    },
+    {
+      "index": 42,
+      "episode_id": "PickSingleEGAD-v0_traj_6739",
+      "original_file_path": "/home/xuanlin/maniskill2_dev/ManiSkill2/demos/rigid_body/PickSingleEGAD-v0/trajectory_merged.rgbd.pd_base_ee_target_delta_pose.h5",
+      "num_steps": 153,
+      "file": "episode_042.npz"
+    },
+    {
+      "index": 43,
+      "episode_id": "PickSingleYCB-v0_traj_4577",
+      "original_file_path": "/home/xuanlin/maniskill2_dev/ManiSkill2/demos/rigid_body/PickSingleYCB-v0/trajectory_merged.rgbd.pd_base_ee_target_delta_pose.h5",
+      "num_steps": 172,
+      "file": "episode_043.npz"
+    },
+    {
+      "index": 44,
+      "episode_id": "PickCube-v0_traj_170",
+      "original_file_path": "/home/xuanlin/maniskill2_dev/ManiSkill2/demos/rigid_body/PickCube-v0/trajectory.rgbd.pd_base_ee_target_delta_pose.h5",
+      "num_steps": 104,
+      "file": "episode_044.npz"
+    },
+    {
+      "index": 45,
+      "episode_id": "TurnFaucet-v0_traj_3998",
+      "original_file_path": "/home/xuanlin/maniskill2_dev/ManiSkill2/demos/rigid_body/TurnFaucet-v0/trajectory_merged.rgbd.pd_base_ee_target_delta_pose.h5",
+      "num_steps": 142,
+      "file": "episode_045.npz"
+    },
+    {
+      "index": 46,
+      "episode_id": "PickSingleEGAD-v0_traj_3972",
+      "original_file_path": "/home/xuanlin/maniskill2_dev/ManiSkill2/demos/rigid_body/PickSingleEGAD-v0/trajectory_merged.rgbd.pd_base_ee_target_delta_pose.h5",
+      "num_steps": 133,
+      "file": "episode_046.npz"
+    },
+    {
+      "index": 47,
+      "episode_id": "PickSingleEGAD-v0_traj_150",
+      "original_file_path": "/home/xuanlin/maniskill2_dev/ManiSkill2/demos/rigid_body/PickSingleEGAD-v0/trajectory_merged.rgbd.pd_base_ee_target_delta_pose.h5",
+      "num_steps": 115,
+      "file": "episode_047.npz"
+    },
+    {
+      "index": 48,
+      "episode_id": "PickSingleEGAD-v0_traj_4934",
+      "original_file_path": "/home/xuanlin/maniskill2_dev/ManiSkill2/demos/rigid_body/PickSingleEGAD-v0/trajectory_merged.rgbd.pd_base_ee_target_delta_pose.h5",
+      "num_steps": 134,
+      "file": "episode_048.npz"
+    },
+    {
+      "index": 49,
+      "episode_id": "PickClutterYCB-v0_traj_4665",
+      "original_file_path": "/home/xuanlin/maniskill2_dev/ManiSkill2/demos/rigid_body/PickClutterYCB-v0/trajectory_merged.rgbd.pd_base_ee_target_delta_pose.h5",
+      "num_steps": 176,
+      "file": "episode_049.npz"
+    },
+    {
+      "index": 50,
+      "episode_id": "PickClutterYCB-v0_traj_320",
+      "original_file_path": "/home/xuanlin/maniskill2_dev/ManiSkill2/demos/rigid_body/PickClutterYCB-v0/trajectory_merged.rgbd.pd_base_ee_target_delta_pose.h5",
+      "num_steps": 144,
+      "file": "episode_050.npz"
+    },
+    {
+      "index": 51,
+      "episode_id": "PickSingleEGAD-v0_traj_3113",
+      "original_file_path": "/home/xuanlin/maniskill2_dev/ManiSkill2/demos/rigid_body/PickSingleEGAD-v0/trajectory_merged.rgbd.pd_base_ee_target_delta_pose.h5",
+      "num_steps": 142,
+      "file": "episode_051.npz"
+    },
+    {
+      "index": 52,
+      "episode_id": "PickSingleYCB-v0_traj_5160",
+      "original_file_path": "/home/xuanlin/maniskill2_dev/ManiSkill2/demos/rigid_body/PickSingleYCB-v0/trajectory_merged.rgbd.pd_base_ee_target_delta_pose.h5",
+      "num_steps": 124,
+      "file": "episode_052.npz"
+    },
+    {
+      "index": 53,
+      "episode_id": "PickClutterYCB-v0_traj_2950",
+      "original_file_path": "/home/xuanlin/maniskill2_dev/ManiSkill2/demos/rigid_body/PickClutterYCB-v0/trajectory_merged.rgbd.pd_base_ee_target_delta_pose.h5",
+      "num_steps": 164,
+      "file": "episode_053.npz"
+    },
+    {
+      "index": 54,
+      "episode_id": "TurnFaucet-v0_traj_4400",
+      "original_file_path": "/home/xuanlin/maniskill2_dev/ManiSkill2/demos/rigid_body/TurnFaucet-v0/trajectory_merged.rgbd.pd_base_ee_target_delta_pose.h5",
+      "num_steps": 185,
+      "file": "episode_054.npz"
+    },
+    {
+      "index": 55,
+      "episode_id": "PickSingleEGAD-v0_traj_5146",
+      "original_file_path": "/home/xuanlin/maniskill2_dev/ManiSkill2/demos/rigid_body/PickSingleEGAD-v0/trajectory_merged.rgbd.pd_base_ee_target_delta_pose.h5",
+      "num_steps": 124,
+      "file": "episode_055.npz"
+    },
+    {
+      "index": 56,
+      "episode_id": "AssemblingKits-v0_traj_230",
+      "original_file_path": "/home/xuanlin/maniskill2_dev/ManiSkill2/demos/rigid_body/AssemblingKits-v0/trajectory.rgbd.pd_base_ee_target_delta_pose.h5",
+      "num_steps": 148,
+      "file": "episode_056.npz"
+    },
+    {
+      "index": 57,
+      "episode_id": "PickSingleYCB-v0_traj_4641",
+      "original_file_path": "/home/xuanlin/maniskill2_dev/ManiSkill2/demos/rigid_body/PickSingleYCB-v0/trajectory_merged.rgbd.pd_base_ee_target_delta_pose.h5",
+      "num_steps": 162,
+      "file": "episode_057.npz"
+    },
+    {
+      "index": 58,
+      "episode_id": "PickClutterYCB-v0_traj_4374",
+      "original_file_path": "/home/xuanlin/maniskill2_dev/ManiSkill2/demos/rigid_body/PickClutterYCB-v0/trajectory_merged.rgbd.pd_base_ee_target_delta_pose.h5",
+      "num_steps": 162,
+      "file": "episode_058.npz"
+    },
+    {
+      "index": 59,
+      "episode_id": "PickClutterYCB-v0_traj_2368",
+      "original_file_path": "/home/xuanlin/maniskill2_dev/ManiSkill2/demos/rigid_body/PickClutterYCB-v0/trajectory_merged.rgbd.pd_base_ee_target_delta_pose.h5",
+      "num_steps": 176,
+      "file": "episode_059.npz"
+    },
+    {
+      "index": 60,
+      "episode_id": "TurnFaucet-v0_traj_1273",
+      "original_file_path": "/home/xuanlin/maniskill2_dev/ManiSkill2/demos/rigid_body/TurnFaucet-v0/trajectory_merged.rgbd.pd_base_ee_target_delta_pose.h5",
+      "num_steps": 178,
+      "file": "episode_060.npz"
+    },
+    {
+      "index": 61,
+      "episode_id": "PickSingleEGAD-v0_traj_731",
+      "original_file_path": "/home/xuanlin/maniskill2_dev/ManiSkill2/demos/rigid_body/PickSingleEGAD-v0/trajectory_merged.rgbd.pd_base_ee_target_delta_pose.h5",
+      "num_steps": 106,
+      "file": "episode_061.npz"
+    },
+    {
+      "index": 62,
+      "episode_id": "PickClutterYCB-v0_traj_763",
+      "original_file_path": "/home/xuanlin/maniskill2_dev/ManiSkill2/demos/rigid_body/PickClutterYCB-v0/trajectory_merged.rgbd.pd_base_ee_target_delta_pose.h5",
+      "num_steps": 171,
+      "file": "episode_062.npz"
+    },
+    {
+      "index": 63,
+      "episode_id": "TurnFaucet-v0_traj_1121",
+      "original_file_path": "/home/xuanlin/maniskill2_dev/ManiSkill2/demos/rigid_body/TurnFaucet-v0/trajectory_merged.rgbd.pd_base_ee_target_delta_pose.h5",
+      "num_steps": 250,
+      "file": "episode_063.npz"
+    },
+    {
+      "index": 64,
+      "episode_id": "PlugCharger-v0_traj_748",
+      "original_file_path": "/home/xuanlin/maniskill2_dev/ManiSkill2/demos/rigid_body/PlugCharger-v0/trajectory.rgbd.pd_base_ee_target_delta_pose.h5",
+      "num_steps": 172,
+      "file": "episode_064.npz"
+    },
+    {
+      "index": 65,
+      "episode_id": "PickSingleEGAD-v0_traj_1336",
+      "original_file_path": "/home/xuanlin/maniskill2_dev/ManiSkill2/demos/rigid_body/PickSingleEGAD-v0/trajectory_merged.rgbd.pd_base_ee_target_delta_pose.h5",
+      "num_steps": 149,
+      "file": "episode_065.npz"
+    },
+    {
+      "index": 66,
+      "episode_id": "PickSingleYCB-v0_traj_3069",
+      "original_file_path": "/home/xuanlin/maniskill2_dev/ManiSkill2/demos/rigid_body/PickSingleYCB-v0/trajectory_merged.rgbd.pd_base_ee_target_delta_pose.h5",
+      "num_steps": 165,
+      "file": "episode_066.npz"
+    },
+    {
+      "index": 67,
+      "episode_id": "PickSingleYCB-v0_traj_1004",
+      "original_file_path": "/home/xuanlin/maniskill2_dev/ManiSkill2/demos/rigid_body/PickSingleYCB-v0/trajectory_merged.rgbd.pd_base_ee_target_delta_pose.h5",
+      "num_steps": 152,
+      "file": "episode_067.npz"
+    },
+    {
+      "index": 68,
+      "episode_id": "PlugCharger-v0_traj_858",
+      "original_file_path": "/home/xuanlin/maniskill2_dev/ManiSkill2/demos/rigid_body/PlugCharger-v0/trajectory.rgbd.pd_base_ee_target_delta_pose.h5",
+      "num_steps": 139,
+      "file": "episode_068.npz"
+    },
+    {
+      "index": 69,
+      "episode_id": "PickSingleYCB-v0_traj_5576",
+      "original_file_path": "/home/xuanlin/maniskill2_dev/ManiSkill2/demos/rigid_body/PickSingleYCB-v0/trajectory_merged.rgbd.pd_base_ee_target_delta_pose.h5",
+      "num_steps": 136,
+      "file": "episode_069.npz"
+    },
+    {
+      "index": 70,
+      "episode_id": "TurnFaucet-v0_traj_1778",
+      "original_file_path": "/home/xuanlin/maniskill2_dev/ManiSkill2/demos/rigid_body/TurnFaucet-v0/trajectory_merged.rgbd.pd_base_ee_target_delta_pose.h5",
+      "num_steps": 161,
+      "file": "episode_070.npz"
+    },
+    {
+      "index": 71,
+      "episode_id": "AssemblingKits-v0_traj_914",
+      "original_file_path": "/home/xuanlin/maniskill2_dev/ManiSkill2/demos/rigid_body/AssemblingKits-v0/trajectory.rgbd.pd_base_ee_target_delta_pose.h5",
+      "num_steps": 125,
+      "file": "episode_071.npz"
+    },
+    {
+      "index": 72,
+      "episode_id": "PickSingleYCB-v0_traj_5070",
+      "original_file_path": "/home/xuanlin/maniskill2_dev/ManiSkill2/demos/rigid_body/PickSingleYCB-v0/trajectory_merged.rgbd.pd_base_ee_target_delta_pose.h5",
+      "num_steps": 144,
+      "file": "episode_072.npz"
+    },
+    {
+      "index": 73,
+      "episode_id": "PickSingleYCB-v0_traj_2465",
+      "original_file_path": "/home/xuanlin/maniskill2_dev/ManiSkill2/demos/rigid_body/PickSingleYCB-v0/trajectory_merged.rgbd.pd_base_ee_target_delta_pose.h5",
+      "num_steps": 135,
+      "file": "episode_073.npz"
+    },
+    {
+      "index": 74,
+      "episode_id": "PickSingleEGAD-v0_traj_1371",
+      "original_file_path": "/home/xuanlin/maniskill2_dev/ManiSkill2/demos/rigid_body/PickSingleEGAD-v0/trajectory_merged.rgbd.pd_base_ee_target_delta_pose.h5",
+      "num_steps": 126,
+      "file": "episode_074.npz"
+    },
+    {
+      "index": 75,
+      "episode_id": "PickSingleEGAD-v0_traj_2763",
+      "original_file_path": "/home/xuanlin/maniskill2_dev/ManiSkill2/demos/rigid_body/PickSingleEGAD-v0/trajectory_merged.rgbd.pd_base_ee_target_delta_pose.h5",
+      "num_steps": 122,
+      "file": "episode_075.npz"
+    },
+    {
+      "index": 76,
+      "episode_id": "PickClutterYCB-v0_traj_1182",
+      "original_file_path": "/home/xuanlin/maniskill2_dev/ManiSkill2/demos/rigid_body/PickClutterYCB-v0/trajectory_merged.rgbd.pd_base_ee_target_delta_pose.h5",
+      "num_steps": 181,
+      "file": "episode_076.npz"
+    },
+    {
+      "index": 77,
+      "episode_id": "PickSingleYCB-v0_traj_5871",
+      "original_file_path": "/home/xuanlin/maniskill2_dev/ManiSkill2/demos/rigid_body/PickSingleYCB-v0/trajectory_merged.rgbd.pd_base_ee_target_delta_pose.h5",
+      "num_steps": 175,
+      "file": "episode_077.npz"
+    },
+    {
+      "index": 78,
+      "episode_id": "TurnFaucet-v0_traj_3950",
+      "original_file_path": "/home/xuanlin/maniskill2_dev/ManiSkill2/demos/rigid_body/TurnFaucet-v0/trajectory_merged.rgbd.pd_base_ee_target_delta_pose.h5",
+      "num_steps": 140,
+      "file": "episode_078.npz"
+    },
+    {
+      "index": 79,
+      "episode_id": "TurnFaucet-v0_traj_799",
+      "original_file_path": "/home/xuanlin/maniskill2_dev/ManiSkill2/demos/rigid_body/TurnFaucet-v0/trajectory_merged.rgbd.pd_base_ee_target_delta_pose.h5",
+      "num_steps": 140,
+      "file": "episode_079.npz"
+    },
+    {
+      "index": 80,
+      "episode_id": "PickSingleYCB-v0_traj_2350",
+      "original_file_path": "/home/xuanlin/maniskill2_dev/ManiSkill2/demos/rigid_body/PickSingleYCB-v0/trajectory_merged.rgbd.pd_base_ee_target_delta_pose.h5",
+      "num_steps": 141,
+      "file": "episode_080.npz"
+    },
+    {
+      "index": 81,
+      "episode_id": "PickClutterYCB-v0_traj_3994",
+      "original_file_path": "/home/xuanlin/maniskill2_dev/ManiSkill2/demos/rigid_body/PickClutterYCB-v0/trajectory_merged.rgbd.pd_base_ee_target_delta_pose.h5",
+      "num_steps": 155,
+      "file": "episode_081.npz"
+    },
+    {
+      "index": 82,
+      "episode_id": "TurnFaucet-v0_traj_2763",
+      "original_file_path": "/home/xuanlin/maniskill2_dev/ManiSkill2/demos/rigid_body/TurnFaucet-v0/trajectory_merged.rgbd.pd_base_ee_target_delta_pose.h5",
+      "num_steps": 153,
+      "file": "episode_082.npz"
+    },
+    {
+      "index": 83,
+      "episode_id": "PickSingleYCB-v0_traj_1748",
+      "original_file_path": "/home/xuanlin/maniskill2_dev/ManiSkill2/demos/rigid_body/PickSingleYCB-v0/trajectory_merged.rgbd.pd_base_ee_target_delta_pose.h5",
+      "num_steps": 199,
+      "file": "episode_083.npz"
+    },
+    {
+      "index": 84,
+      "episode_id": "PickSingleEGAD-v0_traj_2909",
+      "original_file_path": "/home/xuanlin/maniskill2_dev/ManiSkill2/demos/rigid_body/PickSingleEGAD-v0/trajectory_merged.rgbd.pd_base_ee_target_delta_pose.h5",
+      "num_steps": 143,
+      "file": "episode_084.npz"
+    },
+    {
+      "index": 85,
+      "episode_id": "PickClutterYCB-v0_traj_3834",
+      "original_file_path": "/home/xuanlin/maniskill2_dev/ManiSkill2/demos/rigid_body/PickClutterYCB-v0/trajectory_merged.rgbd.pd_base_ee_target_delta_pose.h5",
+      "num_steps": 151,
+      "file": "episode_085.npz"
+    },
+    {
+      "index": 86,
+      "episode_id": "PickSingleEGAD-v0_traj_714",
+      "original_file_path": "/home/xuanlin/maniskill2_dev/ManiSkill2/demos/rigid_body/PickSingleEGAD-v0/trajectory_merged.rgbd.pd_base_ee_target_delta_pose.h5",
+      "num_steps": 145,
+      "file": "episode_086.npz"
+    },
+    {
+      "index": 87,
+      "episode_id": "PickSingleEGAD-v0_traj_1797",
+      "original_file_path": "/home/xuanlin/maniskill2_dev/ManiSkill2/demos/rigid_body/PickSingleEGAD-v0/trajectory_merged.rgbd.pd_base_ee_target_delta_pose.h5",
+      "num_steps": 143,
+      "file": "episode_087.npz"
+    },
+    {
+      "index": 88,
+      "episode_id": "PickSingleYCB-v0_traj_1410",
+      "original_file_path": "/home/xuanlin/maniskill2_dev/ManiSkill2/demos/rigid_body/PickSingleYCB-v0/trajectory_merged.rgbd.pd_base_ee_target_delta_pose.h5",
+      "num_steps": 159,
+      "file": "episode_088.npz"
+    },
+    {
+      "index": 89,
+      "episode_id": "TurnFaucet-v0_traj_73",
+      "original_file_path": "/home/xuanlin/maniskill2_dev/ManiSkill2/demos/rigid_body/TurnFaucet-v0/trajectory_merged.rgbd.pd_base_ee_target_delta_pose.h5",
+      "num_steps": 128,
+      "file": "episode_089.npz"
+    },
+    {
+      "index": 90,
+      "episode_id": "PickSingleEGAD-v0_traj_3636",
+      "original_file_path": "/home/xuanlin/maniskill2_dev/ManiSkill2/demos/rigid_body/PickSingleEGAD-v0/trajectory_merged.rgbd.pd_base_ee_target_delta_pose.h5",
+      "num_steps": 104,
+      "file": "episode_090.npz"
+    },
+    {
+      "index": 91,
+      "episode_id": "PickSingleEGAD-v0_traj_5237",
+      "original_file_path": "/home/xuanlin/maniskill2_dev/ManiSkill2/demos/rigid_body/PickSingleEGAD-v0/trajectory_merged.rgbd.pd_base_ee_target_delta_pose.h5",
+      "num_steps": 137,
+      "file": "episode_091.npz"
+    },
+    {
+      "index": 92,
+      "episode_id": "PickSingleEGAD-v0_traj_3243",
+      "original_file_path": "/home/xuanlin/maniskill2_dev/ManiSkill2/demos/rigid_body/PickSingleEGAD-v0/trajectory_merged.rgbd.pd_base_ee_target_delta_pose.h5",
+      "num_steps": 104,
+      "file": "episode_092.npz"
+    },
+    {
+      "index": 93,
+      "episode_id": "PickSingleEGAD-v0_traj_5021",
+      "original_file_path": "/home/xuanlin/maniskill2_dev/ManiSkill2/demos/rigid_body/PickSingleEGAD-v0/trajectory_merged.rgbd.pd_base_ee_target_delta_pose.h5",
+      "num_steps": 105,
+      "file": "episode_093.npz"
+    },
+    {
+      "index": 94,
+      "episode_id": "PickCube-v0_traj_710",
+      "original_file_path": "/home/xuanlin/maniskill2_dev/ManiSkill2/demos/rigid_body/PickCube-v0/trajectory.rgbd.pd_base_ee_target_delta_pose.h5",
+      "num_steps": 90,
+      "file": "episode_094.npz"
+    },
+    {
+      "index": 95,
+      "episode_id": "PickSingleYCB-v0_traj_2925",
+      "original_file_path": "/home/xuanlin/maniskill2_dev/ManiSkill2/demos/rigid_body/PickSingleYCB-v0/trajectory_merged.rgbd.pd_base_ee_target_delta_pose.h5",
+      "num_steps": 126,
+      "file": "episode_095.npz"
+    },
+    {
+      "index": 96,
+      "episode_id": "PickCube-v0_traj_633",
+      "original_file_path": "/home/xuanlin/maniskill2_dev/ManiSkill2/demos/rigid_body/PickCube-v0/trajectory.rgbd.pd_base_ee_target_delta_pose.h5",
+      "num_steps": 107,
+      "file": "episode_096.npz"
+    },
+    {
+      "index": 97,
+      "episode_id": "PickSingleEGAD-v0_traj_4390",
+      "original_file_path": "/home/xuanlin/maniskill2_dev/ManiSkill2/demos/rigid_body/PickSingleEGAD-v0/trajectory_merged.rgbd.pd_base_ee_target_delta_pose.h5",
+      "num_steps": 96,
+      "file": "episode_097.npz"
+    },
+    {
+      "index": 98,
+      "episode_id": "PickSingleEGAD-v0_traj_6125",
+      "original_file_path": "/home/xuanlin/maniskill2_dev/ManiSkill2/demos/rigid_body/PickSingleEGAD-v0/trajectory_merged.rgbd.pd_base_ee_target_delta_pose.h5",
+      "num_steps": 149,
+      "file": "episode_098.npz"
+    },
+    {
+      "index": 99,
+      "episode_id": "PickSingleEGAD-v0_traj_5923",
+      "original_file_path": "/home/xuanlin/maniskill2_dev/ManiSkill2/demos/rigid_body/PickSingleEGAD-v0/trajectory_merged.rgbd.pd_base_ee_target_delta_pose.h5",
+      "num_steps": 175,
+      "file": "episode_099.npz"
+    }
+  ]
+}
