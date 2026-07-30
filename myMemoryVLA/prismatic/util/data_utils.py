@@ -154,6 +154,8 @@ class PaddedCollatorForActionPrediction:
         action_masks = [instance["action_masks"] for instance in instances]
         action_masks = torch.stack(action_masks)
 
+        images = [instance["image"] for instance in instances]
+
         optional_modalities = {}
         for key in ("depth", "proprio", "spatial_features", "intrinsic"):
             presence = [key in instance for instance in instances]
@@ -180,6 +182,7 @@ class PaddedCollatorForActionPrediction:
             instructions=instructions,
             episode_ids=episode_ids,
             timesteps=timesteps,
+            images = images
         )
 
         output.update(optional_modalities)

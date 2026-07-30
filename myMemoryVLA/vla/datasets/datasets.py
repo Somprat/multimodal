@@ -95,6 +95,7 @@ class RLDSBatchTransform:
             action_masks=action_mask,
             timesteps=timesteps,
             episode_ids=None,
+            image=img
         )
 
         depth = None
@@ -105,17 +106,6 @@ class RLDSBatchTransform:
         if "proprio" in observation:
             proprio = torch.tensor(observation["proprio"][0], dtype=torch.float32)
 
-        # camera_parts = []
-        # for key in ("camera_intrinsics", "camera_extrinsics", "scene_id"):
-        #     if key in observation:
-        #         try:
-        #             camera_parts.append(torch.tensor(observation[key][0], dtype=torch.float32))
-        #         except (TypeError, ValueError):
-        #             pass
-
-        # camera = None
-        # if len(camera_parts) > 0:
-        #     camera = torch.cat(camera_parts)
 
         intrinsic = None
         if "camera_intrinsics" in observation:
@@ -134,8 +124,7 @@ class RLDSBatchTransform:
             output["depth"] = depth
         if proprio is not None:
             output["proprio"] = proprio
-        # if camera is not None:
-        #     output["camera"] = camera
+
         if intrinsic is not None:
             output["intrinsic"] = intrinsic
         

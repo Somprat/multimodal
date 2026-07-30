@@ -13,6 +13,7 @@ import torch.nn as nn
 from torch.distributed.fsdp.wrap import _module_wrap_policy, _or_policy
 import torch.nn.functional as F
 from transformers import LlamaTokenizerFast
+from transformers import CLIPModel, CLIPProcessor
 
 from prismatic.models.backbones.llm import LLMBackbone
 from prismatic.models.backbones.vision import VisionBackbone
@@ -233,7 +234,7 @@ class CogMemBank(nn.Module):
         if T < 2:
             return
 
-        feats = [feat for (_, feat) in bank]
+        feats = [feat for (_, feat, _) in bank]
 
         sims = []
         for i in range(T - 1):
@@ -243,23 +244,38 @@ class CogMemBank(nn.Module):
 
         idx_max = int(torch.tensor(sims).argmax().item())
 
-        timestep_i, feat_i = bank[idx_max]
-        timestep_j, feat_j = bank[idx_max + 1]
+        timestep_i, feat_i, image_embedding_i = bank[idx_max]
+        timestep_j, feat_j, image_embedding_j = bank[idx_max + 1]
         fused_feat = 0.5 * (feat_i + feat_j)
+        if image_embedding_i is not None and image_embedding_j is not None:
+            fused_image_embedding = F.normalize(
+                0.5 * (image_embedding_i + image_embedding_j),
+                dim=0,
+            )
+        else:
+            fused_image_embedding = image_embedding_i if image_embedding_i is not None else image_embedding_j
 
-        bank[idx_max] = (timestep_i, fused_feat.detach().clone())
+        bank[idx_max] = (timestep_i, fused_feat.detach().clone(), fused_image_embedding)
         bank.pop(idx_max + 1)
+
 
     @torch.no_grad()
     def _memory_consolidate(
             self,
             episode_id,
             feat: torch.Tensor,
-            timestep: Optional[torch.Tensor]):
+            timestep: Optional[torch.Tensor],
+            image_embedding: Optional[torch.Tensor] = None,
+            ):
         if episode_id not in self.bank:
             self.bank[episode_id] = []
 
-        self.bank[episode_id].append((timestep, feat.detach().clone()))
+        stored_embedding = (
+            image_embedding.detach().clone()
+            if image_embedding is not None
+            else None
+        )
+        self.bank[episode_id].append((timestep, feat.detach().clone(), stored_embedding))
 
         while len(self.bank[episode_id]) > self.mem_length:
             if self.consolidate_type == 'fifo':
@@ -275,6 +291,8 @@ class CogMemBank(nn.Module):
         episode_ids: np.array,
         timesteps: np.array,
         instructions: Optional[List[str]] = None,
+        retrieval_image_embeddings: Optional[torch.Tensor] = None,
+        retrieval_query_embeddings: Optional[torch.Tensor] = None,
     ) -> torch.Tensor:
         assert episode_ids is not None, "episode_ids must be provided during training"
 
@@ -322,12 +340,17 @@ class CogMemBank(nn.Module):
                     working_mem=working_mem,
                     instruction=instruction,
                     timestep=timesteps[i],
+                    query_embedding=(
+                        retrieval_query_embeddings[i]
+                        if retrieval_query_embeddings is not None
+                        else None
+                    ),
                 )
-                hist_feats = [feat for _, feat in hist]
+                hist_feats = [feat for _, feat, _ in hist]
                 episode_mem = torch.stack(hist_feats, dim=0).reshape(-1, D).unsqueeze(0)  # (1, T*N, D)
 
                 if self.use_timestep_pe:
-                    hist_timesteps = [t for t, _ in hist]
+                    hist_timesteps = [t for t, _, _ in hist]
                     hist_timesteps = torch.tensor(hist_timesteps).to(working_mem.device)
                     pe = self.timestep_encoder(hist_timesteps).unsqueeze(0)  # (1, T, D)
                     pe = pe.repeat_interleave(N, dim=1) # (1, T*N, D)
@@ -354,20 +377,36 @@ class CogMemBank(nn.Module):
 
             # 4) memory consolidate
             timestep_i = timesteps[i] if self.use_timestep_pe else None
+            image_embedding_i = (
+                retrieval_image_embeddings[i]
+                if retrieval_image_embeddings is not None
+                else None
+            )
 
             if self.update_fused:
-                self._memory_consolidate(eid, fused_feats.squeeze(0), timestep_i)
+                self._memory_consolidate(
+                    eid,
+                    fused_feats.squeeze(0),
+                    timestep_i,
+                    image_embedding=image_embedding_i,
+                )
             else:
-                self._memory_consolidate(eid, tokens[i], timestep_i)
+                self._memory_consolidate(
+                    eid,
+                    tokens[i],
+                    timestep_i,
+                    image_embedding=image_embedding_i,
+                )
 
         return torch.cat(outputs, dim=0)  # [B, N, D_role]
 
     def _select_history(
         self,
-        hist, # hist = history of one episode. saved as (time_step, feature_tokenss)
+        hist,
         working_mem: torch.Tensor,
         instruction: str,
         timestep,
+        query_embedding: Optional[torch.Tensor] = None,
     ):
         if self.query_retrieval_mode == "off" or len(hist) <= self.query_retrieval_top_k:
             return hist
@@ -375,27 +414,40 @@ class CogMemBank(nn.Module):
         if self.query_retrieval_mode == "shuffled":
             indices = torch.randperm(len(hist))[:self.query_retrieval_top_k].tolist()
             return [hist[index] for index in indices]
-
         query = retrieval.RetrievalQuery(
             text=instruction,
-            embedding=working_mem.detach().mean(dim=(0, 1)),
+            embedding=(
+                query_embedding
+                if query_embedding is not None
+                else working_mem.detach().mean(dim=(0, 1))
+            ),
             current_time=self._as_float_timestep(timestep),
+            modality_hints=("visual",),
         )
+
+
         records = [
             retrieval.MemoryRecord(
                 id=str(index),
-                embedding=feat.detach().mean(dim=0),
+                embedding=(
+                    image_embedding
+                    if image_embedding is not None
+                    else feat.detach().mean(dim=0)
+                ),
                 timestamp=self._as_float_timestep(hist_timestep),
-                modality="cognition",
+                modality="visual",
             )
-            for index, (hist_timestep, feat) in enumerate(hist)
+            for index, (hist_timestep, feat, image_embedding) in enumerate(hist)
         ]
+
         results = self.query_retriever.retrieve(
             query=query,
             memories=records,
             top_k=self.query_retrieval_top_k,
         )
+
         return [hist[int(result.memory.id)] for result in results]
+
 
     @staticmethod
     def _as_float_timestep(timestep) -> Optional[float]:
@@ -417,6 +469,8 @@ class PerMemBank(CogMemBank):
                  fusion_type: str = 'gate',
                  consolidate_type: str = 'tome',
                  update_fused: bool = False,
+                 query_retrieval_mode: str = "off",
+                 query_retrieval_top_k: int = 4,
                  ):
         super().__init__(
             dataloader_type=dataloader_type,
@@ -428,6 +482,8 @@ class PerMemBank(CogMemBank):
             fusion_type=fusion_type,
             consolidate_type=consolidate_type,
             update_fused=update_fused,
+            query_retrieval_mode=query_retrieval_mode,
+            query_retrieval_top_k=query_retrieval_top_k,
         )
 
 
@@ -442,6 +498,8 @@ class SpatialMemBank(CogMemBank):
                  fusion_type: str = 'gate',
                  consolidate_type: str = 'tome',
                  update_fused: bool = False,
+                 query_retrieval_mode: str = "off",
+                 query_retrieval_top_k: int = 4,
                  ):
         super().__init__(
             dataloader_type=dataloader_type,
@@ -453,6 +511,8 @@ class SpatialMemBank(CogMemBank):
             fusion_type=fusion_type,
             consolidate_type=consolidate_type,
             update_fused=update_fused,
+            query_retrieval_mode=query_retrieval_mode,
+            query_retrieval_top_k=query_retrieval_top_k,
         )
 class SpatialEncoder(nn.Module):
     def __init__(self, spatial_token_size: int, depth_patch_size: int = 16):
@@ -692,6 +752,15 @@ class MemoryVLA(nn.Module):
 
         self.cur_timestep = 0
 
+        self.clip_processor = CLIPProcessor.from_pretrained(
+            "openai/clip-vit-base-patch32"
+        )
+        self.clip_model = CLIPModel.from_pretrained(
+            "openai/clip-vit-base-patch32"
+        )
+        self.clip_model.requires_grad_(False)
+        self.clip_model.eval()
+
         self.vision_dim = self.vlm.vision_backbone.dino_featurizer.patch_embed.proj.weight.shape[0] + \
                  self.vlm.vision_backbone.siglip_featurizer.patch_embed.proj.weight.shape[0]
 
@@ -726,6 +795,8 @@ class MemoryVLA(nn.Module):
             fusion_type=self.fusion_type,
             consolidate_type=self.consolidate_type,
             update_fused=self.update_fused,
+            query_retrieval_mode=self.query_retrieval_mode,
+            query_retrieval_top_k=self.query_retrieval_top_k,
         )
 # we want to use the forwar function of this class which takes in points
 # we already have the depth_to_points function from geometry.py
@@ -756,6 +827,8 @@ class MemoryVLA(nn.Module):
             fusion_type=self.fusion_type,
             consolidate_type=self.consolidate_type,
             update_fused=self.update_fused,
+            query_retrieval_mode=self.query_retrieval_mode,
+            query_retrieval_top_k=self.query_retrieval_top_k,
         )
         self.spatial_to_per_fusion = CrossTransformerBlock(self.per_token_size)
         self.per_spatial_gate = GateFusion(self.per_token_size)
@@ -804,12 +877,58 @@ class MemoryVLA(nn.Module):
     def freeze_backbones(self, stage):
         self.vlm.freeze_backbones(stage)
 
+    @torch.no_grad()
+    def _encode_retrieval_inputs(
+        self,
+        images,
+        instructions: Optional[List[str]],
+    ) -> tuple[Optional[torch.Tensor], Optional[torch.Tensor]]:
+        if images is None or instructions is None:
+            return None, None
+        if len(images) != len(instructions):
+            raise ValueError(
+                "retrieval images and instructions must have the same batch size"
+            )
+
+        self.clip_model.eval()
+        clip_param = next(self.clip_model.parameters())
+        image_inputs = self.clip_processor(
+            images=list(images),
+            return_tensors="pt",
+        ).to(clip_param.device)
+        text_inputs = self.clip_processor(
+            text=list(instructions),
+            return_tensors="pt",
+            padding=True,
+            truncation=True,
+        ).to(clip_param.device)
+
+        image_outputs = self.clip_model.get_image_features(**image_inputs)
+        text_outputs = self.clip_model.get_text_features(**text_inputs)
+        image_embeddings = (
+            image_outputs.pooler_output
+            if hasattr(image_outputs, "pooler_output")
+            else image_outputs
+        )
+        text_embeddings = (
+            text_outputs.pooler_output
+            if hasattr(text_outputs, "pooler_output")
+            else text_outputs
+        )
+        return (
+            F.normalize(image_embeddings.float(), dim=-1),
+            F.normalize(text_embeddings.float(), dim=-1),
+        )
+
     def _fuse_spatial_tokens(
         self,
         per_tokens: torch.Tensor,
         spatial_tokens: Optional[torch.Tensor],
         episode_ids,
         timesteps,
+        instructions: Optional[List[str]] = None,
+        retrieval_image_embeddings: Optional[torch.Tensor] = None,
+        retrieval_query_embeddings: Optional[torch.Tensor] = None,
     ) -> torch.Tensor:
         if spatial_tokens is None:
             return per_tokens
@@ -818,6 +937,9 @@ class MemoryVLA(nn.Module):
             tokens=spatial_tokens,
             episode_ids=episode_ids,
             timesteps=timesteps,
+            instructions=instructions,
+            retrieval_image_embeddings=retrieval_image_embeddings,
+            retrieval_query_embeddings=retrieval_query_embeddings,
         )
         spatial_context = self.spatial_to_per_fusion(
             per_tokens,
@@ -859,6 +981,7 @@ class MemoryVLA(nn.Module):
         timesteps: np.array = None,
         episode_ids: np.array = None,
         instructions: Optional[List[str]] = None,
+        images=None,
         inputs_embeds: Optional[torch.FloatTensor] = None,
         past_key_values: Optional[List[torch.FloatTensor]] = None,
         use_cache: Optional[bool] = None,
@@ -905,17 +1028,26 @@ class MemoryVLA(nn.Module):
         vision_feats = self.vlm.vision_feats
         per_tokens = self.per_compr(vision_feats)
 
+        retrieval_image_embeddings, retrieval_query_embeddings = (
+            self._encode_retrieval_inputs(images, instructions)
+        )
+
         cog_tokens = self.cog_mem_bank.process_batch(
             tokens=cog_tokens,
             episode_ids=episode_ids,
             timesteps=timesteps,
             instructions=instructions,
+            retrieval_image_embeddings=retrieval_image_embeddings,
+            retrieval_query_embeddings=retrieval_query_embeddings,
         )
 
         per_tokens = self.per_mem_bank.process_batch(
             tokens=per_tokens,
             episode_ids=episode_ids,
             timesteps=timesteps,
+            instructions=instructions,
+            retrieval_image_embeddings=retrieval_image_embeddings,
+            retrieval_query_embeddings=retrieval_query_embeddings,
         )
         if depth is None:
             raise ValueError("The depth value is missing")
@@ -941,6 +1073,9 @@ class MemoryVLA(nn.Module):
             spatial_tokens=spatial_tokens,
             episode_ids=episode_ids,
             timesteps=timesteps,
+            instructions=instructions,
+            retrieval_image_embeddings=retrieval_image_embeddings,
+            retrieval_query_embeddings=retrieval_query_embeddings,
         )
 
         # Repeat 'actions' 'repeated_diffusion_steps' times, resulting in [repeated_diffusion_steps*B, T, D]
@@ -1196,17 +1331,26 @@ class MemoryVLA(nn.Module):
         timesteps = [torch.tensor(self.cur_timestep, device=cog_tokens.device)]
         self.cur_timestep += 1
 
+        retrieval_image_embeddings, retrieval_query_embeddings = (
+            self._encode_retrieval_inputs([image], [instruction])
+        )
+
         cog_tokens = self.cog_mem_bank.process_batch(
             tokens=cog_tokens,
             episode_ids=episode_ids,
             timesteps=timesteps,
             instructions=[instruction],
+            retrieval_image_embeddings=retrieval_image_embeddings,
+            retrieval_query_embeddings=retrieval_query_embeddings,
         )
 
         per_tokens = self.per_mem_bank.process_batch(
             tokens=per_tokens,
             episode_ids=episode_ids,
             timesteps=timesteps,
+            instructions=[instruction],
+            retrieval_image_embeddings=retrieval_image_embeddings,
+            retrieval_query_embeddings=retrieval_query_embeddings,
         )
 
         if depth is None or intrinsics is None:
@@ -1238,6 +1382,9 @@ class MemoryVLA(nn.Module):
             spatial_tokens=spatial_tokens,
             episode_ids=episode_ids,
             timesteps=timesteps,
+            instructions=[instruction],
+            retrieval_image_embeddings=retrieval_image_embeddings,
+            retrieval_query_embeddings=retrieval_query_embeddings,
         )
 
         # Sample random noise

@@ -178,6 +178,7 @@ class TrainingStrategy(ABC):
                         timesteps=batch["timesteps"],
                         episode_ids=batch["episode_ids"],
                         instructions=batch["instructions"],
+                        images=batch["images"],
                         output_hidden_states=True,
                         repeated_diffusion_steps=repeated_diffusion_steps,
                     )

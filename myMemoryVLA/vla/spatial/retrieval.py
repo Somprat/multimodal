@@ -48,6 +48,8 @@ class RetrievalQuery:
     modality_hints: Sequence[str] = field(default_factory=tuple)
     object_ids: Sequence[str] = field(default_factory=tuple)
 
+
+
 # doesn't allowed these weights to be changed
 @dataclass(frozen=True)
 class RetrievalWeights:
@@ -155,7 +157,6 @@ def task_score(query: RetrievalQuery, memory: MemoryRecord) -> float:
 
     return _clamp01(score)
 
-
 class ManualRetrievalRouter:
     """Select retrieval weights from explicit task metadata, with heuristic fallback."""
 
@@ -221,6 +222,8 @@ class ManualRetrievalRouter:
         mode = self._mode_from_task_type(query) or self._mode_from_text(query.text)
         return mode, self.WEIGHTS[mode]
 
+
+
     # both these functuons' end goals are modes
     def _mode_from_task_type(self, query: RetrievalQuery) -> Optional[RetrievalMode]:
         if query.task_type is None:
@@ -269,7 +272,6 @@ class MemoryRetriever:
             spatial = spatial_score(query, memory, spatial_scale=self.spatial_scale)
             temporal = temporal_score(query, memory, temporal_scale=self.temporal_scale)
             task = task_score(query, memory)
-
             # sum of weights*task score
             # task score was obtain by consine similarity of query and memory
             total = (
