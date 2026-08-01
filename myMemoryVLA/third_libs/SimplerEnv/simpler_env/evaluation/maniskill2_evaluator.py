@@ -95,10 +95,11 @@ def run_maniskill2_eval_single_episode(
     print(task_description)
 
     # Initialize logging
-    image, depth, intrinsic = get_image_depth_intrinsics_from_maniskill2_obs_dict(env, obs, camera_name=obs_camera_name)
+    image, depth, intrinsic, extrinsic = get_image_depth_intrinsics_from_maniskill2_obs_dict(env, obs, camera_name=obs_camera_name)
     images = [image]
     depths = [depth]
     intrinsics = [intrinsic]
+    extrinsics = [extrinsic]
     predicted_actions = []
     predicted_terminated, done, truncated = False, False, False
 
@@ -134,10 +135,11 @@ def run_maniskill2_eval_single_episode(
 
         print(timestep, info)
 
-        image, depth, intrinsic = get_image_depth_intrinsics_from_maniskill2_obs_dict(env, obs, camera_name=obs_camera_name)
+        image, depth, intrinsic, extrinsic = get_image_depth_intrinsics_from_maniskill2_obs_dict(env, obs, camera_name=obs_camera_name)
         images.append(image)
         depths.append(depth)
         intrinsics.append(intrinsic)
+        extrinsic.append(extrinsic)
         timestep += 1
 
     episode_stats = info.get("episode_stats", {})

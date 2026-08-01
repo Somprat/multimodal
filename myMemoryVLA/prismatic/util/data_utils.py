@@ -154,6 +154,8 @@ class PaddedCollatorForActionPrediction:
         action_masks = [instance["action_masks"] for instance in instances]
         action_masks = torch.stack(action_masks)
 
+        # add a raw image key, not just pixel values in a collator because we need that to use the 
+        # clip model to get the feature embedding
         images = [instance["image"] for instance in instances]
 
         optional_modalities = {}

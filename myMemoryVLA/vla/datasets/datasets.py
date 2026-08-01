@@ -96,6 +96,8 @@ class RLDSBatchTransform:
             timesteps=timesteps,
             episode_ids=None,
             image=img
+            # img is the PIL image. we add this here so the dataset returns a raw image before
+            # sent to the collator
         )
 
         depth = None

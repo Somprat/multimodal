@@ -90,10 +90,11 @@ def run_maniskill2_eval_single_episode(
     print(task_description)
 
     # Initialize logging
-    image, depth, intrinsic = get_image_depth_intrinsics_from_maniskill2_obs_dict(env, obs, camera_name=obs_camera_name)
+    image, depth, intrinsic, extrinsic = get_image_depth_intrinsics_from_maniskill2_obs_dict(env, obs, camera_name=obs_camera_name)
     images = [image]
     depths = [depth]
     intrinsics = [intrinsic]
+    extrinsics = [extrinsic]
     predicted_actions = []
     predicted_terminated, done, truncated = False, False, False
 
@@ -105,6 +106,16 @@ def run_maniskill2_eval_single_episode(
     episode_first_frame = 'True'
 
     # Step the environment
+    frames = {
+        "rgb": [],
+        "depth": [],
+        "camera_intrinsics": [],
+        "camera_extrinsics": [],
+        "gripper_xyz": [],
+        "object_xyz": [],
+        "target_xyz": [],
+        "is_grasping": [],
+    }
     while not (predicted_terminated or truncated):
         # step the model; "raw_action" is raw model action output; "action" is the processed action to be sent into maniskill env
         raw_action, action = model.step(
@@ -112,6 +123,7 @@ def run_maniskill2_eval_single_episode(
             task_description,
             episode_first_frame=episode_first_frame,
         )
+
         
         episode_first_frame = 'False'
         predicted_actions.append(raw_action)
@@ -135,15 +147,50 @@ def run_maniskill2_eval_single_episode(
         is_final_subtask = env.is_final_subtask()
         
 
-        # print(timestep, info)
+        base_env = env.unwrapped
 
-        image, depth, intrinsic = get_image_depth_intrinsics_from_maniskill2_obs_dict(env, obs, camera_name=obs_camera_name)
+        image, depth, intrinsic, extrinsic = get_image_depth_intrinsics_from_maniskill2_obs_dict(env, obs, camera_name=obs_camera_name)
         images.append(image)
         depths.append(depth)
         intrinsics.append(intrinsic)
+        extrinsics.append(extrinsic)
         timestep += 1
 
+        frames["rgb"].append(np.asarray(image).copy())
+        frames["depth"].append(depth.detach().cpu().numpy())
+        frames["camera_intrinsics"].append(intrinsic.detach().cpu().numpy())
+        frames["camera_extrinsics"].append(extrinsic.detach().cpu().numpy())
+        frames["gripper_xyz"].append(np.asarray(base_env.tcp.pose.p).copy())
+        frames["object_xyz"].append(np.asarray(base_env.source_obj_pose.p).copy())
+        frames["target_xyz"].append(np.asarray(base_env.target_obj_pose.p).copy())
+        frames["is_grasping"].append(
+            base_env.agent.check_grasp(base_env.episode_source_obj)
+)       
+
+    output_dir = os.path.join(logging_dir, "probe_data")
+    os.makedirs(output_dir, exist_ok=True)
+    output_path = os.path.join(output_dir, f"{env_name}_episode{obj_episode_id:04d}.npz")
+
+
+    np.savez_compressed(
+        output_path,
+        rgb=np.stack(frames["rgb"]).astype(np.uint8),
+        depth=np.stack(frames["depth"]).astype(np.float32),
+        camera_intrinsics = np.stack(frames["camera_intrinsics"]),
+        camera_extrinsics = np.stack(frames["camera_extrinsics"]),
+        gripper_xyz = np.stack(frames["gripper_xyz"]),
+        object_xyz = np.stack(frames["object_xyz"]),
+        target_xyz = np.stack(frames["target_xyz"]),
+        is_grasping = np.asarray(frames["is_grasping"]),
+        timestep = np.arange(len(frames))
+    )
+
+
+
+
+
     print(success)
+
     episode_stats = info.get("episode_stats", {})
 
     # save video

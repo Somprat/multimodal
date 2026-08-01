@@ -234,8 +234,11 @@ class CogMemBank(nn.Module):
         if T < 2:
             return
 
+        # add the third element to make the structure consistent
+        # when the capacity hits, the bank would compare the adjacent memory (collected around the same time)
         feats = [feat for (_, feat, _) in bank]
 
+        # with cosine similarity. Then, try to fuse them to keep the bank size bounded
         sims = []
         for i in range(T - 1):
             f1 = feats[i].flatten(1) if feats[i].dim() > 1 else feats[i].unsqueeze(0)
@@ -247,18 +250,21 @@ class CogMemBank(nn.Module):
         timestep_i, feat_i, image_embedding_i = bank[idx_max]
         timestep_j, feat_j, image_embedding_j = bank[idx_max + 1]
         fused_feat = 0.5 * (feat_i + feat_j)
+
+        # normalize this because it would be used in cosine similarity in the future
         if image_embedding_i is not None and image_embedding_j is not None:
             fused_image_embedding = F.normalize(
                 0.5 * (image_embedding_i + image_embedding_j),
                 dim=0,
-            )
+            ) # dim =0 is just the tensor's first axis
+
         else:
             fused_image_embedding = image_embedding_i if image_embedding_i is not None else image_embedding_j
 
         bank[idx_max] = (timestep_i, fused_feat.detach().clone(), fused_image_embedding)
         bank.pop(idx_max + 1)
 
-
+    # This fn is basically telling what to do when the bank capacity hits
     @torch.no_grad()
     def _memory_consolidate(
             self,
@@ -275,7 +281,13 @@ class CogMemBank(nn.Module):
             if image_embedding is not None
             else None
         )
+
+        # detach = require_grad = False. stop back propogation.
+        # clone = change this stuff later won't change the original one
         self.bank[episode_id].append((timestep, feat.detach().clone(), stored_embedding))
+        # a dictionary keyed by episode ids are appending the memory unit
+        # could be like {1: [mem1, mem2], 2: [mem3, mem4], ...}
+
 
         while len(self.bank[episode_id]) > self.mem_length:
             if self.consolidate_type == 'fifo':
@@ -314,12 +326,14 @@ class CogMemBank(nn.Module):
 
         for i in range(B):
             # 1) episode management
-            eid = episode_ids[i]
+            eid = episode_ids[i] # eid = episoed id
             if self.training:
+                # group is the episodes that are relevant ome together
                 if self.dataloader_type == 'group':
                     if i > 0 and i % self.group_size == 0:
                         prev_group_eid = episode_ids[i - self.group_size]
                         self.clear_episode(prev_group_eid)
+                # stream = chronological order. The memory persists across batches
                 if self.dataloader_type == 'stream':
                     if i > 0 and episode_ids[i] != episode_ids[i - 1]:
                         self.clear_episode(episode_ids[i - 1])
@@ -327,6 +341,7 @@ class CogMemBank(nn.Module):
 
             # 2) memory retrieval
             working_mem = tokens[i].unsqueeze(0)  # (1, N, D)
+
 
             hist = self.bank.get(eid, [])
             if len(hist) > 0:
@@ -345,7 +360,8 @@ class CogMemBank(nn.Module):
                         if retrieval_query_embeddings is not None
                         else None
                     ),
-                )
+                ) # become a list of (id, cognitive features, image_embedding)
+                
                 hist_feats = [feat for _, feat, _ in hist]
                 episode_mem = torch.stack(hist_feats, dim=0).reshape(-1, D).unsqueeze(0)  # (1, T*N, D)
 
@@ -357,9 +373,28 @@ class CogMemBank(nn.Module):
                 else:
                     pe = torch.zeros_like(episode_mem)
 
+                # pe = positional encoding. when did this event occur
+
+
                 query = working_mem
                 for block in self.retrieval_blocks:
                     query = block(query, episode_mem + pe, episode_mem)
+                    # block = cross transformerblock. It's performing attention here.
+                    # query is trading relevant information with these history. The query becomes more context rich.
+
+                    # key is the timestep: we usually do episode_mem + pe, not just pe alone 
+                    # so the model know both time and context
+                    
+                    # Each block has different weights, that's why the query 
+                    # needs to attend the block multiple times
+
+
+        # self.retrieval_blocks = nn.ModuleList([
+        #     CrossTransformerBlock(self.token_size)
+        #     for _ in range(self.retrieval_layers)
+        # ])                    
+
+
 
                 retrieved_episode_mem = query
 
@@ -437,6 +472,7 @@ class CogMemBank(nn.Module):
                 timestamp=self._as_float_timestep(hist_timestep),
                 modality="visual",
             )
+            
             for index, (hist_timestep, feat, image_embedding) in enumerate(hist)
         ]
 

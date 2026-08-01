@@ -89,10 +89,12 @@ for ep_id in range(args.n_trajs):
     model.reset(instruction)
     print(instruction)
 
-    image, depth, intrinsic = get_image_depth_intrinsics_from_maniskill2_obs_dict(env, obs)  # np.ndarray of shape (H, W, 3), uint8
+    image, depth, intrinsic, extrinsic = get_image_depth_intrinsics_from_maniskill2_obs_dict(env, obs)  # np.ndarray of shape (H, W, 3), uint8
     images = [image]
     depths = [depth]
     intrinsics = [intrinsic]
+    extrinsics = [extrinsic]
+
 
     predicted_terminated, success, truncated = False, False, False
     timestep = 0
@@ -117,10 +119,11 @@ for ep_id in range(args.n_trajs):
             print(instruction)
         is_final_subtask = env.is_final_subtask() 
         # update image observation
-        image, depth, intrinsic = get_image_depth_intrinsics_from_maniskill2_obs_dict(env, obs)
+        image, depth, intrinsic, extrinsic = get_image_depth_intrinsics_from_maniskill2_obs_dict(env, obs)
         images.append(image)
         depths.append(depth)
         intrinsics.append(intrinsic)
+        extrinsics.append(extrinsic)
         timestep += 1
 
     episode_stats = info.get("episode_stats", {})

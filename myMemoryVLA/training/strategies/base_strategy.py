@@ -164,6 +164,7 @@ class TrainingStrategy(ABC):
                     "cuda", dtype=self.mixed_precision_dtype, enabled=self.enable_mixed_precision_training
                 ):
                     assert action_model is not None
+                    # batch is like a dictionary containing different parts of a collator
                     loss, output = self.vlm(
                         input_ids=batch["input_ids"],
                         attention_mask=batch["attention_mask"],
