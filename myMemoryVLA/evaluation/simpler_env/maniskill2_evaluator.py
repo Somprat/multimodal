@@ -169,7 +169,7 @@ def run_maniskill2_eval_single_episode(
 
     output_dir = os.path.join(logging_dir, "probe_data")
     os.makedirs(output_dir, exist_ok=True)
-    output_path = os.path.join(output_dir, f"{env_name}_episode{obj_episode_id:04d}.npz")
+    output_path = os.path.join(output_dir, f"{env_name}_episode_{obj_episode_id:04d}.npz")
 
 
     np.savez_compressed(
