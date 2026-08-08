@@ -13,6 +13,8 @@ load_all_data_for_training: true
 mem_length: 16
 per_token_size: 256
 pretrained_checkpoint: ./pretrained/CogACT-Large/checkpoints/CogACT-Large.pt
+query_retrieval_mode: "query"
+query_retrieval_top_k: 4
 repeated_diffusion_steps: 4
 resume_epoch: 0
 resume_step: 0

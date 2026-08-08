@@ -1192,18 +1192,17 @@ class MemoryVLA(nn.Module):
             **kwargs,
         )
 
-        # Load from Checkpoint (Custom --> should load both *projector* and *llm* weights)
+        # Keep inference loading below the host-memory limit. Construct the
+        # destination modules in BF16 before copying the large checkpoint.
         if use_bf16:
-            raw_state = torch.load(pretrained_checkpoint, map_location=device)["model"]
-            for k in raw_state:
-                for subk in raw_state[k]:
-                    raw_state[k][subk] = raw_state[k][subk].to(torch.bfloat16)
+            vlm = vlm.to(dtype=torch.bfloat16)
 
-            model_state_dict = raw_state
-        else:
-            model_state_dict = torch.load(
-                pretrained_checkpoint, map_location="cpu"
-            )["model"]
+        # Load from Checkpoint (Custom --> should load both *projector* and *llm* weights)
+        model_state_dict = torch.load(
+            str(pretrained_checkpoint),
+            map_location="cpu",
+            mmap=True,
+        )["model"]
 
         assert (
             "projector" in model_state_dict and "llm_backbone" in model_state_dict
@@ -1229,6 +1228,9 @@ class MemoryVLA(nn.Module):
                         norm_stats = norm_stats,
                         **kwargs,
                         )
+
+        if use_bf16:
+            memory_vla = memory_vla.to(dtype=torch.bfloat16)
 
         # Load ActionModel from Checkpoint
         if "action_model" in model_state_dict:
