@@ -56,7 +56,7 @@ jsonlines==4.0.0
 keras==2.15.0
 kiwisolver==1.5.0
 libclang==18.1.1
--e git+https://github.com/Somprat/multimodal.git@16fe44ab1393e2c00735cbcc044516986f249c4e#egg=mani_skill2_real2sim&subdirectory=myMemoryVLA/third_libs/SimplerEnv/ManiSkill2_real2sim
+-e git+https://github.com/Somprat/multimodal.git@5dabd7ac72c8bfe9ad06e57106f43458d7e3dab8#egg=mani_skill2_real2sim&subdirectory=myMemoryVLA/third_libs/SimplerEnv/ManiSkill2_real2sim
 Markdown==3.10.3
 markdown-it-py==4.2.0
 MarkupSafe==3.0.3
@@ -64,7 +64,7 @@ matplotlib==3.10.9
 matplotlib-inline==0.2.2
 mdurl==0.1.2
 mediapy==1.2.0
--e git+https://github.com/Somprat/multimodal.git@16fe44ab1393e2c00735cbcc044516986f249c4e#egg=memvla&subdirectory=myMemoryVLA
+-e git+https://github.com/Somprat/multimodal.git@5dabd7ac72c8bfe9ad06e57106f43458d7e3dab8#egg=memvla&subdirectory=myMemoryVLA
 mergedeep==1.3.4
 ml-dtypes==0.2.0
 mpmath==1.3.0
@@ -86,7 +86,7 @@ nvidia-nvtx-cu12==12.1.105
 oauthlib==3.3.1
 omegaconf==2.3.1
 opencv-python==4.11.0.86
-OpenEXR==3.4.13
+OpenEXR==3.4.14
 opt_einsum==3.4.0
 packaging==26.3
 parso==0.8.7
@@ -117,10 +117,10 @@ safetensors==0.8.0
 sapien==2.2.2
 scipy==1.12.0
 sentencepiece==0.1.99
--e git+https://github.com/Somprat/multimodal.git@16fe44ab1393e2c00735cbcc044516986f249c4e#egg=simpler_env&subdirectory=myMemoryVLA/third_libs/SimplerEnv
+-e git+https://github.com/Somprat/multimodal.git@5dabd7ac72c8bfe9ad06e57106f43458d7e3dab8#egg=simpler_env&subdirectory=myMemoryVLA/third_libs/SimplerEnv
 six==1.17.0
 smmap==5.0.3
-soupsieve==2.9.1
+soupsieve==2.9.2
 stack-data==0.6.3
 sympy==1.14.0
 tabulate==0.10.0

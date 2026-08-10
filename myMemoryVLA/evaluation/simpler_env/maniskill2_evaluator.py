@@ -7,6 +7,25 @@ from simpler_env.utils.env.observation_utils import get_image_depth_intrinsics_f
 from simpler_env.utils.visualization import write_video
 
 
+def _to_numpy(value):
+    """Convert torch/tensorflow/NumPy values without sharing mutable storage."""
+    if hasattr(value, "detach"):
+        value = value.detach()
+    if hasattr(value, "cpu"):
+        value = value.cpu()
+    if hasattr(value, "numpy"):
+        value = value.numpy()
+    return np.asarray(value).copy()
+
+
+def _validate_probe_frames(frames):
+    lengths = {key: len(value) for key, value in frames.items()}
+    if not lengths or len(set(lengths.values())) != 1:
+        raise ValueError(f"Probe frame arrays are not aligned: {lengths}")
+    if next(iter(lengths.values())) == 0:
+        raise ValueError("Cannot save an empty probe episode")
+
+
 def run_maniskill2_eval_single_episode(
     model,
     ckpt_path,
@@ -135,6 +154,8 @@ def run_maniskill2_eval_single_episode(
         "object_xyz": [],
         "target_xyz": [],
         "is_grasping": [],
+        "instruction": [],
+        "action": [],
     }
     base_env = env.unwrapped
     while not (predicted_terminated or truncated):
@@ -145,9 +166,29 @@ def run_maniskill2_eval_single_episode(
             episode_first_frame=episode_first_frame,
         )
 
+        # Pair the observation consumed by the policy with its predicted action.
+        # Logging after env.step() shifts observations by one timestep.
+        frames["rgb"].append(_to_numpy(image))
+        frames["depth"].append(_to_numpy(depth))
+        frames["camera_intrinsics"].append(_to_numpy(intrinsic))
+        frames["camera_extrinsics"].append(_to_numpy(extrinsic))
+        frames["gripper_xyz"].append(_to_numpy(base_env.tcp.pose.p))
+        frames["object_xyz"].append(_to_numpy(base_env.source_obj_pose.p))
+        frames["target_xyz"].append(_to_numpy(base_env.target_obj_pose.p))
+        frames["is_grasping"].append(
+            bool(base_env.agent.check_grasp(base_env.episode_source_obj))
+        )
+        frames["instruction"].append(task_description)
+        frames["action"].append(
+            np.concatenate(
+                [
+                    _to_numpy(raw_action["world_vector"]).reshape(-1),
+                    _to_numpy(raw_action["rotation_delta"]).reshape(-1),
+                    _to_numpy(raw_action["open_gripper"]).reshape(-1),
+                ]
+            ).astype(np.float32)
+        )
 
-
-        
         episode_first_frame = 'False'
         predicted_actions.append(raw_action)
         predicted_terminated = bool(action["terminate_episode"][0] > 0)
@@ -179,22 +220,16 @@ def run_maniskill2_eval_single_episode(
         extrinsics.append(extrinsic)
         timestep += 1
 
-        frames["rgb"].append(np.asarray(image).copy())
-        frames["depth"].append(depth.detach().cpu().numpy())
-        frames["camera_intrinsics"].append(intrinsic.detach().cpu().numpy())
-        frames["camera_extrinsics"].append(extrinsic.detach().cpu().numpy())
-        frames["gripper_xyz"].append(np.asarray(base_env.tcp.pose.p).copy())
-        frames["object_xyz"].append(np.asarray(base_env.source_obj_pose.p).copy())
-        frames["target_xyz"].append(np.asarray(base_env.target_obj_pose.p).copy())
-        frames["is_grasping"].append(
-            base_env.agent.check_grasp(base_env.episode_source_obj)
-)       
 
     output_dir = os.path.join(logging_dir, "probe_data")
     os.makedirs(output_dir, exist_ok=True)
-    output_path = os.path.join(output_dir, f"{env_name}_episode_{obj_episode_id:04d}.npz")
+    if obj_variation_mode == "episode":
+        episode_tag = f"episode_{obj_episode_id:04d}"
+    else:
+        episode_tag = f"xy_{obj_init_x}_{obj_init_y}"
+    output_path = os.path.join(output_dir, f"{env_name}_{episode_tag}.npz")
 
-
+    _validate_probe_frames(frames)
     np.savez_compressed(
         output_path,
         rgb=np.stack(frames["rgb"]).astype(np.uint8),
@@ -205,7 +240,10 @@ def run_maniskill2_eval_single_episode(
         object_xyz = np.stack(frames["object_xyz"]),
         target_xyz = np.stack(frames["target_xyz"]),
         is_grasping = np.asarray(frames["is_grasping"]),
-        timestep = np.arange(len(frames))
+        instruction=np.asarray(frames["instruction"]),
+        action=np.stack(frames["action"]).astype(np.float32),
+        timestep=np.arange(len(frames["rgb"]), dtype=np.int32),
+        episode_success=np.asarray(bool(done)),
     )
 
 
