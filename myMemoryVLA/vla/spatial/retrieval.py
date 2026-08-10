@@ -16,6 +16,7 @@ class RetrievalMode(str, Enum):
     AUDIO_TEMPORAL_VISUAL = "audio_temporal_visual"
     NAVIGATION = "navigation"
 
+
 # dataclass is a normal class but was automatically equipped with init, __repr__ and __eq__
 # only thinkgs we need to do is specifying each variable
 @dataclass
@@ -137,6 +138,8 @@ def temporal_score(
 
 
 def task_score(query: RetrievalQuery, memory: MemoryRecord) -> float:
+
+    # Next step: implement the object Id
     score = 0.0
     # store stuff in set to prevent duplicates
     task_tags = {tag.lower() for tag in memory.task_tags}

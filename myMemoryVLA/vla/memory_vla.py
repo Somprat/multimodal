@@ -26,9 +26,18 @@ from .spatial import retrieval
 
 from action_model.action_model import ActionModel
 from action_model.models import DiT
+from dataclasses import dataclass
 
 # Initialize Overwatch =>> Wraps `logging.Logger`
 overwatch = initialize_overwatch(__name__)
+
+@dataclass
+class BankEntry:
+    timestep: Optional[torch.Tensor]
+    feat: torch.tensor
+    image_embedding: Optional[torch.Tensor]
+    position: Optional[torch.Tensor]
+    task_tags: tuple[str, ...]
 
 
 
@@ -236,7 +245,8 @@ class CogMemBank(nn.Module):
 
         # add the third element to make the structure consistent
         # when the capacity hits, the bank would compare the adjacent memory (collected around the same time)
-        feats = [feat for (_, feat, _) in bank]
+        feats = [memory.feat for memory in bank]
+        positions = [memory.position for memory in bank]
 
         # with cosine similarity. Then, try to fuse them to keep the bank size bounded
         sims = []
@@ -247,21 +257,26 @@ class CogMemBank(nn.Module):
 
         idx_max = int(torch.tensor(sims).argmax().item())
 
-        timestep_i, feat_i, image_embedding_i = bank[idx_max]
-        timestep_j, feat_j, image_embedding_j = bank[idx_max + 1]
-        fused_feat = 0.5 * (feat_i + feat_j)
-
+        memory_i = bank[idx_max]
+        memory_j = bank[idx_max + 1]
+        fused_feat = 0.5 * (memory_i.feat + memory_j.feat)
+        fused_position = 0.5*(memory_i.position + memory_j.position) if memory_i.position is not None and memory_j.position is not None else None
         # normalize this because it would be used in cosine similarity in the future
-        if image_embedding_i is not None and image_embedding_j is not None:
+        if memory_i.image_embedding is not None and memory_j.image_embedding is not None:
             fused_image_embedding = F.normalize(
-                0.5 * (image_embedding_i + image_embedding_j),
+                0.5 * (memory_i.image_embedding + memory_j.image_embedding),
                 dim=0,
             ) # dim =0 is just the tensor's first axis
 
         else:
-            fused_image_embedding = image_embedding_i if image_embedding_i is not None else image_embedding_j
+            fused_image_embedding = memory_i.image_embedding if memory_i.image_embedding is not None else memory_j.image_embedding
 
-        bank[idx_max] = (timestep_i, fused_feat.detach().clone(), fused_image_embedding)
+        max_bank = bank[idx_max]
+        max_bank.timestep = memory_i.timestep
+        max_bank.feat = fused_feat.detach().clone()
+        max_bank.image_embedding = fused_image_embedding
+        max_bank.position = fused_position
+
         bank.pop(idx_max + 1)
 
     # This fn is basically telling what to do when the bank capacity hits
@@ -272,6 +287,8 @@ class CogMemBank(nn.Module):
             feat: torch.Tensor,
             timestep: Optional[torch.Tensor],
             image_embedding: Optional[torch.Tensor] = None,
+            position: Optional[torch.Tensor] = None,
+            task_tags: tuple[str,...] = None
             ):
         if episode_id not in self.bank:
             self.bank[episode_id] = []
@@ -282,9 +299,21 @@ class CogMemBank(nn.Module):
             else None
         )
 
+        stored_position = (
+            position.detach().clone()
+            if position is not None
+            else None
+        )
+
         # detach = require_grad = False. stop back propogation.
         # clone = change this stuff later won't change the original one
-        self.bank[episode_id].append((timestep, feat.detach().clone(), stored_embedding))
+        self.bank[episode_id].append(BankEntry(
+            timestep=timestep,
+            feat=feat.detach().clone(),
+            image_embedding=image_embedding,
+            position=stored_position,
+            task_tags=task_tags
+        ))
         # a dictionary keyed by episode ids are appending the memory unit
         # could be like {1: [mem1, mem2], 2: [mem3, mem4], ...}
 
@@ -305,6 +334,8 @@ class CogMemBank(nn.Module):
         instructions: Optional[List[str]] = None,
         retrieval_image_embeddings: Optional[torch.Tensor] = None,
         retrieval_query_embeddings: Optional[torch.Tensor] = None,
+        positions: Optional[list] = None,
+        task_type: Optional[str] = None
     ) -> torch.Tensor:
         assert episode_ids is not None, "episode_ids must be provided during training"
 
@@ -324,7 +355,19 @@ class CogMemBank(nn.Module):
                     self.clear_episode(self.eid_stream)
                 self.eid_stream = first_eid
 
+
         for i in range(B):
+            instruction = (
+                instructions[i]
+                if instructions is not None and i < len(instructions)
+                else ""
+            )
+            mode, _ = self.query_retriever.router.route(
+                retrieval.RetrievalQuery(text=instruction)
+            )
+            task_type=mode.value    
+            position = positions[i] if positions is not None else None
+
             # 1) episode management
             eid = episode_ids[i] # eid = episoed id
             if self.training:
@@ -342,14 +385,8 @@ class CogMemBank(nn.Module):
             # 2) memory retrieval
             working_mem = tokens[i].unsqueeze(0)  # (1, N, D)
 
-
             hist = self.bank.get(eid, [])
             if len(hist) > 0:
-                instruction = (
-                    instructions[i]
-                    if instructions is not None and i < len(instructions)
-                    else ""
-                )
                 hist = self._select_history(
                     hist=hist,
                     working_mem=working_mem,
@@ -360,13 +397,15 @@ class CogMemBank(nn.Module):
                         if retrieval_query_embeddings is not None
                         else None
                     ),
+                    current_position=position,
+                    task_type=task_type
                 ) # become a list of (id, cognitive features, image_embedding)
                 
-                hist_feats = [feat for _, feat, _ in hist]
+                hist_feats = [memory.feat for memory in hist]
                 episode_mem = torch.stack(hist_feats, dim=0).reshape(-1, D).unsqueeze(0)  # (1, T*N, D)
 
                 if self.use_timestep_pe:
-                    hist_timesteps = [t for t, _, _ in hist]
+                    hist_timesteps = [memory.timestep for memory in hist]
                     hist_timesteps = torch.tensor(hist_timesteps).to(working_mem.device)
                     pe = self.timestep_encoder(hist_timesteps).unsqueeze(0)  # (1, T, D)
                     pe = pe.repeat_interleave(N, dim=1) # (1, T*N, D)
@@ -378,23 +417,7 @@ class CogMemBank(nn.Module):
 
                 query = working_mem
                 for block in self.retrieval_blocks:
-                    query = block(query, episode_mem + pe, episode_mem)
-                    # block = cross transformerblock. It's performing attention here.
-                    # query is trading relevant information with these history. The query becomes more context rich.
-
-                    # key is the timestep: we usually do episode_mem + pe, not just pe alone 
-                    # so the model know both time and context
-                    
-                    # Each block has different weights, that's why the query 
-                    # needs to attend the block multiple times
-
-
-        # self.retrieval_blocks = nn.ModuleList([
-        #     CrossTransformerBlock(self.token_size)
-        #     for _ in range(self.retrieval_layers)
-        # ])                    
-
-
+                    query = block(query, episode_mem + pe, episode_mem)      
 
                 retrieved_episode_mem = query
 
@@ -410,6 +433,7 @@ class CogMemBank(nn.Module):
 
             outputs.append(fused_feats)
 
+
             # 4) memory consolidate
             timestep_i = timesteps[i] if self.use_timestep_pe else None
             image_embedding_i = (
@@ -418,12 +442,15 @@ class CogMemBank(nn.Module):
                 else None
             )
 
+
             if self.update_fused:
                 self._memory_consolidate(
                     eid,
                     fused_feats.squeeze(0),
                     timestep_i,
                     image_embedding=image_embedding_i,
+                    position=positions[i] if positions is not None else None,
+                    task_tags=(task_type,)
                 )
             else:
                 self._memory_consolidate(
@@ -431,6 +458,8 @@ class CogMemBank(nn.Module):
                     tokens[i],
                     timestep_i,
                     image_embedding=image_embedding_i,
+                    position=positions[i] if positions is not None else None,
+                    task_tags=(task_type,)
                 )
 
         return torch.cat(outputs, dim=0)  # [B, N, D_role]
@@ -442,6 +471,8 @@ class CogMemBank(nn.Module):
         instruction: str,
         timestep,
         query_embedding: Optional[torch.Tensor] = None,
+        current_position: Optional[list] = None,
+        task_type: Optional[str] = None
     ):
         if self.query_retrieval_mode == "off" or len(hist) <= self.query_retrieval_top_k:
             return hist
@@ -449,6 +480,8 @@ class CogMemBank(nn.Module):
         if self.query_retrieval_mode == "shuffled":
             indices = torch.randperm(len(hist))[:self.query_retrieval_top_k].tolist()
             return [hist[index] for index in indices]
+# need the query position here and task type
+
         query = retrieval.RetrievalQuery(
             text=instruction,
             embedding=(
@@ -458,22 +491,26 @@ class CogMemBank(nn.Module):
             ),
             current_time=self._as_float_timestep(timestep),
             modality_hints=("visual",),
+            current_position=current_position,
+            task_type=task_type
         )
 
-
+        # needs to find memory positions and its task_type
         records = [
             retrieval.MemoryRecord(
                 id=str(index),
                 embedding=(
-                    image_embedding
-                    if image_embedding is not None
-                    else feat.detach().mean(dim=0)
+                    memory.image_embedding
+                    if memory.image_embedding is not None
+                    else memory.feat.detach().mean(dim=0)
                 ),
-                timestamp=self._as_float_timestep(hist_timestep),
+                timestamp=self._as_float_timestep(memory.timestep),
                 modality="visual",
+                position=memory.position,
+                task_tags=memory.task_tags
             )
             
-            for index, (hist_timestep, feat, image_embedding) in enumerate(hist)
+            for index, memory in enumerate(hist)
         ]
 
         results = self.query_retriever.retrieve(
@@ -483,7 +520,13 @@ class CogMemBank(nn.Module):
         )
 
         return [hist[int(result.memory.id)] for result in results]
-
+# @dataclass
+# class BankEntry:
+#     timestep: Optional[torch.Tensor]
+#     feat: torch.tensor
+#     image_embedding: Optional[torch.Tensor]
+#     position: Optional[torch.Tensor]
+#     task_tags: tuple[str, ...]
 
     @staticmethod
     def _as_float_timestep(timestep) -> Optional[float]:
@@ -507,6 +550,7 @@ class PerMemBank(CogMemBank):
                  update_fused: bool = False,
                  query_retrieval_mode: str = "off",
                  query_retrieval_top_k: int = 4,
+                 current_position: Optional[list] = None
                  ):
         super().__init__(
             dataloader_type=dataloader_type,
@@ -965,6 +1009,7 @@ class MemoryVLA(nn.Module):
         instructions: Optional[List[str]] = None,
         retrieval_image_embeddings: Optional[torch.Tensor] = None,
         retrieval_query_embeddings: Optional[torch.Tensor] = None,
+        positions: Optional[torch.tensor] = None
     ) -> torch.Tensor:
         if spatial_tokens is None:
             return per_tokens
@@ -976,6 +1021,7 @@ class MemoryVLA(nn.Module):
             instructions=instructions,
             retrieval_image_embeddings=retrieval_image_embeddings,
             retrieval_query_embeddings=retrieval_query_embeddings,
+            positions=positions
         )
         spatial_context = self.spatial_to_per_fusion(
             per_tokens,
@@ -1041,6 +1087,8 @@ class MemoryVLA(nn.Module):
             return_dict=return_dict,
         )
 
+        positions = proprio[:, :3]if proprio is not None else None
+
         # extract the visual token number
         if self.vlm.vision_backbone.featurizer is not None:
             num_patch = self.vlm.vision_backbone.featurizer.patch_embed.num_patches
@@ -1068,6 +1116,14 @@ class MemoryVLA(nn.Module):
             self._encode_retrieval_inputs(images, instructions)
         )
 
+        if proprio is not None:
+            current_position = proprio[:, :3]
+
+        else:
+            proprio=None
+
+
+
         cog_tokens = self.cog_mem_bank.process_batch(
             tokens=cog_tokens,
             episode_ids=episode_ids,
@@ -1075,6 +1131,7 @@ class MemoryVLA(nn.Module):
             instructions=instructions,
             retrieval_image_embeddings=retrieval_image_embeddings,
             retrieval_query_embeddings=retrieval_query_embeddings,
+            positions=positions,
         )
 
         per_tokens = self.per_mem_bank.process_batch(
@@ -1084,6 +1141,7 @@ class MemoryVLA(nn.Module):
             instructions=instructions,
             retrieval_image_embeddings=retrieval_image_embeddings,
             retrieval_query_embeddings=retrieval_query_embeddings,
+            positions=positions,
         )
         if depth is None:
             raise ValueError("The depth value is missing")
@@ -1112,6 +1170,7 @@ class MemoryVLA(nn.Module):
             instructions=instructions,
             retrieval_image_embeddings=retrieval_image_embeddings,
             retrieval_query_embeddings=retrieval_query_embeddings,
+            positions=positions
         )
 
         # Repeat 'actions' 'repeated_diffusion_steps' times, resulting in [repeated_diffusion_steps*B, T, D]
@@ -1292,7 +1351,7 @@ class MemoryVLA(nn.Module):
         use_ddim: bool = False,
         num_ddim_steps: int = 10,
         episode_first_frame: str = 'False',
-
+        current_position: torch.Tensor = None,
         **kwargs: str
     ) -> np.ndarray:
         """
@@ -1311,6 +1370,13 @@ class MemoryVLA(nn.Module):
         image_transform, tokenizer = self.vlm.vision_backbone.image_transform, self.vlm.llm_backbone.tokenizer
 
         # Build VLA Prompt
+        positions = torch.as_tensor(
+            current_position,
+            device=self.vlm.device,
+            dtype=torch.float32
+        ).reshape(1, 3)
+
+
         prompt_builder = self.vlm.get_prompt_builder()
         prompt_builder.add_turn(role="human", message=f"What action should the robot take to {instruction.lower()}?")
         prompt_text = prompt_builder.get_prompt()
@@ -1366,12 +1432,13 @@ class MemoryVLA(nn.Module):
             self.cur_timestep = 0
 
         episode_ids = [0]
-        timesteps = [torch.tensor(self.cur_timestep, device=cog_tokens.device)]
+        timesteps = [torch.tensor(self.cur_timestep, device=self.vlm.device)]
         self.cur_timestep += 1
 
         retrieval_image_embeddings, retrieval_query_embeddings = (
             self._encode_retrieval_inputs([image], [instruction])
         )
+
 
         cog_tokens = self.cog_mem_bank.process_batch(
             tokens=cog_tokens,
@@ -1380,7 +1447,9 @@ class MemoryVLA(nn.Module):
             instructions=[instruction],
             retrieval_image_embeddings=retrieval_image_embeddings,
             retrieval_query_embeddings=retrieval_query_embeddings,
+            positions=positions,
         )
+
 
         per_tokens = self.per_mem_bank.process_batch(
             tokens=per_tokens,
@@ -1389,6 +1458,7 @@ class MemoryVLA(nn.Module):
             instructions=[instruction],
             retrieval_image_embeddings=retrieval_image_embeddings,
             retrieval_query_embeddings=retrieval_query_embeddings,
+            positions=positions,
         )
 
         if depth is None or intrinsics is None:
@@ -1423,6 +1493,7 @@ class MemoryVLA(nn.Module):
             instructions=[instruction],
             retrieval_image_embeddings=retrieval_image_embeddings,
             retrieval_query_embeddings=retrieval_query_embeddings,
+            positions=positions,
         )
 
         # Sample random noise

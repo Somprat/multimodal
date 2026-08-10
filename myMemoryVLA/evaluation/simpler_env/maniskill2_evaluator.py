@@ -31,6 +31,26 @@ def run_maniskill2_eval_single_episode(
     additional_env_save_tags=None,
     logging_dir="./results",
 ):
+                #     kwargs = dict(
+                #     model=model,
+                #     ckpt_path=args.ckpt_path,
+                #     robot_name=args.robot,
+                #     env_name=args.env_name,
+                #     scene_name=args.scene_name,
+                #     robot_init_x=robot_init_x,
+                #     robot_init_y=robot_init_y,
+                #     robot_init_quat=robot_init_quat,
+                #     control_mode=control_mode,
+                #     additional_env_build_kwargs=args.additional_env_build_kwargs,
+                #     rgb_overlay_path=args.rgb_overlay_path,
+                #     control_freq=args.control_freq,
+                #     sim_freq=args.sim_freq,
+                #     max_episode_steps=args.max_episode_steps,
+                #     enable_raytracing=args.enable_raytracing,
+                #     additional_env_save_tags=args.additional_env_save_tags,
+                #     obs_camera_name=args.obs_camera_name,
+                #     logging_dir=args.logging_dir,
+                # )
 
     if additional_env_build_kwargs is None:
         additional_env_build_kwargs = {}
@@ -116,13 +136,16 @@ def run_maniskill2_eval_single_episode(
         "target_xyz": [],
         "is_grasping": [],
     }
+    base_env = env.unwrapped
     while not (predicted_terminated or truncated):
         # step the model; "raw_action" is raw model action output; "action" is the processed action to be sent into maniskill env
         raw_action, action = model.step(
             image, depth, intrinsic,
-            task_description,
+            task_description, current_position=np.asarray(base_env.tcp.pose.p, dtype=np.float32),
             episode_first_frame=episode_first_frame,
         )
+
+
 
         
         episode_first_frame = 'False'
@@ -147,7 +170,7 @@ def run_maniskill2_eval_single_episode(
         is_final_subtask = env.is_final_subtask()
         
 
-        base_env = env.unwrapped
+
 
         image, depth, intrinsic, extrinsic = get_image_depth_intrinsics_from_maniskill2_obs_dict(env, obs, camera_name=obs_camera_name)
         images.append(image)

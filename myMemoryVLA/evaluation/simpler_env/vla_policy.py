@@ -140,6 +140,7 @@ class VLAInference:
     def step(
         self, image: np.ndarray, depth: np.float64, intrinsic:np.float64,
             task_description: Optional[str] = None,
+            current_position: Optional[list] = None,
             episode_first_frame: str = 'False',
             *args, **kwargs
     ) -> tuple[dict[str, np.ndarray], dict[str, np.ndarray]]:
@@ -183,6 +184,7 @@ class VLAInference:
             use_ddim=self.use_ddim,
             num_ddim_steps=self.num_ddim_steps,
             episode_first_frame=episode_first_frame,
+            current_position=current_position,
             **spatial_inputs,
             )
 

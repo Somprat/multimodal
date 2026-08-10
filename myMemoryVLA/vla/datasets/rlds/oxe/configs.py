@@ -575,6 +575,7 @@ OXE_DATASET_CONFIGS = {
             "secondary": "image_right",
             "wrist": "image_wrist",
         },
+        
         "depth_obs_keys": {"primary": None, "secondary": None, "wrist": None},
         "state_obs_keys": ["proprio"],
         "state_encoding": StateEncoding.JOINT,
