@@ -1147,7 +1147,7 @@ class MemoryVLA(nn.Module):
             raise ValueError("The depth value is missing")
         if intrinsics is None:
             raise ValueError("The intrinsics value is missing")
-
+        
         points, valid_masks = geometry.depth_to_points(
             depth=depth,
             intrinsics=intrinsics,

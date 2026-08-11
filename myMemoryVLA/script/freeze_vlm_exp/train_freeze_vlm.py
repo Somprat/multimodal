@@ -15,6 +15,7 @@ from torch.utils.data import DataLoader
 from train_spatial_probe import ProbeFrameDataset
 from vla.spatial.encoder import PointCloudSpatialEncoder
 from vla.spatial.geometry import depth_to_points, transform_points
+import vla.memory_vla as memory_vla
 
 
 class ProbeHeads(nn.Module):
@@ -42,10 +43,45 @@ class ProbeHeads(nn.Module):
 
 
 class ProbeModel(nn.Module):
-    def __init__(self, variant, rgb_feature_dim):
+    def __init__(self, variant, 
+            rgb_feature_dim, 
+            query_retrieval_mode: str = "query", # One of: off, query, shuffled
+            dataloader_type: str = "group", # Type of dataloader, chose from ['group', 'stream', 'parallel_stream']
+            group_size: int = 16, # Group size for 'group' dataloader
+            per_token_size: int = 256, # Token size for perception compression
+            mem_length: int = 16, # Memory length
+            retrieval_layers: int = 2, # Number of layers of memory retrieval
+            query_retrieval_top_k: int = 4, # Historical cognition records selected per query
+            use_timestep_pe: bool = True, # Whether to use timestep positional encoding
+            fusion_type: str = 'gate',# Memory fusion type, chose from ['gate', 'add'])
+            consolidate_type: str = 'tome', # Memory consolidate type, chose from ['fifo', 'tome']
+            update_fused: bool = False, # Whether to update fused memory
+            load_depth: bool = True, # Whether to load depth observations from RLDS
+            load_proprio: bool = True, # Whether to load proprioceptive observations from RLDS
+            use_spatial_features: bool = True,
+            query_retrieval: bool = True): # Whether to load/use precomputed spatial features if available
+        
+        
         super().__init__()
         self.variant = variant
         self.spatial_encoder = None
+        self.dataloader_type = dataloader_type
+        self.group_size = group_size
+        self.per_token_size = per_token_size
+        self.mem_length = mem_length
+        self.retrieval_layers = retrieval_layers
+        self.query_retrieval_mode = query_retrieval_mode
+        self.query_retrieval_top_k = query_retrieval_top_k
+        self.use_timestep_pe = use_timestep_pe
+        self.fusion_type = fusion_type
+        self.consolidate_type = consolidate_type
+        self.updated_fused = update_fused
+        self.load_depth = load_depth
+        self.load_proprio = load_proprio
+        self.use_spatial_features = use_spatial_features
+
+
+        self.memory_vla=memory_vla.MemoryVLA()
 
         if variant in {"rgb_spatial", "spatial"}:
             self.spatial_encoder = PointCloudSpatialEncoder(
@@ -56,37 +92,134 @@ class ProbeModel(nn.Module):
                 max_points=1024,
             )
 
+        self.per_mem_bank = memory_vla.PerMemBank(
+            dataloader_type=self.dataloader_type,
+            group_size=self.group_size,
+            token_size=self.per_token_size,
+            mem_length=self.mem_length,
+            retrieval_layers=self.retrieval_layers,
+            use_timestep_pe=self.use_timestep_pe,
+            fusion_type=self.fusion_type,
+            consolidate_type=self.consolidate_type,
+            update_fused=self.update_fused,
+            query_retrieval_mode=self.query_retrieval_mode,
+            query_retrieval_top_k=self.query_retrieval_top_k,
+        )
+
+        self.get_clip_features = memory_vla.MemoryVLA._encode_retrieval_inputs()
+        self.fuse_tokens = memory_vla.MemoryVLA._fuse_spatial_tokens()
+
         input_dim = {
             "rgb": rgb_feature_dim,
             "rgb_spatial": rgb_feature_dim + 256,
             "spatial": 256,
         }[variant]
+
         self.heads = ProbeHeads(input_dim)
+        
+        
 
     def forward(self, batch):
-        rgb_features = batch["rgb_features"].float().detach()
+        rgb_features = batch.rgb_features.float().detach()
+        episode_ids = batch.episode_id # right now doesn't have one
+        timesteps = batch.timestep
+        instructions = batch.instructions
+        positions = batch.positions
+        # these are arguments for process_batch
+        
+        if self.query_retrieval_mode == "off":
+            if self.variant == "rgb":
+                probe_input = rgb_features
+            else:
+                points_camera, point_mask = depth_to_points(
+                    batch.depth, batch.intrinsics
+                )
+                points_world = transform_points(
+                    points_camera, torch.linalg.inv(batch.extrinsics)
+                )
+                spatial_tokens = self.spatial_encoder(
+                    points=points_world,
+                    point_mask=point_mask,
+                )
+                spatial_features = spatial_tokens.mean(dim=1)
+                probe_input = (
+                    torch.cat([rgb_features, spatial_features], dim=-1)
+                    if self.variant == "rgb_spatial"
+                    else spatial_features
+                )
+            return self.heads(probe_input)
 
-        if self.variant == "rgb":
-            probe_input = rgb_features
+        if self.query_retrieval_mode == 'query':
+            if self.variant == 'rgb':
+                input_tokens = rgb_features.unsqueeze(1)
+                retrieval_image_embeddings, retrieval_query_embeddings =  self.get_clip_features(rgb_features, instructions)
+
+
+                result_tokens = self.per_mem_bank.process_batch(
+                    tokens=input_tokens,
+                    episode_ids=episode_ids,
+                    timesteps=timesteps,
+                    instructions=instructions,
+                    retrieval_image_embeddings=retrieval_image_embeddings,
+                    retrieval_query_embeddings=retrieval_query_embeddings,
+                    positions=positions,
+                )
+                result_features = result_tokens.squeeze(1)
+            elif self.variant == 'rgb_spatial':
+                #rgb
+                input_tokens = rgb_features.unsqueeze(1)
+                retrieval_image_embeddings, retrieval_query_embeddings =  self.get_clip_features(rgb_features, instructions)
+
+
+                per_tokens = self.per_mem_bank.process_batch(
+                    tokens=input_tokens,
+                    episode_ids=episode_ids,
+                    timesteps=timesteps,
+                    instructions=instructions,
+                    retrieval_image_embeddings=retrieval_image_embeddings,
+                    retrieval_query_embeddings=retrieval_query_embeddings,
+                    positions=positions,
+                )
+
+                # spatial
+                points_camera, point_mask = depth_to_points(
+                    batch["depth"], batch["intrinsics"]
+                )
+                points_world = transform_points(
+                    points_camera, torch.linalg.inv(batch["extrinsics"])
+                )
+                spatial_tokens = self.spatial_encoder(
+                    points=points_world,
+                    point_mask=point_mask,
+                )
+                fused_tokens = self.fuse_tokens(
+                    per_tokens=per_tokens,
+                    spatial_tokens=spatial_tokens,
+                    episode_ids=episode_ids,
+                    spatial_tokens=spatial_tokens,
+                    timesteps=timesteps,
+                    instructions=instructions,
+                    retrieval_image_embeddings=retrieval_image_embeddings,
+                    retrieval_query_embeddings=retrieval_query_embeddings,
+                    positions=positions
+                )
+                result_features = fused_tokens.squeeze(1)
+            elif self.variant == 'spatial':
+                points_camera, point_mask = depth_to_points(
+                    batch["depth"], batch["intrinsics"]
+                )
+                points_world = transform_points(
+                    points_camera, torch.linalg.inv(batch["extrinsics"])
+                )
+                spatial_tokens = self.spatial_encoder(
+                    points=points_world,
+                    point_mask=point_mask,
+                )
+                result_features = spatial_tokens.squeeze(1)
+
+            return self.heads(result_features)
         else:
-            points_camera, point_mask = depth_to_points(
-                batch["depth"], batch["intrinsics"]
-            )
-            points_world = transform_points(
-                points_camera, torch.linalg.inv(batch["extrinsics"])
-            )
-            spatial_tokens = self.spatial_encoder(
-                points=points_world,
-                point_mask=point_mask,
-            )
-            spatial_features = spatial_tokens.mean(dim=1)
-            probe_input = (
-                torch.cat([rgb_features, spatial_features], dim=-1)
-                if self.variant == "rgb_spatial"
-                else spatial_features
-            )
-
-        return self.heads(probe_input)
+            raise ValueError("Please put only either off or query")
 
 
 def move_batch(batch, device):
@@ -151,7 +284,7 @@ def evaluate(model, loader, device, grasp_loss):
             predictions["valid_grasp"], targets["valid_grasp"]
         ),
     }
-
+# figure out how to include the query stuff here
 
 def main():
     parser = argparse.ArgumentParser()
@@ -166,6 +299,7 @@ def main():
     parser.add_argument("--batch-size", type=int, default=32)
     parser.add_argument("--learning-rate", type=float, default=1e-3)
     parser.add_argument("--seed", type=int, default=42)
+    parser.add_argument("--query_retrieval_mode", type=Path, default="query")
     args = parser.parse_args()
 
     random.seed(args.seed)
@@ -190,8 +324,8 @@ def main():
     generator = torch.Generator().manual_seed(args.seed)
     train_loader = DataLoader(
         train_dataset,
-        batch_size=args.batch_size,
-        shuffle=True,
+        batch_size=1,
+        shuffle=False,
         generator=generator,
     )
     validation_loader = DataLoader(
@@ -202,7 +336,7 @@ def main():
     )
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model = ProbeModel(args.variant, train_dataset.rgb_feature_dim).to(device)
+    model = ProbeModel(args.variant, train_dataset.rgb_feature_dim, query_retrieval_mode=args.query_retrieval_mode).to(device)
     optimizer = torch.optim.Adam(model.parameters(), lr=args.learning_rate)
 
     positives = train_dataset.valid_grasp.sum().item()

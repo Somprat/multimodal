@@ -34,6 +34,7 @@ def main() -> None:
         type=Path,
         default=Path("/workspace/multimodal/models/model_b/checkpoints/memvla-bridge.pt"),
     )
+    
     parser.add_argument("--cache-dir", type=Path, default=None)
     parser.add_argument("--splits", type=Path, default=None)
     parser.add_argument("--batch-size", type=int, default=16)
@@ -76,7 +77,7 @@ def main() -> None:
         if cache_path.exists() and not args.overwrite:
             print(f"Skipping existing cache: {cache_path.name}")
             continue
-
+    
         with np.load(episode_path, allow_pickle=False) as data:
             rgb_frames = data["rgb"].copy()
 
