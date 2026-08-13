@@ -618,7 +618,7 @@ class SpatialEncoder(nn.Module):
             depth = depth.permute(0, 3, 1, 2)
         assert depth.dim() == 4 and depth.shape[1] == 1, "depth must be [B, 1, H, W], [B, H, W], or [B, H, W, 1]"
         return depth
-
+    
     def forward(
         self,
         depth: Optional[torch.Tensor] = None,
