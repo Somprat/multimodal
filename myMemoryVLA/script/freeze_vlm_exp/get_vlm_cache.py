@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Cache frozen VLM vision features for every recorded probe episode."""
+# convert the rgb episode (npz) to the frozen cache rgb features.
 
 import argparse
 import gc

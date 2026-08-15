@@ -23,6 +23,7 @@ from prismatic.util.nn_utils import FusedMLPProjector, LinearProjector, MLPProje
 from .spatial import geometry
 from .spatial.encoder import PointCloudSpatialEncoder as SpatialPointCloudEncoder
 from .spatial import retrieval
+from .episodic.episodic_bank import EpisodicMemBank
 
 from action_model.action_model import ActionModel
 from action_model.models import DiT
@@ -807,6 +808,14 @@ class MemoryVLA(nn.Module):
         query_retrieval_top_k: int = 4,
 
 
+        max_steps: int = 5,
+    
+        kick_method: str = "fifo",
+        top_k: int = 4,
+        novelty_threshold = 0.8,
+
+
+
         **kwargs,
     ) -> None:
         super().__init__()
@@ -830,6 +839,13 @@ class MemoryVLA(nn.Module):
         self.query_retrieval_mode = query_retrieval_mode
         self.query_retrieval_top_k = query_retrieval_top_k
 
+
+        self.max_steps = max_steps
+        self.kick_method = kick_method
+        self.top_k = top_k
+        self.novelty_threshold = novelty_threshold
+        
+
         self.cur_timestep = 0
 
         self.clip_processor = CLIPProcessor.from_pretrained(
@@ -843,6 +859,9 @@ class MemoryVLA(nn.Module):
 
         self.vision_dim = self.vlm.vision_backbone.dino_featurizer.patch_embed.proj.weight.shape[0] + \
                  self.vlm.vision_backbone.siglip_featurizer.patch_embed.proj.weight.shape[0]
+
+
+        self.token_size = token_size
 
 
         self.per_compr = BottleneckSE(
@@ -878,9 +897,20 @@ class MemoryVLA(nn.Module):
             query_retrieval_mode=self.query_retrieval_mode,
             query_retrieval_top_k=self.query_retrieval_top_k,
         )
-# we want to use the forwar function of this class which takes in points
-# we already have the depth_to_points function from geometry.py
-# Goal: connect whatever that gives us depth, plug in the depth_to_points and put it here!
+
+        self.episodic_bank = EpisodicMemBank(max_steps=5,
+                                             
+                 dataloader_type = "stream",
+                 group_size = self.group_size,
+                 token_size = self.token_size,
+                 mem_length = self.mem_length,
+                 retrieval_layers = self.retrieval_layers,
+                 use_timestep_pe = self.use_timestep_pe,
+                 fusion_type = self.fusion_type,
+                 consolidate_type = self.consolidate_type,
+                 update_fused = self.update_fused,
+                 query_retrieval_mode = self.query_retrieval_mode,
+                 query_retrieval_top_k = self.query_retrieval_top_k)
         
         self.spatial_encoder = SpatialEncoder(
             spatial_token_size = self.per_token_size,
@@ -1111,6 +1141,13 @@ class MemoryVLA(nn.Module):
 
         vision_feats = self.vlm.vision_feats
         per_tokens = self.per_compr(vision_feats)
+
+        if timesteps == 0:
+            self.episodic_bank.start_episode(image=images, instruction=instructions)
+
+            topk_memory = self.episodic_bank.process_batch(current_instruction=instructions, initial_frame=images)
+
+        
 
         retrieval_image_embeddings, retrieval_query_embeddings = (
             self._encode_retrieval_inputs(images, instructions)

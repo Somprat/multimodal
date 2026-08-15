@@ -3,6 +3,7 @@
 from pathlib import Path
 
 import numpy as np
+import os
 import torch
 from torch.utils.data import Dataset
 
@@ -20,14 +21,14 @@ class ProbeFrameDataset(Dataset):
         target_relative = []
         object_distance = []
         valid_grasp = []
-        timesteps = []
+        timesteps_list = []
         instructions = []
         positions = []
         episode_ids = []
 
         #maybe this is episode id?
         for episode_id, episode_name in enumerate(episode_names):
-            episode_path = data_dir / episode_name
+            episode_path = Path(os.path.join(data_dir, "probe_data", episode_name))
             cache_path = cache_dir / f"{episode_path.stem}.pt"
             if not cache_path.exists():
                 raise FileNotFoundError(
@@ -42,7 +43,7 @@ class ProbeFrameDataset(Dataset):
                 frame_count = len(data["rgb"])
 
                 # .long() changes the elements from float to integer
-                timesteps = data.get("timestep", np.arange(frame_count)).long()
+                timesteps = torch.from_numpy(np.asarray(data.get("timestep", np.arange(frame_count))))
 
                 depth = torch.from_numpy(data["depth"].copy()).float()
                 camera_intrinsics = torch.from_numpy(
@@ -61,7 +62,7 @@ class ProbeFrameDataset(Dataset):
                 grasp = torch.from_numpy(
                     data["is_grasping"].astype(np.float32)
                 )
-                raw_instructions = data["instructions"]
+                raw_instructions = data["instruction"]
                 if raw_instructions.ndim == 0:
                     instruction = [str(raw_instructions.item())] * frame_count
                 else:
@@ -85,7 +86,7 @@ class ProbeFrameDataset(Dataset):
                 "timestep": timesteps,
                 "instruction": instruction,
                 "gripper_xyz": gripper_xyz,
-                "episode_ids": episode_id
+                "episode_ids": episode_id_tensor
             }
             for name, tensor in tensors.items():
                 if len(tensor) != frame_count:
@@ -101,10 +102,10 @@ class ProbeFrameDataset(Dataset):
             target_relative.append(target_rel)
             object_distance.append(distance)
             valid_grasp.append(grasp)
-            timesteps.append(timesteps)
+            timesteps_list.append(timesteps)
             instructions.extend(instruction)
             positions.append(gripper_xyz)
-            episode_ids.append(episode_id)
+            episode_ids.append(episode_id_tensor)
 
         if not rgb_features:
             raise ValueError("The split contains no episodes")
@@ -117,9 +118,10 @@ class ProbeFrameDataset(Dataset):
         self.target_relative = torch.cat(target_relative)
         self.object_distance = torch.cat(object_distance)
         self.valid_grasp = torch.cat(valid_grasp)
-        self.timesteps = torch.cat(timesteps)
+        self.timesteps = torch.cat(timesteps_list)
         self.instructions = instructions
         self.positions = torch.cat(positions)
+        self.episode_ids = torch.cat(episode_ids)
 
 
     @property
@@ -139,8 +141,9 @@ class ProbeFrameDataset(Dataset):
             "target_relative": self.target_relative[index],
             "object_distance": self.object_distance[index],
             "valid_grasp": self.valid_grasp[index],
-            "timestep": self.timesteps[index],
+            "timesteps": self.timesteps[index],
             "instructions": self.instructions[index],
-            "self.positions": self.positions[index]
+            "positions": self.positions[index],
+            "episode_ids": self.episode_ids[index]
         }
     
