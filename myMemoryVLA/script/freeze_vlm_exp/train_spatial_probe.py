@@ -25,6 +25,8 @@ class ProbeFrameDataset(Dataset):
         instructions = []
         positions = []
         episode_ids = []
+        episode_ends = []
+        episode_successes = []
 
         #maybe this is episode id?
         for episode_id, episode_name in enumerate(episode_names):
@@ -34,10 +36,11 @@ class ProbeFrameDataset(Dataset):
                 raise FileNotFoundError(
                     f"Missing RGB cache for {episode_name}: {cache_path}"
                 )
-        
+                    
             cache = torch.load(cache_path, map_location="cpu")
             cached_rgb = cache["rgb_features"].float()
-            
+
+                        
 
             with np.load(episode_path, allow_pickle=False) as data:
                 frame_count = len(data["rgb"])
@@ -73,6 +76,7 @@ class ProbeFrameDataset(Dataset):
                 episode_id_tensor = torch.full(
                     (frame_count,), episode_id, dtype=torch.long
                 )
+                success = bool(data["episode_success"].item())
 
             frame_count = len(depth)
             tensors = {
@@ -93,6 +97,10 @@ class ProbeFrameDataset(Dataset):
                     raise ValueError(
                         f"{episode_name}: {name} has {len(tensor)} frames, expected {frame_count}"
                     )
+            end_flags = torch.zeros((frame_count, ))
+            end_flags[-1] = True
+            
+            success_flags = torch.full((frame_count,), success, dtype=torch.bool)
 
             rgb_features.append(cached_rgb)
             depths.append(depth)
@@ -106,6 +114,8 @@ class ProbeFrameDataset(Dataset):
             instructions.extend(instruction)
             positions.append(gripper_xyz)
             episode_ids.append(episode_id_tensor)
+            episode_ends.append(end_flags)
+            episode_successes.append(success_flags)
 
         if not rgb_features:
             raise ValueError("The split contains no episodes")
@@ -122,6 +132,8 @@ class ProbeFrameDataset(Dataset):
         self.instructions = instructions
         self.positions = torch.cat(positions)
         self.episode_ids = torch.cat(episode_ids)
+        self.episode_ends = torch.cat(episode_ends)
+        self.episode_successes = torch.cat(episode_successes)
 
 
     @property
@@ -144,6 +156,7 @@ class ProbeFrameDataset(Dataset):
             "timesteps": self.timesteps[index],
             "instructions": self.instructions[index],
             "positions": self.positions[index],
-            "episode_ids": self.episode_ids[index]
+            "episode_ids": self.episode_ids[index],
+            "episode_end": self.episode_ends[index],
+            "episode_success": self.episode_successes[index]
         }
-    

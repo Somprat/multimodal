@@ -219,6 +219,7 @@ def run_maniskill2_eval_single_episode(
         intrinsics.append(intrinsic)
         extrinsics.append(extrinsic)
         timestep += 1
+    model.finish_episode(success=bool(done))
 
 
     output_dir = os.path.join(logging_dir, "probe_data")

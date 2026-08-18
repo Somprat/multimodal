@@ -46,6 +46,9 @@ def parse_local_args(argv):
     return parser.parse_known_args(argv)
 
 
+
+
+
 if __name__ == "__main__":
     
     local_args, remaining_argv = parse_local_args(sys.argv[1:])
@@ -103,6 +106,7 @@ if __name__ == "__main__":
         use_bf16=args.use_bf16,
         **filtered_args,
     )
+
 
     success_arr = maniskill2_evaluator(model, args)
     print(args)

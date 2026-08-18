@@ -4,8 +4,7 @@ from dataclasses import dataclass
 import torch.nn.functional as F
 from typing import Optional
 import torch.nn as nn
-
-from ..memory_vla import CogMemBank, PerMemBank
+from typing import Any
 
 # Main memoryVLA integration
 # 1. Initialize. at the beginning. Never reset
@@ -20,16 +19,18 @@ class MemoryUnit:
     instruction_embedding: str
     scene_embedding: torch.tensor
     success: bool
-    cog_mem_bank: CogMemBank
-    per_mem_bank: PerMemBank
+    cog_mem_bank: Any
+    per_mem_bank: Any
+
 
 @dataclass
 class BankEntry:
     timestep: Optional[torch.Tensor]
     feat: torch.tensor
     image_embedding: Optional[torch.Tensor]
-    position: Optional[torch.Tensor]
     task_tags: tuple[str, ...]
+    position: Optional[torch.Tensor] = None
+
 
 
 
@@ -77,7 +78,8 @@ class EpisodicMemBank:
         # 1. make self.bank become a dictionary
         # 2. At the end of each episode, self.bank[episode_id].cog_summary = pool(memoryvla's cogmembank[episode_id])
         # design like a function that takes in that episodes' cog mem bank
-        self.meanpool = nn.AvgPool1d
+
+
         
         self.bank = {}
 
@@ -105,22 +107,25 @@ class EpisodicMemBank:
         memory_unit = MemoryUnit(
             instruction_embedding=text_outputs,
             scene_embedding=image_outputs,
-            success=True
+            success=True,
+            cog_mem_bank=None,
+            per_mem_bank=None
         )
         self.bank[self.episode_id] = memory_unit
+        self.episode_id += 1
+        
+        return self.episode_id -1
+    
+
+    def summarize_mem_bank(self, episode_banks):
+        if not episode_banks:
+            return None
+        timestep = torch.tensor(0)
+        mean_feat = torch.stack([entry.feat for entry in episode_banks], dim=0).mean(dim=0)
 
 
-    def summarize_mem_bank(self, episode_cog_banks):
-        timestep = 0
-        total_feat = torch.cat([bank.feat for bank in episode_cog_banks], dim=0)
-        mean_feat = self.meanpool(total_feat.permute(0, 2, 1)).squeeze(-1)
-
-        # CLIP image. We usually use it for comparison to get top k. but we already did the
-        # comparison between starting clip embedding of the start of the previous episodes 
-        # and the clip embedding of the initial scene of the current working one
-        first_scene_embedding = episode_cog_banks[0].image_embedding
-        # task_tags stay consistent across one episode
-        task_tags = episode_cog_banks[0].task_tags
+        first_scene_embedding = episode_banks[0].image_embedding
+        task_tags = episode_banks[0].task_tags
 
         summary = BankEntry(
             timestep=timestep,
@@ -133,21 +138,18 @@ class EpisodicMemBank:
 
     
         
-        
-
 
     def end_episode(self,
                     success: bool,
                     episode_cog_banks: list,
                     episode_per_banks: list):
-
-        self.episode_id+=1
         summarized_cog = self.summarize_mem_bank(episode_cog_banks)
         summarized_per = self.summarize_mem_bank(episode_per_banks)
 
-        self.bank[self.episode_id].success = success
-        self.bank[self.episode_id].cog_mem_bank = summarized_cog
-        self.banl[self.episode_id].per_mem_bank = summarized_per
+        self.bank[self.episode_id-1].success = success
+        self.bank[self.episode_id-1].cog_mem_bank = summarized_cog
+        self.bank[self.episode_id-1].per_mem_bank = summarized_per
+
 
     
 
@@ -155,13 +157,14 @@ class EpisodicMemBank:
         scores = []
         T = len(self.bank)
         for i in range(T-2):
-            bank1 = self.bank[i+1].instruction_embedding.float().flatten()
-            bank2 = self.bank[i+2].instruction_embedding.float().flatten()
-            score = F.cosine_similarity(bank1, bank2)
+            bank1 = self.bank[i+1].instruction_embedding.flatten()
+            bank2 = self.bank[i+2].instruction_embedding.flatten()
+            score = F.cosine_similarity(bank1, bank2, dim=0).item()
+
 
             scores.append(score)
 
-        
+         
         index_max_score = int(torch.tensor(scores).argmax().item())
         fuesed_instruction = (self.bank[index_max_score+1].instruction_embedding + self.bank[index_max_score+2].instruction_embedding)/2
         fused_image =(self.bank[index_max_score+1].scene_embedding + self.bank[index_max_score+2].scene_embedding)/2
@@ -176,12 +179,12 @@ class EpisodicMemBank:
     def kick_memory(self):
         if self.kick_method == "fifo":
             min_eid = min(self.bank.keys())
-            self.bank = self.bank.pop(min_eid)
+            self.bank.pop(min_eid)
         elif self.kick_method == "novelty":
             self.novelty_update()
             # will be something like compare cosine similarity of the adjacent memory
         else:
-            raise ValueError("Can only chosse between fifo and novelty")
+            raise ValueError("Can only chose between fifo and novelty")
 
     # retrieval mechanism
     # only use the success episodes for now. might have 2 separate routes of cross attention. 
@@ -197,11 +200,11 @@ class EpisodicMemBank:
             padding=True,
             truncation=True,
         )        
-        current_embedding = self.clip_model.get_text_features(**text_inputs).float().flatten()
+        current_embedding = self.clip_model.get_text_features(**text_inputs).flatten()
 
-        episode_embedding = memory_unit.instructions_embedding.float().flatten()
+        episode_embedding = memory_unit.instruction_embedding.flatten()
 
-        score = F.cosine_similarity(current_embedding, episode_embedding)
+        score = F.cosine_similarity(current_embedding, episode_embedding, dim=0)
         return _clamp01(score)
 
 
@@ -210,35 +213,31 @@ class EpisodicMemBank:
             images=list(initial_frame),
             return_tensors="pt",
         )
-        current_embedding = self.clip_model.get_image_features(**image_inputs).float().flatten()
+        current_embedding = self.clip_model.get_image_features(**image_inputs).float().detach().flatten()
 
-        episode_embedding = memory_unit.scene_embedding.float().detach()
-        score = F.cosine_similarity(current_embedding, episode_embedding)
+        episode_embedding = memory_unit.scene_embedding.float().detach().flatten()
+        score = F.cosine_similarity(current_embedding, episode_embedding, dim=0)
 
         return _clamp01(score)
 
 
-    def process_batch(self, 
+
+    def retrieve(self, 
                       current_instruction: str,
                       initial_frame: torch.Tensor):
         # comparing the episode instruction
         # comparing the initial scene embedding.
 
         scores = []
-        for memory_unit in self.bank.values():
+        for episode_id, memory_unit in self.bank.items():
             semantic_score = self.instruction_score(memory_unit, current_instruction)
             image_score = self.image_score(memory_unit, initial_frame)
 
             total_score = (semantic_score + image_score)/2
-            scores.append(total_score)
-        # implement cross_attentio 
-        topk_indices = sorted(list(range(len(scores))), key=lambda i: scores[i], reverse=True)[:self.top_k]
+            scores.append((total_score, episode_id))
+        scores.sort(key=lambda item: item[0], reverse=True)
 
-        topk_eid = [x+1 for x in topk_indices]
-
-        top4_ep = [self.bank[eid] for eid in topk_eid]
-
-        return top4_ep
+        return [self.bank[eid] for _, eid in scores[:self.top_k]]
 
 
 def _clamp01(value: float) -> float:

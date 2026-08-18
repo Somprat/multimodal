@@ -120,6 +120,13 @@ class PaddedCollatorForActionPrediction:
             timesteps = np.concatenate([
                 instance["timesteps"] for instance in instances
             ], axis=0)
+            episode_ends = np.concatenate([
+                instance["episode_end"] for instance in instances
+            ])
+
+            episode_successes = np.concatenate([
+                instance["episode_success"] for instance in instances
+])
         else:
             timesteps = None
 
@@ -184,7 +191,9 @@ class PaddedCollatorForActionPrediction:
             instructions=instructions,
             episode_ids=episode_ids,
             timesteps=timesteps,
-            images = images
+            images = images,
+            episode_end=episode_ends,
+            episode_success=episode_successes,
         )
 
         output.update(optional_modalities)

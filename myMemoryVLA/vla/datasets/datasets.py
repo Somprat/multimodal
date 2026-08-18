@@ -339,10 +339,15 @@ class GroupRLDSDataset(RLDSDataset):
         episode_id = -1
         for rlds_batch in self.dataset.as_numpy_iterator():
             episode_id += 1
-            indices = range(rlds_batch["action"].shape[0])
-            for i in indices:
-                frame = self.batch_transform(tree_map(lambda x: x[i], rlds_batch))
+            T = rlds_batch["action"].shape[0]
+
+            for i in range(T):
+                frame = self.batch_transform(
+                    tree_map(lambda x: x[i], rlds_batch)
+                )
                 frame["episode_ids"] = np.array([episode_id])
+                frame["episode_end"] = np.array([i == T - 1])
+                frame["episode_success"] = np.array([True])
                 yield frame
 
 
@@ -366,6 +371,8 @@ class StreamRLDSDataset(RLDSDataset):
                     tree_map(lambda x: x[i], rlds_batch)
                 )
                 frame["episode_ids"] = np.array([episode_id])
+                frame["episode_end"] = np.array([i == T - 1])
+                frame["episode_success"] = np.array([True])
                 yield frame
 
 

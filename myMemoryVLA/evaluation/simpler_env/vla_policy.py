@@ -121,6 +121,9 @@ class VLAInference:
         self.intrinsic_history.append(intrinsic)
         self.num_intrinsic_history = min(self.num_intrinsic_history+1, self.horizon)
 
+    def finish_episode(self, success):
+        self.vla.finish_episode(success)
+
     def reset(self, task_description: str) -> None:
         self.task_description = task_description
         self.image_history.clear()

@@ -37,8 +37,8 @@ class BankEntry:
     timestep: Optional[torch.Tensor]
     feat: torch.tensor
     image_embedding: Optional[torch.Tensor]
-    position: Optional[torch.Tensor]
     task_tags: tuple[str, ...]
+    position: Optional[torch.Tensor] = None
 
 
 
@@ -462,6 +462,7 @@ class CogMemBank(nn.Module):
                     position=positions[i] if positions is not None else None,
                     task_tags=(task_type,)
                 )
+            
 
         return torch.cat(outputs, dim=0)  # [B, N, D_role]
 
@@ -952,6 +953,16 @@ class MemoryVLA(nn.Module):
             per_token_size=per_token_size,
         )
 
+        self.active_ep_id = None
+
+        self.episodic_cog_attn = CrossTransformerBlock(self.cog_token_size)
+        self.episodic_per_attn = CrossTransformerBlock(self.per_token_size)
+
+        self.episodic_cog_gate = GateFusion(self.cog_token_size)
+        self.episodic_per_gate = GateFusion(self.per_token_size)
+        self.active_ep_contexts = {}
+        self.episode_recordings = {}
+
         self.all_module_keys = []
         self._trainable_module_keys = []
 
@@ -967,6 +978,9 @@ class MemoryVLA(nn.Module):
             if name != "vlm" and any(p.requires_grad for p in module.parameters()):
                 self.all_module_keys.append(name)
                 self._trainable_module_keys.append(name)
+
+
+
 
     @property
     def trainable_module_keys(self) -> List[str]:
@@ -1029,6 +1043,104 @@ class MemoryVLA(nn.Module):
             F.normalize(image_embeddings.float(), dim=-1),
             F.normalize(text_embeddings.float(), dim=-1),
         )
+
+    def _begin_episode(self, images, instruction, episode_id):
+        selected = self.episodic_bank.retrieve(
+            current_instruction=[instruction],
+            initial_frame=images
+        )
+        if selected:
+            active_ep_cog = torch.cat(
+                [memory.cog_mem_bank.feat for memory in selected], dim=0
+            ).unsqueeze(0)
+            active_ep_per = torch.cat(
+                [memory.per_mem_bank.feat for memory in selected], dim=0
+                ).unsqueeze(0)
+
+        else:
+            active_ep_cog=None
+            active_ep_per=None
+        self.episodic_bank.start_episode(image=images, instruction=[instruction])
+
+        #write somenotes about these things
+        self.active_ep_contexts[episode_id] = {
+            "cog": active_ep_cog,
+            "per": active_ep_per
+        }
+        self.episode_recordings[episode_id] = {
+            "cog": [],
+            "per": []
+        }
+
+
+
+    # episode_mem_ids here is the ids in the traininig collator so like (4,4,4,5) and coorresponds with timesteps
+    def _fuse_episodic_tokens(self, cog_tokens, per_tokens, episode_mem_ids):
+        cog_outputs = []
+        per_outputs = []
+
+        for i, raw_eid in enumerate(episode_mem_ids):
+            eid = int(raw_eid)
+            cog_token = cog_tokens[i:i+1]
+            per_token = per_tokens[i:i+1]
+            context = self.active_ep_contexts.get(eid)
+
+            if context and context["cog"] is not None:
+                
+                cog_context = self.episodic_cog_attn(
+                    cog_token   
+                    ,context["cog"].to(cog_token.device,cog_token.dtype)
+                    ,context["cog"].to(cog_token.device,cog_token.dtype)
+                )
+            
+                cog_token = self.episodic_cog_gate(
+                    cog_token,
+                    cog_context
+                )
+            cog_outputs.append(cog_token)
+
+
+            if context and context["per"] is not None:
+
+                per_context = self.episodic_per_attn(
+                    per_token,
+                    context["per"].to(per_token.device, per_token.dtype),
+                    context["per"].to(per_token.device, per_token.dtype)
+                )
+
+                per_token = self.episodic_per_gate(
+                    per_token,
+                    per_context
+                )
+            per_outputs.append(per_token)
+
+
+
+        return torch.cat(cog_outputs), torch.cat(per_outputs)
+
+
+    def finish_episode(self, success, episode_id = None):
+        if episode_id is None:
+            episode_id = self.active_ep_id
+
+        self.episodic_bank.end_episode(
+            success=success,
+            episode_cog_banks=self.cog_mem_bank.bank.get(episode_id, []),
+            episode_per_banks=self.per_mem_bank.bank.get(episode_id, [])
+        )
+    
+
+        finished_id = episode_id
+
+        self.active_ep_contexts.pop(finished_id, None)
+        self.episode_recordings.pop(finished_id, None)
+
+        self.active_ep_id = None
+
+        if len(self.episodic_bank.bank) > self.episodic_bank.max_steps:
+            self.episodic_bank.kick_memory()
+
+
 
     def _fuse_spatial_tokens(
         self,
@@ -1101,6 +1213,8 @@ class MemoryVLA(nn.Module):
         output_hidden_states: Optional[bool] = None,
         return_dict: Optional[bool] = None,
         repeated_diffusion_steps: int = 4,
+        episode_ends: torch.Tensor = None,
+        episode_successes: torch.Tensor = None
     ) -> Tuple:
         """Run a forward pass through the VLM, returning a CausalLMOutputWithPast instance (contains loss)."""
 
@@ -1141,23 +1255,27 @@ class MemoryVLA(nn.Module):
 
         vision_feats = self.vlm.vision_feats
         per_tokens = self.per_compr(vision_feats)
-
-        if timesteps == 0:
-            self.episodic_bank.start_episode(image=images, instruction=instructions)
-
-            topk_memory = self.episodic_bank.process_batch(current_instruction=instructions, initial_frame=images)
-
         
 
         retrieval_image_embeddings, retrieval_query_embeddings = (
             self._encode_retrieval_inputs(images, instructions)
         )
+        # 1. how to make this topk persist
+        # 2. implment tthe corss attention here
+        for i in range(len(episode_ids)):
+            episode_id = int(torch.as_tensor(episode_ids[i]).item())
+            episode_timestep = int(torch.as_tensor(timesteps[i]).item())
 
-        if proprio is not None:
-            current_position = proprio[:, :3]
-
-        else:
-            proprio=None
+            # check that it's the beginning of some episode and that ep is not the current ep
+            if (
+                episode_timestep == 0
+                and episode_id not in self.active_ep_contexts
+            ):
+                self._begin_episode(
+                    images=[images[i]],
+                    instruction=instructions[i],
+                    episode_id=episode_id,
+                )
 
 
 
@@ -1170,6 +1288,7 @@ class MemoryVLA(nn.Module):
             retrieval_query_embeddings=retrieval_query_embeddings,
             positions=positions,
         )
+
 
         per_tokens = self.per_mem_bank.process_batch(
             tokens=per_tokens,
@@ -1184,6 +1303,14 @@ class MemoryVLA(nn.Module):
             raise ValueError("The depth value is missing")
         if intrinsics is None:
             raise ValueError("The intrinsics value is missing")
+
+        # let the retrieved cog_tokens and per_tokens cross attention with episodic tokens
+        cog_tokens, per_tokens = self._fuse_episodic_tokens(
+            cog_tokens=cog_tokens,
+            per_tokens=per_tokens,
+            episode_mem_ids=episode_ids
+        )
+
         
         points, valid_masks = geometry.depth_to_points(
             depth=depth,
@@ -1191,6 +1318,7 @@ class MemoryVLA(nn.Module):
             mask=None,
             flatten=True,
         )
+
 
         spatial_tokens = self.point_cloud_spatial_encoder(
             points=points,
@@ -1209,7 +1337,15 @@ class MemoryVLA(nn.Module):
             retrieval_query_embeddings=retrieval_query_embeddings,
             positions=positions
         )
+        for i in range(len(episode_ids)):
 
+            if bool(torch.as_tensor(episode_ends[i].item())):
+                    episode_id = int(torch.as_tensor(episode_ids[i]).item())
+                    success = bool(torch.as_tensor(episode_successes[i]).item())
+                    self.finish_episode(
+                        episode_id=episode_id,
+                        success=success
+                    )
         # Repeat 'actions' 'repeated_diffusion_steps' times, resulting in [repeated_diffusion_steps*B, T, D]
         actions_future = actions[:, -(self.future_action_window_size+1):, :]
         actions_repeated = actions_future.repeat(repeated_diffusion_steps, 1, 1)
@@ -1226,6 +1362,7 @@ class MemoryVLA(nn.Module):
             cog_tokens_repeated,
             per_tokens_repeated,
         )
+
 
         return loss, output
 
@@ -1363,6 +1500,7 @@ class MemoryVLA(nn.Module):
                     sub_state,
                     strict=key in spatial_checkpoint_keys,
                 )
+        
 
         del model_state_dict
         import gc
@@ -1427,7 +1565,7 @@ class MemoryVLA(nn.Module):
             raise ValueError(f"Unsupported `tokenizer` type = {type(tokenizer)}")
 
         model_dtype = next(self.parameters()).dtype
-
+        
         # Preprocess Image
         pixel_values = image_transform(image)
         if isinstance(pixel_values, torch.Tensor):
@@ -1466,9 +1604,16 @@ class MemoryVLA(nn.Module):
             self.cog_mem_bank.reset()
             self.per_mem_bank.reset()
             self.spatial_mem_bank.reset()
+
+            self.active_ep_id = self.episodic_bank.episode_id
+            self._begin_episode(
+                images=[image],
+                instruction=instruction,
+                episode_id=self.active_ep_id
+            )
             self.cur_timestep = 0
 
-        episode_ids = [0]
+        episode_ids = [self.active_ep_id]
         timesteps = [torch.tensor(self.cur_timestep, device=self.vlm.device)]
         self.cur_timestep += 1
 
@@ -1496,6 +1641,12 @@ class MemoryVLA(nn.Module):
             retrieval_image_embeddings=retrieval_image_embeddings,
             retrieval_query_embeddings=retrieval_query_embeddings,
             positions=positions,
+        )
+        # let the retrieved cog_tokens and per_tokens cross attention with episodic tokens
+        cog_tokens, per_tokens = self._fuse_episodic_tokens(
+            cog_tokens=cog_tokens,
+            per_tokens=per_tokens,
+            episode_mem_ids=episode_ids
         )
 
         if depth is None or intrinsics is None:
@@ -1532,6 +1683,8 @@ class MemoryVLA(nn.Module):
             retrieval_query_embeddings=retrieval_query_embeddings,
             positions=positions,
         )
+
+
 
         # Sample random noise
         B = cog_tokens.shape[0]

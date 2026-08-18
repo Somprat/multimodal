@@ -182,6 +182,8 @@ class TrainingStrategy(ABC):
                         images=batch["images"],
                         output_hidden_states=True,
                         repeated_diffusion_steps=repeated_diffusion_steps,
+                        episode_ends=batch["episode_end"],
+                        episode_successes=batch["episode_success"]
                     )
                 # Commit Loss =>> Backward!
                 metrics.commit(loss=loss)
