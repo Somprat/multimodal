@@ -31,7 +31,7 @@ class VLAInference:
         use_bf16: bool = False,
         action_ensemble = True,
         adaptive_ensemble_alpha = 0.1,
-        spatial_mode: str = "pointcloud",
+        experiment_mode: str = "full",
         **kwargs,
     ) -> None:
         os.environ["TOKENIZERS_PARALLELISM"] = "false"
@@ -57,13 +57,15 @@ class VLAInference:
             )
         self.policy_setup = policy_setup
         self.unnorm_key = unnorm_key
-        if spatial_mode not in {"baseline", "pointcloud"}:
-            raise ValueError(f"Unsupported spatial_mode={spatial_mode!r}; expected 'baseline' or 'pointcloud'.")
-        self.spatial_mode = spatial_mode
+        if experiment_mode not in {"baseline", "full"}:
+            raise ValueError(
+                f"Unsupported experiment_mode={experiment_mode!r}; expected 'baseline' or 'full'."
+            )
+        self.experiment_mode = experiment_mode
 
         print(
             f"*** policy_setup: {policy_setup}, unnorm_key: {unnorm_key}, "
-            f"spatial_mode: {spatial_mode} ***"
+            f"experiment_mode: {experiment_mode} ***"
         )
         self.use_ddim = use_ddim
         self.num_ddim_steps = num_ddim_steps
@@ -74,6 +76,7 @@ class VLAInference:
           future_action_window_size=future_action_window_size,
           action_dim=action_dim,
           use_bf16=use_bf16,
+          experiment_mode=experiment_mode,
           **kwargs,
         )
 
@@ -174,7 +177,7 @@ class VLAInference:
                 self.reset(task_description)
 
         assert image.dtype == np.uint8
-        if self.spatial_mode == "pointcloud":
+        if self.experiment_mode == "full":
             if depth is None:
                 raise ValueError("pointcloud mode requires depth")
             if intrinsic is None:
@@ -188,7 +191,7 @@ class VLAInference:
         image: Image.Image = Image.fromarray(image)
         spatial_inputs = (
             {"depth": depth, "intrinsics": intrinsic, "extrinsics": extrinsic}
-            if self.spatial_mode == "pointcloud"
+            if self.experiment_mode == "full"
             else {}
         )
         raw_actions, normalized_actions = self.vla.predict_action(

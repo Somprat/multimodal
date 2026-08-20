@@ -38,10 +38,10 @@ def parse_local_args(argv):
     parser = argparse.ArgumentParser(add_help=False)
     parser.add_argument("--use_bf16", action="store_true")
     parser.add_argument(
-        "--spatial-mode",
-        choices=("baseline", "pointcloud"),
-        default="pointcloud",
-        help="Use simulator depth/intrinsics or evaluate the original RGB-only baseline path.",
+        "--experiment-mode",
+        choices=("baseline", "full"),
+        default="full",
+        help="Evaluate the RGB baseline or the full spatial/query/episodic system.",
     )
     return parser.parse_known_args(argv)
 
@@ -67,7 +67,7 @@ if __name__ == "__main__":
     cli_args = vars(args)
     if local_args.use_bf16 is not None:
         cli_args["use_bf16"] = local_args.use_bf16
-    cli_args["spatial_mode"] = local_args.spatial_mode
+    cli_args["experiment_mode"] = local_args.experiment_mode
     merged_args = deep_update(yaml_args.copy(), cli_args)
     args = Namespace(**merged_args)
     np.random.seed(args.seed)
@@ -82,7 +82,7 @@ if __name__ == "__main__":
     filtered_args = {k: v for k, v in vars(args).items() if k not in exclude_keys}
 
     args.logging_dir = os.path.join(os.path.dirname(os.path.dirname(args.ckpt_path)), 'eval_simpler')
-    mode_tag = f"spatial_{args.spatial_mode}"
+    mode_tag = f"experiment_{args.experiment_mode}"
     if args.additional_env_save_tags:
         args.additional_env_save_tags = f"{args.additional_env_save_tags}_{mode_tag}"
     else:
@@ -111,4 +111,3 @@ if __name__ == "__main__":
     success_arr = maniskill2_evaluator(model, args)
     print(args)
     print(" " * 10, "Average success", np.mean(success_arr))
-

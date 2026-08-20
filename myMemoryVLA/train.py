@@ -76,6 +76,9 @@ class TrainConfig:
     retrieval_layers: int = 2 # Number of layers of memory retrieval
     query_retrieval_mode: str = "query" # One of: off, query, shuffled
     query_retrieval_top_k: int = 4 # Historical cognition records selected per query
+    experiment_mode: str = "full" # One of: baseline, full
+    freeze_vlm: bool = True # Recompute VLM features without updating PrismaticVLM
+    freeze_action_model: bool = False # Keep False for matched ManiSkill adaptation
     use_timestep_pe: bool = True # Whether to use timestep positional encoding
     fusion_type: str = 'gate' # Memory fusion type, chose from ['gate', 'add']
     consolidate_type: str = 'tome' # Memory consolidate type, chose from ['fifo', 'tome']
@@ -209,6 +212,13 @@ def train(cfg: TrainConfig) -> None:
     # [Explicit] Call to `freeze_backbones` here for clarity =>> will log exactly what is/is not frozen
     overwatch.info(f"Invoking `VLM.freeze_backbones()` for `{vla_id}` => Stage: `{stage}`")
     vla.freeze_backbones(stage)
+
+    overwatch.info(
+        "Training scope =>> "
+        f"experiment_mode={cfg.experiment_mode}, freeze_vlm={cfg.freeze_vlm}, "
+        f"freeze_action_model={cfg.freeze_action_model}, "
+        f"trainable_modules={vla.trainable_module_keys}"
+    )
 
     # Print number of total/trainable model parameters
     num_params = sum(p.numel() for p in vla.parameters())

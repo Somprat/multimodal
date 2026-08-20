@@ -961,6 +961,9 @@ class MemoryVLA(nn.Module):
         update_fused: bool = False,
         query_retrieval_mode: str = "query",
         query_retrieval_top_k: int = 4,
+        experiment_mode: str = "full",
+        freeze_vlm: bool = True,
+        freeze_action_model: bool = False,
 
 
         max_steps: int = 5,
@@ -975,7 +978,15 @@ class MemoryVLA(nn.Module):
     ) -> None:
         super().__init__()
 
+        if experiment_mode not in {"baseline", "full"}:
+            raise ValueError(
+                f"experiment_mode must be 'baseline' or 'full', got {experiment_mode!r}"
+            )
+
         self.vlm = vlm
+        self.experiment_mode = experiment_mode
+        self.freeze_vlm = freeze_vlm
+        self.freeze_action_model = freeze_action_model
         self.future_action_window_size = future_action_window_size
         self.use_ema = use_ema
         self.norm_stats = norm_stats
@@ -1117,6 +1128,23 @@ class MemoryVLA(nn.Module):
         self.active_ep_contexts = {}
         self.episode_recordings = {}
 
+        if self.experiment_mode == "baseline":
+            inactive_modules = (
+                self.cog_mem_bank,
+                self.per_mem_bank,
+                self.spatial_encoder,
+                self.point_cloud_spatial_encoder,
+                self.spatial_mem_bank,
+                self.spatial_to_per_fusion,
+                self.per_spatial_gate,
+                self.episodic_cog_attn,
+                self.episodic_per_attn,
+                self.episodic_cog_gate,
+                self.episodic_per_gate,
+            )
+            for module in inactive_modules:
+                module.requires_grad_(False)
+
         self.all_module_keys = []
         self._trainable_module_keys = []
 
@@ -1132,6 +1160,8 @@ class MemoryVLA(nn.Module):
             if name != "vlm" and any(p.requires_grad for p in module.parameters()):
                 self.all_module_keys.append(name)
                 self._trainable_module_keys.append(name)
+
+        self.apply_training_scope()
 
 
 
@@ -1151,9 +1181,36 @@ class MemoryVLA(nn.Module):
     @property
     def vision_backbone(self) -> VisionBackbone:
         return self.vlm.vision_backbone
+
+    def _refresh_trainable_module_keys(self) -> None:
+        self._trainable_module_keys = [
+            name
+            for name, module in self.named_children()
+            if name != "vlm" and any(p.requires_grad for p in module.parameters())
+        ]
+
+    def apply_training_scope(self) -> None:
+        if self.freeze_vlm:
+            self.vlm.requires_grad_(False)
+            self.vlm.eval()
+            self.vlm.trainable_module_keys = []
+        if self.freeze_action_model:
+            self.action_model.requires_grad_(False)
+            self.action_model.eval()
+        self._refresh_trainable_module_keys()
+
+    def train(self, mode: bool = True):
+        super().train(mode)
+        self.clip_model.eval()
+        if self.freeze_vlm:
+            self.vlm.eval()
+        if self.freeze_action_model:
+            self.action_model.eval()
+        return self
     
     def freeze_backbones(self, stage):
         self.vlm.freeze_backbones(stage)
+        self.apply_training_scope()
 
     @torch.no_grad()
     def _encode_retrieval_inputs(
@@ -1274,6 +1331,9 @@ class MemoryVLA(nn.Module):
 
 
     def finish_episode(self, success, episode_id = None):
+        if self.experiment_mode == "baseline":
+            return
+
         if episode_id is None:
             episode_id = self.active_ep_id
 
@@ -1420,102 +1480,82 @@ class MemoryVLA(nn.Module):
         per_tokens = self.per_compr(vision_feats)
         
 
-        retrieval_image_embeddings, retrieval_query_embeddings = (
-            self._encode_retrieval_inputs(images, instructions)
-        )
-        # 1. how to make this topk persist
-        # 2. implment tthe corss attention here
-        for i in range(len(episode_ids)):
-            episode_id = int(torch.as_tensor(episode_ids[i]).item())
-            episode_timestep = int(torch.as_tensor(timesteps[i]).item())
+        if self.experiment_mode == "full":
+            retrieval_image_embeddings, retrieval_query_embeddings = (
+                self._encode_retrieval_inputs(images, instructions)
+            )
 
-            # check that it's the beginning of some episode and that ep is not the current ep
-            if (
-                episode_timestep == 0
-                and episode_id not in self.active_ep_contexts
-            ):
-                self._begin_episode(
-                    images=[images[i]],
-                    instruction=instructions[i],
-                    episode_id=episode_id,
+            for i in range(len(episode_ids)):
+                episode_id = int(torch.as_tensor(episode_ids[i]).item())
+                episode_timestep = int(torch.as_tensor(timesteps[i]).item())
+                if episode_timestep == 0 and episode_id not in self.active_ep_contexts:
+                    self._begin_episode(
+                        images=[images[i]],
+                        instruction=instructions[i],
+                        episode_id=episode_id,
+                    )
+
+            cog_tokens = self.cog_mem_bank.process_batch(
+                tokens=cog_tokens,
+                episode_ids=episode_ids,
+                timesteps=timesteps,
+                instructions=instructions,
+                retrieval_image_embeddings=retrieval_image_embeddings,
+                retrieval_query_embeddings=retrieval_query_embeddings,
+                positions=positions,
+            )
+            per_tokens = self.per_mem_bank.process_batch(
+                tokens=per_tokens,
+                episode_ids=episode_ids,
+                timesteps=timesteps,
+                instructions=instructions,
+                retrieval_image_embeddings=retrieval_image_embeddings,
+                retrieval_query_embeddings=retrieval_query_embeddings,
+                positions=positions,
+            )
+
+            if depth is None or intrinsics is None or extrinsics is None:
+                raise ValueError(
+                    "Full experiment mode requires depth, intrinsics, and extrinsics"
                 )
 
+            cog_tokens, per_tokens = self._fuse_episodic_tokens(
+                cog_tokens=cog_tokens,
+                per_tokens=per_tokens,
+                episode_mem_ids=episode_ids,
+            )
+            points_camera, valid_masks = geometry.depth_to_points(
+                depth=depth,
+                intrinsics=intrinsics,
+                mask=None,
+                flatten=True,
+            )
+            points_world = geometry.transform_points(
+                points_camera,
+                torch.linalg.inv(extrinsics.float()),
+            )
+            spatial_tokens = self.point_cloud_spatial_encoder(
+                points=points_world,
+                proprio=proprio,
+                camera=camera,
+                point_mask=valid_masks,
+            )
+            per_tokens = self._fuse_spatial_tokens(
+                per_tokens=per_tokens,
+                spatial_tokens=spatial_tokens,
+                episode_ids=episode_ids,
+                timesteps=timesteps,
+                instructions=instructions,
+                retrieval_image_embeddings=retrieval_image_embeddings,
+                retrieval_query_embeddings=retrieval_query_embeddings,
+                positions=positions,
+            )
 
-
-        cog_tokens = self.cog_mem_bank.process_batch(
-            tokens=cog_tokens,
-            episode_ids=episode_ids,
-            timesteps=timesteps,
-            instructions=instructions,
-            retrieval_image_embeddings=retrieval_image_embeddings,
-            retrieval_query_embeddings=retrieval_query_embeddings,
-            positions=positions,
-        )
-
-
-        per_tokens = self.per_mem_bank.process_batch(
-            tokens=per_tokens,
-            episode_ids=episode_ids,
-            timesteps=timesteps,
-            instructions=instructions,
-            retrieval_image_embeddings=retrieval_image_embeddings,
-            retrieval_query_embeddings=retrieval_query_embeddings,
-            positions=positions,
-        )
-        if depth is None:
-            raise ValueError("The depth value is missing")
-        if intrinsics is None:
-            raise ValueError("The intrinsics value is missing")
-        if extrinsics is None:
-            raise ValueError("The camera extrinsics value is missing")
-
-        # let the retrieved cog_tokens and per_tokens cross attention with episodic tokens
-        cog_tokens, per_tokens = self._fuse_episodic_tokens(
-            cog_tokens=cog_tokens,
-            per_tokens=per_tokens,
-            episode_mem_ids=episode_ids
-        )
-
-        
-        points_camera, valid_masks = geometry.depth_to_points(
-            depth=depth,
-            intrinsics=intrinsics,
-            mask=None,
-            flatten=True,
-        )
-
-        camera_to_world = torch.linalg.inv(extrinsics.float())
-
-        points_world = geometry.transform_points(
-            points_camera, camera_to_world
-        )
-
-
-        spatial_tokens = self.point_cloud_spatial_encoder(
-            points=points_world,
-            proprio=proprio,
-            camera=camera,
-            point_mask=valid_masks,
-        )
-            
-        per_tokens = self._fuse_spatial_tokens(
-            per_tokens=per_tokens,
-            spatial_tokens=spatial_tokens,
-            episode_ids=episode_ids,
-            timesteps=timesteps,
-            instructions=instructions,
-            retrieval_image_embeddings=retrieval_image_embeddings,
-            retrieval_query_embeddings=retrieval_query_embeddings,
-            positions=positions
-        )
-        for i in range(len(episode_ids)):
-
-            if bool(torch.as_tensor(episode_ends[i].item())):
-                    episode_id = int(torch.as_tensor(episode_ids[i]).item())
-                    success = bool(torch.as_tensor(episode_successes[i]).item())
+            for i in range(len(episode_ids)):
+                if bool(torch.as_tensor(episode_ends[i].item())):
                     self.finish_episode(
-                        episode_id=episode_id,
-                        success=success
+                        episode_id=int(torch.as_tensor(episode_ids[i]).item()),
+                        success=bool(torch.as_tensor(episode_successes[i]).item()),
                     )
         # Repeat 'actions' 'repeated_diffusion_steps' times, resulting in [repeated_diffusion_steps*B, T, D]
         actions_future = actions[:, -(self.future_action_window_size+1):, :]
@@ -1652,7 +1692,7 @@ class MemoryVLA(nn.Module):
             "spatial_to_per_fusion", "per_spatial_gate",
         }
         missing_spatial_keys = sorted(spatial_checkpoint_keys - model_state_dict.keys())
-        if missing_spatial_keys:
+        if missing_spatial_keys and memory_vla.experiment_mode == "full":
             overwatch.warning(
                 "Checkpoint has no trained weights for spatial modules: "
                 + ", ".join(missing_spatial_keys)
@@ -1772,66 +1812,54 @@ class MemoryVLA(nn.Module):
 
         assert episode_first_frame in ['True', 'False'], "episode_first_frame must be 'True' or 'False'"
         if episode_first_frame == 'True':
-            print(" ** reset memory ** ")
-            self.cog_mem_bank.reset()
-            self.per_mem_bank.reset()
-            self.spatial_mem_bank.reset()
-
-            self.active_ep_id = self.episodic_bank.episode_id
-            self._begin_episode(
-                images=[image],
-                instruction=instruction,
-                episode_id=self.active_ep_id
-            )
             self.cur_timestep = 0
 
-        episode_ids = [self.active_ep_id]
-        timesteps = [torch.tensor(self.cur_timestep, device=self.vlm.device)]
-        self.cur_timestep += 1
+        if self.experiment_mode == "full":
+            if episode_first_frame == 'True':
+                print(" ** reset memory ** ")
+                self.cog_mem_bank.reset()
+                self.per_mem_bank.reset()
+                self.spatial_mem_bank.reset()
+                self.active_ep_id = self.episodic_bank.episode_id
+                self._begin_episode(
+                    images=[image],
+                    instruction=instruction,
+                    episode_id=self.active_ep_id,
+                )
 
-        retrieval_image_embeddings, retrieval_query_embeddings = (
-            self._encode_retrieval_inputs([image], [instruction])
-        )
-
-
-        cog_tokens = self.cog_mem_bank.process_batch(
-            tokens=cog_tokens,
-            episode_ids=episode_ids,
-            timesteps=timesteps,
-            instructions=[instruction],
-            retrieval_image_embeddings=retrieval_image_embeddings,
-            retrieval_query_embeddings=retrieval_query_embeddings,
-            positions=positions,
-        )
-
-
-        per_tokens = self.per_mem_bank.process_batch(
-            tokens=per_tokens,
-            episode_ids=episode_ids,
-            timesteps=timesteps,
-            instructions=[instruction],
-            retrieval_image_embeddings=retrieval_image_embeddings,
-            retrieval_query_embeddings=retrieval_query_embeddings,
-            positions=positions,
-        )
-        # let the retrieved cog_tokens and per_tokens cross attention with episodic tokens
-        cog_tokens, per_tokens = self._fuse_episodic_tokens(
-            cog_tokens=cog_tokens,
-            per_tokens=per_tokens,
-            episode_mem_ids=episode_ids
-        )
-
-        if depth is None and intrinsics is None and extrinsics is None:
-            spatial_tokens = self.spatial_encoder(
-                depth=depth,
-                proprio=proprio,
-                camera=camera,
+            episode_ids = [self.active_ep_id]
+            timesteps = [torch.tensor(self.cur_timestep, device=self.vlm.device)]
+            retrieval_image_embeddings, retrieval_query_embeddings = (
+                self._encode_retrieval_inputs([image], [instruction])
             )
-        elif depth is None or intrinsics is None or extrinsics is None:
-            raise ValueError(
-                "Point-cloud inference requires depth, intrinsics, and extrinsics together"
+            cog_tokens = self.cog_mem_bank.process_batch(
+                tokens=cog_tokens,
+                episode_ids=episode_ids,
+                timesteps=timesteps,
+                instructions=[instruction],
+                retrieval_image_embeddings=retrieval_image_embeddings,
+                retrieval_query_embeddings=retrieval_query_embeddings,
+                positions=positions,
             )
-        else:
+            per_tokens = self.per_mem_bank.process_batch(
+                tokens=per_tokens,
+                episode_ids=episode_ids,
+                timesteps=timesteps,
+                instructions=[instruction],
+                retrieval_image_embeddings=retrieval_image_embeddings,
+                retrieval_query_embeddings=retrieval_query_embeddings,
+                positions=positions,
+            )
+            cog_tokens, per_tokens = self._fuse_episodic_tokens(
+                cog_tokens=cog_tokens,
+                per_tokens=per_tokens,
+                episode_mem_ids=episode_ids,
+            )
+
+            if depth is None or intrinsics is None or extrinsics is None:
+                raise ValueError(
+                    "Full experiment mode requires depth, intrinsics, and extrinsics"
+                )
             depth = self._add_batch_depth(depth)
             intrinsics = self._add_batch_intrinsics(intrinsics)
             extrinsics = self._add_batch_extrinsics(extrinsics)
@@ -1855,18 +1883,18 @@ class MemoryVLA(nn.Module):
                 camera=camera,
                 point_mask=valid_masks,
             )
+            per_tokens = self._fuse_spatial_tokens(
+                per_tokens=per_tokens,
+                spatial_tokens=spatial_tokens,
+                episode_ids=episode_ids,
+                timesteps=timesteps,
+                instructions=[instruction],
+                retrieval_image_embeddings=retrieval_image_embeddings,
+                retrieval_query_embeddings=retrieval_query_embeddings,
+                positions=positions,
+            )
 
-
-        per_tokens = self._fuse_spatial_tokens(
-            per_tokens=per_tokens,
-            spatial_tokens=spatial_tokens,
-            episode_ids=episode_ids,
-            timesteps=timesteps,
-            instructions=[instruction],
-            retrieval_image_embeddings=retrieval_image_embeddings,
-            retrieval_query_embeddings=retrieval_query_embeddings,
-            positions=positions,
-        )
+        self.cur_timestep += 1
 
 
 
