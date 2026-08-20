@@ -24,6 +24,7 @@ from .spatial import geometry
 from .spatial.encoder import PointCloudSpatialEncoder as SpatialPointCloudEncoder
 from .spatial import retrieval
 from .episodic.episodic_bank import EpisodicMemBank
+from .spatial.modal_retrieval import ModalRetrievalQuery, ModalMemoryRecord, ModalMemoryRetriever
 
 from action_model.action_model import ActionModel
 from action_model.models import DiT
@@ -172,9 +173,52 @@ class GateFusion(nn.Module):
 
         fused = scale * x1 + (1 - scale) * x2
         return fused
-
+    
+MODALITY_SCORE_WEIGHTS = {
+    "cog": {
+        "token": 0.75,
+        "task": 0.15,
+        "time": 0.10,
+        "position": 0.00,
+    },
+    "per": {
+        "token": 0.75,
+        "task": 0.15,
+        "time": 0.10,
+        "position": 0.00,
+    },
+    "spatial": {
+        "token": 0.65,
+        "task": 0.10,
+        "time": 0.05,
+        "position": 0.20,
+    },
+}
+TASK_MEMORY_BUDGETS = {
+    "navigation": {
+        "cog": 1,
+        "per": 3,
+        "spatial": 4,
+    },
+    "object_state": {
+        "cog": 2,
+        "per": 4,
+        "spatial": 2,
+    },
+    "temporal": {
+        "cog": 4,
+        "per": 2,
+        "spatial": 2,
+    },
+    "default": {
+        "cog": 2,
+        "per": 3,
+        "spatial": 3,
+    },
+}
 
 class CogMemBank(nn.Module):
+    modality = 'cog'
     def __init__(self,
                  dataloader_type: str,
                  group_size: int,
@@ -187,12 +231,13 @@ class CogMemBank(nn.Module):
                  update_fused: bool = False,
                  query_retrieval_mode: str = "off",
                  query_retrieval_top_k: int = 4,
+                 use_query_classifier: bool = False,
                  ):
         super().__init__()
         assert dataloader_type in ('stream', 'group')
         assert fusion_type in ('gate', 'add')
         assert consolidate_type in ('fifo', 'tome')
-        if query_retrieval_mode not in ("off", "query", "shuffled"):
+        if query_retrieval_mode not in ("off", "query", "shuffled", "by_modal"):
             raise ValueError(
                 "query_retrieval_mode must be one of: off, query, shuffled"
             )
@@ -211,6 +256,9 @@ class CogMemBank(nn.Module):
         self.query_retrieval_mode = query_retrieval_mode
         self.query_retrieval_top_k = query_retrieval_top_k
         self.query_retriever = retrieval.MemoryRetriever()
+        self.modal_retriever = ModalMemoryRetriever(
+            use_classifier=use_query_classifier
+        )
 
         self.retrieval_blocks = nn.ModuleList([
             CrossTransformerBlock(self.token_size)
@@ -315,6 +363,7 @@ class CogMemBank(nn.Module):
             position=stored_position,
             task_tags=task_tags
         ))
+        
         # a dictionary keyed by episode ids are appending the memory unit
         # could be like {1: [mem1, mem2], 2: [mem3, mem4], ...}
 
@@ -386,22 +435,41 @@ class CogMemBank(nn.Module):
             # 2) memory retrieval
             working_mem = tokens[i].unsqueeze(0)  # (1, N, D)
 
+            
             hist = self.bank.get(eid, [])
             if len(hist) > 0:
-                hist = self._select_history(
-                    hist=hist,
-                    working_mem=working_mem,
-                    instruction=instruction,
-                    timestep=timesteps[i],
-                    query_embedding=(
-                        retrieval_query_embeddings[i]
-                        if retrieval_query_embeddings is not None
-                        else None
-                    ),
-                    current_position=position,
-                    task_type=task_type
-                ) # become a list of (id, cognitive features, image_embedding)
-                
+                if self.query_retrieval_mode == "query":
+                    hist = self._select_history(
+                        hist=hist,
+                        working_mem=working_mem,
+                        instruction=instruction,
+                        timestep=timesteps[i],
+                        query_embedding=(
+                            retrieval_query_embeddings[i]
+                            if retrieval_query_embeddings is not None
+                            else None
+                        ),
+                        current_position=position,
+                        task_type=task_type
+                    ) # become a list of (id, cognitive features, image_embedding)
+                elif self.query_retrieval_mode == "by_modal":
+                    hist = self._select_history_by_modals(
+                        hist=hist,
+                        instruction=instruction,
+                        timestep=timesteps[i],
+                        tokens = working_mem.squeeze(0),
+                        current_position=position,
+                        task_type=task_type
+                    ) # become a list of (id, cognitive features, image_embedding)
+    # def _select_history_by_modals(
+    #         self,
+    #         hist,
+    #         instruction,
+    #         timestep,
+    #         tokens,
+    #         current_position,
+    #         task_type
+    # ):
                 hist_feats = [memory.feat for memory in hist]
                 episode_mem = torch.stack(hist_feats, dim=0).reshape(-1, D).unsqueeze(0)  # (1, T*N, D)
 
@@ -522,13 +590,54 @@ class CogMemBank(nn.Module):
         )
 
         return [hist[int(result.memory.id)] for result in results]
+
+    def _select_history_by_modals(
+            self,
+            hist,
+            instruction,
+            timestep,
+            tokens,
+            current_position,
+            task_type
+    ):
+        # 1. create a retrieval query but replace the embeddings with bank tokens
+        # 2. create a memory class and replace everything
+        # 3. create a function that compares the 2 query
+        query = ModalRetrievalQuery(
+            text=instruction,
+            tokens=tokens,
+            current_position=current_position,
+            current_time=timestep,
+            task_type=task_type,
+            modality_hints=("visual",),
+        )
+
+        memories = [ModalMemoryRecord(
+            id=index,
+            tokens=memory.feat,
+            position=memory.position,
+            timestamp=memory.timestep,
+            task_tags=memory.task_tags
+        ) for index, memory in enumerate(hist)]
+
+
+        results = self.modal_retriever.retrieve(
+            query=query,
+            memories=memories,
+            weights=MODALITY_SCORE_WEIGHTS[self.modality],
+            modal = self.modality
+        )
+        return [hist[int(result.memory.id)] for result in results]
+
+
+
 # @dataclass
 # class BankEntry:
 #     timestep: Optional[torch.Tensor]
 #     feat: torch.tensor
 #     image_embedding: Optional[torch.Tensor]
-#     position: Optional[torch.Tensor]
 #     task_tags: tuple[str, ...]
+#     position: Optional[torch.Tensor] = None
 
     @staticmethod
     def _as_float_timestep(timestep) -> Optional[float]:
@@ -537,9 +646,53 @@ class CogMemBank(nn.Module):
         if torch.is_tensor(timestep):
             return float(timestep.detach().cpu().item())
         return float(timestep)
+    
+TASK_MEMORY_BUDGETS = {
+    "navigation": {
+        "cog": 3,
+        "per": 1,
+        "spatial": 4,
+    },
+    "object_state": {
+        "cog": 2,
+        "per": 4,
+        "spatial": 2,
+    },
+    "temporal": {
+        "cog": 4,
+        "per": 2,
+        "spatial": 2,
+    },
+    "default": {
+        "cog": 2,
+        "per": 3,
+        "spatial": 3,
+    },
+}
 
+MODALITY_SCORE_WEIGHTS = {
+    "cog": {
+        "token": 0.75,
+        "task": 0.15,
+        "time": 0.10,
+        "position": 0.00,
+    },
+    "per": {
+        "token": 0.75,
+        "task": 0.15,
+        "time": 0.10,
+        "position": 0.00,
+    },
+    "spatial": {
+        "token": 0.65,
+        "task": 0.10,
+        "time": 0.05,
+        "position": 0.20,
+    },
+}
 
 class PerMemBank(CogMemBank):
+    modality='per'
     def __init__(self,
                  dataloader_type: str,
                  group_size: int,
@@ -570,6 +723,7 @@ class PerMemBank(CogMemBank):
 
 
 class SpatialMemBank(CogMemBank):
+    modality='spatial'
     def __init__(self,
                  dataloader_type: str,
                  group_size: int,
@@ -1190,12 +1344,21 @@ class MemoryVLA(nn.Module):
         dtype = encoder_param.dtype
         return intrinsics.to(device, dtype)
 
+    def _add_batch_extrinsics(self, extrinsics):
+        extrinsics = torch.as_tensor(extrinsics)
+        if extrinsics.ndim == 2:
+            extrinsics = extrinsics.unsqueeze(0)
+
+        encoder_param = next(self.point_cloud_spatial_encoder.parameters())
+        return extrinsics.to(device=encoder_param.device, dtype=torch.float32)
+
     def forward(
         self,
         depth: Optional[torch.FloatTensor] = None,
         proprio: Optional[torch.FloatTensor] = None,
         camera: Optional[torch.FloatTensor] = None,
         intrinsics: Optional[torch.FloatTensor] = None,
+        extrinsics: Optional[torch.FloatTensor] = None,
         input_ids: torch.LongTensor=None,
         attention_mask: Optional[torch.Tensor] = None,
         pixel_values: Optional[torch.FloatTensor] = None,
@@ -1303,6 +1466,8 @@ class MemoryVLA(nn.Module):
             raise ValueError("The depth value is missing")
         if intrinsics is None:
             raise ValueError("The intrinsics value is missing")
+        if extrinsics is None:
+            raise ValueError("The camera extrinsics value is missing")
 
         # let the retrieved cog_tokens and per_tokens cross attention with episodic tokens
         cog_tokens, per_tokens = self._fuse_episodic_tokens(
@@ -1312,16 +1477,22 @@ class MemoryVLA(nn.Module):
         )
 
         
-        points, valid_masks = geometry.depth_to_points(
+        points_camera, valid_masks = geometry.depth_to_points(
             depth=depth,
             intrinsics=intrinsics,
             mask=None,
             flatten=True,
         )
 
+        camera_to_world = torch.linalg.inv(extrinsics.float())
+
+        points_world = geometry.transform_points(
+            points_camera, camera_to_world
+        )
+
 
         spatial_tokens = self.point_cloud_spatial_encoder(
-            points=points,
+            points=points_world,
             proprio=proprio,
             camera=camera,
             point_mask=valid_masks,
@@ -1521,6 +1692,7 @@ class MemoryVLA(nn.Module):
         proprio: Optional[torch.FloatTensor] = None,
         camera: Optional[torch.FloatTensor] = None,
         intrinsics: Optional[torch.FloatTensor] = None,
+        extrinsics: Optional[torch.FloatTensor] = None,
         unnorm_key: Optional[str] = None, 
         cfg_scale: float = 1.5, 
         use_ddim: bool = False,
@@ -1649,29 +1821,41 @@ class MemoryVLA(nn.Module):
             episode_mem_ids=episode_ids
         )
 
-        if depth is None or intrinsics is None:
+        if depth is None and intrinsics is None and extrinsics is None:
             spatial_tokens = self.spatial_encoder(
                 depth=depth,
                 proprio=proprio,
                 camera=camera,
             )
+        elif depth is None or intrinsics is None or extrinsics is None:
+            raise ValueError(
+                "Point-cloud inference requires depth, intrinsics, and extrinsics together"
+            )
         else:
             depth = self._add_batch_depth(depth)
             intrinsics = self._add_batch_intrinsics(intrinsics)
+            extrinsics = self._add_batch_extrinsics(extrinsics)
 
-            points, valid_masks = geometry.depth_to_points(
+            points_camera, valid_masks = geometry.depth_to_points(
                 depth=depth,
                 intrinsics=intrinsics,
                 mask=None,
                 flatten=True,
             )
 
+            camera_to_world = torch.linalg.inv(extrinsics.float())
+
+            points_world = geometry.transform_points(
+                points_camera, camera_to_world
+            )
+
             spatial_tokens = self.point_cloud_spatial_encoder(
-                points=points,
+                points=points_world,
                 proprio=proprio,
                 camera=camera,
                 point_mask=valid_masks,
             )
+
 
         per_tokens = self._fuse_spatial_tokens(
             per_tokens=per_tokens,

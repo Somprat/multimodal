@@ -3,10 +3,26 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from enum import Enum
 from math import exp
-from typing import Any, Mapping, Optional, Protocol, Sequence
+from typing import Any, Mapping, Optional, Sequence
 
 import torch
+import torch.nn as nn
 import torch.nn.functional as F
+
+# 1. do cosine similarity between currnet observation and the memory in the same episode
+# 2. do the 
+
+# adding the per, cog and mem in the memory record
+# might not need another memory bank. Just compare the feat of the current timestep with each of the one in the past
+# and compre the position and time difference as well
+
+        # self.bank[episode_id].append(BankEntry(
+        #     timestep=timestep,
+        #     feat=feat.detach().clone(),
+        #     image_embedding=image_embedding,
+        #     position=stored_position,
+        #     task_tags=task_tags
+        # ))
 
 
 class RetrievalMode(str, Enum):
@@ -16,15 +32,11 @@ class RetrievalMode(str, Enum):
     AUDIO_TEMPORAL_VISUAL = "audio_temporal_visual"
     NAVIGATION = "navigation"
 
-
-# dataclass is a normal class but was automatically equipped with init, __repr__ and __eq__
-# only thinkgs we need to do is specifying each variable
 @dataclass
-class MemoryRecord:
+class ModalMemoryRecord:
     id: str
     text: str = ""
-    embedding: Optional[torch.Tensor] = None
-    # embedding is the embedding of semantic feature that the model decides to store in the long term memory
+    tokens: Optional[torch.Tensor] = None
     position: Optional[torch.Tensor] = None
     timestamp: Optional[float] = None
     # Sequence[str] = takes in a list/tuple of str
@@ -39,10 +51,55 @@ class MemoryRecord:
     modality: str = "unknown"
 
 
+class QueryModeClassifier:
+    """The CLIP + linear query router trained by train_query_router.py."""
+
+    LABEL_TO_MODE = {
+        "navigation": RetrievalMode.NAVIGATION,
+        "object_state": RetrievalMode.OBJECT_STATE,
+        "default": RetrievalMode.DEFAULT,
+        "temporal": RetrievalMode.AUDIO_TEMPORAL_VISUAL,
+    }
+
+    def __init__(self, checkpoint_path: Optional[str] = None) -> None:
+        from pathlib import Path
+
+        from transformers import CLIPModel, CLIPTokenizer
+
+        path = Path(checkpoint_path) if checkpoint_path else (
+            Path(__file__).resolve().parents[2]
+            / "checkpoints/query_router/clip_linear_4class.pt"
+        )
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        checkpoint = torch.load(path, map_location=self.device, weights_only=True)
+        encoder_name = checkpoint["encoder"]
+
+        self.tokenizer = CLIPTokenizer.from_pretrained(encoder_name)
+        self.encoder = CLIPModel.from_pretrained(encoder_name).to(self.device).eval()
+        self.classifier = nn.Linear(
+            checkpoint["embedding_dim"], len(checkpoint["labels"])
+        ).to(self.device)
+        self.classifier.load_state_dict(checkpoint["state_dict"])
+        self.classifier.eval()
+        self.labels = checkpoint["labels"]
+
+    @torch.inference_mode()
+    def classify(self, query: ModalRetrievalQuery) -> Optional[RetrievalMode]:
+        inputs = self.tokenizer(
+            text=[query.text], padding=True, truncation=True, return_tensors="pt"
+        ).to(self.device)
+        features = self.encoder.get_text_features(**inputs)
+        embedding = features.pooler_output if hasattr(features, "pooler_output") else features
+        embedding = F.normalize(embedding.float(), dim=-1)
+        label = self.labels[self.classifier(embedding).argmax(dim=-1).item()]
+        return self.LABEL_TO_MODE.get(label)
+
+
+
 @dataclass
-class RetrievalQuery:
+class ModalRetrievalQuery:
     text: str
-    embedding: Optional[torch.Tensor] = None
+    tokens: Optional[torch.Tensor] = None
     current_position: Optional[torch.Tensor] = None
     current_time: Optional[float] = None
     task_type: Optional[str] = None
@@ -63,7 +120,7 @@ class RetrievalWeights:
 @dataclass
 class RetrievalResult:
     # the info about each aspect: posistion, emebdding, texts, etc.
-    memory: MemoryRecord
+    memory: ModalMemoryRecord
     # retrieval score: higher = more relevant
     score: float
     breakdown: Mapping[str, float]
@@ -73,38 +130,65 @@ class RetrievalResult:
 #     "spatial_match": 0.15,
 #     "recency": 0.08
 # }
-    mode: RetrievalMode
+    mode: RetrievalMode = None
+    budget: str = "default"
 
+MODALITY_SCORE_WEIGHTS = {
+    "cog": {
+        "token": 0.75,
+        "task": 0.15,
+        "time": 0.10,
+        "position": 0.00,
+    },
+    "per": {
+        "token": 0.75,
+        "task": 0.15,
+        "time": 0.10,
+        "position": 0.00,
+    },
+    "spatial": {
+        "token": 0.65,
+        "task": 0.10,
+        "time": 0.05,
+        "position": 0.20,
+    },
+}
+TASK_MEMORY_BUDGETS = {
+    "navigation": {
+        "cog": 3,
+        "per": 1,
+        "spatial": 4,
+    },
+    "object_state": {
+        "cog": 2,
+        "per": 4,
+        "spatial": 2,
+    },
+    "temporal": {
+        "cog": 4,
+        "per": 2,
+        "spatial": 2,
+    },
+    "default": {
+        "cog": 2,
+        "per": 3,
+        "spatial": 3,
+    },
+}
 
-class QueryModeClassifier(Protocol):
-    """Optional learned or LLM-backed router.
+# do the cosine similarity of the the current tokens and the history here
+def token_score(
+        query: ModalRetrievalQuery,
+        memory: ModalMemoryRecord
+):
+    score = F.cosine_similarity(query.tokens.float(), memory.tokens.float(), dim=-1).mean()
+    return float(score.detach().cpu().item())
 
-    Implement this protocol later if you want a language model, small classifier,
-    or task planner to choose retrieval modes instead of relying on heuristics.
-    """
-
-    def classify(self, query: RetrievalQuery) -> Optional[RetrievalMode]:
-        ...
-
-# comparing query(what the robot needs) vs the memory
-def semantic_score(query: RetrievalQuery, memory: MemoryRecord) -> float:
-    if query.embedding is None or memory.embedding is None:
-        return 0.0
-
-    # cosine simlarity expects float
-    # flatten to make it a 1d array tensor
-    query_embedding = query.embedding.float().flatten()
-    memory_embedding = memory.embedding.float().flatten()
-    if query_embedding.numel() != memory_embedding.numel():
-        return 0.0
-
-    score = F.cosine_similarity(query_embedding, memory_embedding, dim=0)
-    return _clamp01(float(score.item()))
 
 
 def spatial_score(
-    query: RetrievalQuery,
-    memory: MemoryRecord,
+    query: ModalRetrievalQuery,
+    memory: ModalMemoryRecord,
     spatial_scale: float = 2.0,
 ) -> float:
     if query.current_position is None or memory.position is None:
@@ -125,8 +209,8 @@ def spatial_score(
 
 
 def temporal_score(
-    query: RetrievalQuery,
-    memory: MemoryRecord,
+    query: ModalRetrievalQuery,
+    memory: ModalMemoryRecord,
     temporal_scale: float = 60.0,
 ) -> float:
     if query.current_time is None or memory.timestamp is None:
@@ -137,7 +221,7 @@ def temporal_score(
     return exp(-age / max(temporal_scale, 1e-6))
 
 
-def task_score(query: RetrievalQuery, memory: MemoryRecord) -> float:
+def task_score(query: ModalRetrievalQuery, memory: ModalMemoryRecord) -> float:
 
     # Next step: implement the object Id
     score = 0.0
@@ -160,49 +244,14 @@ def task_score(query: RetrievalQuery, memory: MemoryRecord) -> float:
 
     return _clamp01(score)
 
-MANUAL_TASK_LABELS = {
-    "pick up the object and move it to a goal position.": "navigation",
-    "pick up a designated object from a clutter of objects.": "object_state",
-    "turn on the faucet by rotating a designated handle.": "default",
-    "insert a designated object into the corresponding slot on a board.": "navigation",
-    "plug the charger into the wall socket.": "navigation",
-    "stack the red cube on top of the green cube.": "navigation",
-    "insert the peg into the horizontal hole in a box.": "navigation",
-    "pick up the red cube and move it to a goal position.": "navigation",
-    "lift up the red cube by 0.2 meters.": "navigation"
-}
+
+
 
 class ManualRetrievalRouter:
     """Select retrieval weights from explicit task metadata, with heuristic fallback."""
 
     # create dictionary pairs of the task's name and its optimal weights
-    WEIGHTS = {
-        RetrievalMode.DEFAULT: RetrievalWeights(),
-        RetrievalMode.SEMANTIC_SPATIAL_RECENT: RetrievalWeights(
-            semantic=0.35,
-            spatial=0.25,
-            temporal=0.30,
-            task=0.10,
-        ),
-        RetrievalMode.OBJECT_STATE: RetrievalWeights(
-            semantic=0.25,
-            spatial=0.15,
-            temporal=0.20,
-            task=0.40,
-        ),
-        RetrievalMode.AUDIO_TEMPORAL_VISUAL: RetrievalWeights(
-            semantic=0.20,
-            spatial=0.10,
-            temporal=0.35,
-            task=0.35,
-        ),
-        RetrievalMode.NAVIGATION: RetrievalWeights(
-            semantic=0.25,
-            spatial=0.45,
-            temporal=0.15,
-            task=0.15,
-        ),
-    }
+
 
     # store the key of the last dict as its value: easy for conversion from task_type to mode
     TASK_TYPE_TO_MODE = {
@@ -220,27 +269,54 @@ class ManualRetrievalRouter:
     RECENT_TERMS = ("last seen", "recent", "before", "earlier", "previously")
     STATE_TERMS = ("state", "open", "closed", "on", "off", "moved", "changed")
 
+    MANUAL_TASK_LABELS = {
+        "pick up the object and move it to a goal position.": "navigation",
+        "pick up a designated object from a clutter of objects.": "object_state",
+        "turn on the faucet by rotating a designated handle.": "default",
+        "insert a designated object into the corresponding slot on a board.": "navigation",
+        "plug the charger into the wall socket.": "navigation",
+        "stack the red cube on top of the green cube.": "navigation",
+        "insert the peg into the horizontal hole in a box.": "navigation",
+        "pick up the red cube and move it to a goal position.": "navigation",
+        "lift up the red cube by 0.2 meters.": "navigation"
+    }
+
     # classify each query into different modes
-    def __init__(self, classifier: Optional[QueryModeClassifier] = None) -> None:
-        self.classifier = classifier
+    MODE_TO_BUDGET = {
+        RetrievalMode.NAVIGATION: "navigation",
+        RetrievalMode.OBJECT_STATE: "object_state",
+        RetrievalMode.AUDIO_TEMPORAL_VISUAL: "temporal",
+        RetrievalMode.SEMANTIC_SPATIAL_RECENT: "temporal",
+        RetrievalMode.DEFAULT: "default",
+    }
+
+    def __init__(
+        self,
+        use_classifier: bool = False,
+        classifier: Optional[QueryModeClassifier] = None,
+    ) -> None:
+        self.use_classifier = use_classifier
+        self.classifier = classifier or (
+            QueryModeClassifier() if use_classifier else None
+        )
 
     # return the query's mode and its weight that we set up there
-    def route(self, query: RetrievalQuery) -> tuple[RetrievalMode, RetrievalWeights]:
-        if self.classifier is not None:
-            # optional if we have classifier
+    def route(self, query: ModalRetrievalQuery) -> str:
+        if self.use_classifier and self.classifier is not None:
             classified_mode = self.classifier.classify(query)
-            # self.classifier might say I dont' know
             if classified_mode is not None:
-                return classified_mode, self.WEIGHTS[classified_mode]
+                return self.MODE_TO_BUDGET[classified_mode]
+        
 
 
-        mode = self._mode_from_task_type(query) or self._mode_from_text(query.text)
-        return mode, self.WEIGHTS[mode]
+#        mode = self._mode_from_task_type(query) or self._mode_from_text(query.text)
+        budget = self.MANUAL_TASK_LABELS.get(query.text, "default")
+        return budget
 
 
 
     # both these functuons' end goals are modes
-    def _mode_from_task_type(self, query: RetrievalQuery) -> Optional[RetrievalMode]:
+    def _mode_from_task_type(self, query: ModalRetrievalQuery) -> Optional[RetrievalMode]:
         if query.task_type is None:
             return None
         # input the query's task type (key of the TASK_TYPE_TO_MODE dictionary) to get the mode
@@ -261,39 +337,55 @@ class ManualRetrievalRouter:
         return RetrievalMode.DEFAULT
 
 
-class MemoryRetriever:
+class ModalMemoryRetriever:
     def __init__(
         self,
         router: Optional[ManualRetrievalRouter] = None,
+        use_classifier: bool = False,
         spatial_scale: float = 2.0,
         temporal_scale: float = 60.0,
     ) -> None:
-        self.router = router or ManualRetrievalRouter()
+        self.router = router or ManualRetrievalRouter(use_classifier=use_classifier)
         self.spatial_scale = spatial_scale
         self.temporal_scale = temporal_scale
 
     def retrieve(
         self,
-        query: RetrievalQuery,
-        memories: Sequence[MemoryRecord],
-        top_k: int = 5,
+        weights,
+        query: ModalRetrievalQuery,
+        memories: Sequence[ModalMemoryRecord],
+        modal: str
     ) -> list[RetrievalResult]:
         # weights here is the RetrievalWeights data class
-        mode, weights = self.router.route(query)
+        # mode = self.router.route(query)
+        # if mode == RetrievalMode.NAVIGATION:
+        #     budget_name = "navigation"
+        # elif mode == RetrievalMode.OBJECT_STATE:
+        #     budget_name = "object_state"
+        # elif mode in {
+        #     RetrievalMode.AUDIO_TEMPORAL_VISUAL,
+        #     RetrievalMode.SEMANTIC_SPATIAL_RECENT,
+        # }:
+        #     budget_name= "temporal"
+        # else:
+        #     budget_name = "default"
+        budget_name = self.router.route(query)
+        top_k = TASK_MEMORY_BUDGETS[budget_name][modal]
+        
         results = []
-        # rert
+
         for memory in memories:
-            semantic = semantic_score(query, memory)
-            spatial = spatial_score(query, memory, spatial_scale=self.spatial_scale)
-            temporal = temporal_score(query, memory, temporal_scale=self.temporal_scale)
+            token = token_score(query, memory)
+            position = spatial_score(query, memory, spatial_scale=self.spatial_scale)
+            time = temporal_score(query, memory, temporal_scale=self.temporal_scale)
             task = task_score(query, memory)
             # sum of weights*task score
             # task score was obtain by consine similarity of query and memory
             total = (
-                weights.semantic * semantic
-                + weights.spatial * spatial
-                + weights.temporal * temporal
-                + weights.task * task
+                weights["token"] * token
+                + weights["position"] * position
+                + weights["time"] * time
+                + weights["task"] * task
             )
             # at the end, append memory, score, breakdown which is just some info and mode
             results.append(
@@ -301,12 +393,12 @@ class MemoryRetriever:
                     memory=memory,
                     score=total,
                     breakdown={
-                        "semantic": semantic,
-                        "spatial": spatial,
-                        "temporal": temporal,
+                        "token": token,
+                        "spatial": position,
+                        "temporal": time,
                         "task": task,
                     },
-                    mode=mode,
+                    budget=budget_name
                 )
             )
         #sorting the result by scores which is the total variable with is the sum of ...
@@ -314,7 +406,5 @@ class MemoryRetriever:
         # only return the top_k with the most total
         return results[:top_k]
     
-
-# keep score between 0 and 1, used in smeantic, task,... scores
 def _clamp01(value: float) -> float:
     return max(0.0, min(1.0, value))

@@ -120,6 +120,9 @@ class ProbeModel(nn.Module):
         instructions = batch["instructions"]
         positions = batch["positions"]
         # these are arguments for process_batch
+        retrieval_image_embeddings, retrieval_query_embeddings = (
+            self._encode_retrieval_inputs(rgb_features, instructions)
+        )
         
         if self.query_retrieval_mode == "off":
             if self.variant == "rgb":
@@ -143,7 +146,7 @@ class ProbeModel(nn.Module):
                 )
             return self.heads(probe_input)
 
-        if self.query_retrieval_mode in {"query", "shuffled"}:
+        if self.query_retrieval_mode in {"query", "shuffled", "by_modal"}:
             if self.variant == 'rgb':
                 input_tokens = rgb_features.unsqueeze(1)
                 result_tokens = self.per_mem_bank.process_batch(
@@ -163,6 +166,8 @@ class ProbeModel(nn.Module):
                     timesteps=timesteps,
                     instructions=instructions,
                     positions=positions,
+                    retrieval_image_embeddings=retrieval_image_embeddings,
+                    retrieval_query_embeddings=retrieval_query_embeddings
                 )
 
                 # spatial
@@ -176,6 +181,15 @@ class ProbeModel(nn.Module):
                     points=points_world,
                     point_mask=point_mask,
                 )
+                per_tokens = memory_vla.MemoryVLA._fuse_spatial_tokens(
+                    per_tokens=per_tokens,
+                    spatial_tokens=spatial_tokens,
+                    timesteps=timesteps,
+                    episode_ids=episode_ids,
+                    retrieval_image_embeddings=retrieval_image_embeddings,
+                    retrieval_query_embeddings=retrieval_query_embeddings
+                )
+
                 result_features = torch.cat(
                     [per_tokens.squeeze(1), spatial_tokens.mean(dim=1)], dim=-1
                 )
@@ -289,7 +303,7 @@ def main():
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument(
         "--query-retrieval-mode",
-        choices=("off", "query", "shuffled"),
+        choices=("off", "query", "shuffled", "by_modal"),
         default="query",
     )
     args = parser.parse_args()

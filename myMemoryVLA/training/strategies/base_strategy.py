@@ -173,6 +173,7 @@ class TrainingStrategy(ABC):
                         depth=batch.get("depth"),
                         proprio=batch.get("proprio"),
                         intrinsics=batch.get("intrinsic"),
+                        extrinsics=batch.get("extrinsics"),
                         camera=batch.get("camera"),
                         action_masks=batch["action_masks"],
                         labels=batch["labels"],

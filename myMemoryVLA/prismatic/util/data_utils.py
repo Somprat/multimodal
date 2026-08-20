@@ -166,19 +166,32 @@ class PaddedCollatorForActionPrediction:
         images = [instance["image"] for instance in instances]
 
         optional_modalities = {}
-        for key in ("depth", "proprio", "spatial_features", "intrinsic"):
+        for key in ("depth", "proprio", "spatial_features", "intrinsic", "extrinsics"):
             presence = [key in instance for instance in instances]
             if any(presence) and not all(presence):
                 raise ValueError(f"Optional modality {key!r} is missing from part of the batch")
             if all(presence):
                 optional_modalities[key] = torch.stack([instance[key] for instance in instances])
 
-        if ("depth" in optional_modalities) != ("intrinsic" in optional_modalities):
-            raise ValueError("Point-cloud batches must provide both depth and intrinsic tensors")
-        if "intrinsic" in optional_modalities and optional_modalities["intrinsic"].shape[-2:] != (3, 3):
+        pointcloud_keys = ("depth", "intrinsic", "extrinsics")
+        present = [key in optional_modalities for key in pointcloud_keys]
+
+        if any(present) and not all(present):
             raise ValueError(
-                "Batched camera intrinsics must have shape [B, 3, 3]"
+                "Point-cloud batches require depth, intrinsic, and extrinsics"
             )
+
+        if (
+            "intrinsic" in optional_modalities
+            and optional_modalities["intrinsic"].shape[-2:] != (3, 3)
+        ):
+            raise ValueError("Batched intrinsics must have shape [B, 3, 3]")
+
+        if (
+            "extrinsics" in optional_modalities
+            and optional_modalities["extrinsics"].shape[-2:] != (4, 4)
+        ):
+            raise ValueError("Batched extrinsics must have shape [B, 4, 4]")
 
         output = dict(
             pixel_values=pixel_values,

@@ -113,14 +113,23 @@ class RLDSBatchTransform:
         if "camera_intrinsics" in observation:
             intrinsic = torch.tensor(observation["camera_intrinsics"][0], dtype = torch.float32)
 
-        if (depth is None) != (intrinsic is None):
+        extrinsic = None
+        if "camera_extrinsics" in observation:
+            extrinsic = torch.tensor(observation["camera_extrinsics"][0], dtype=torch.float32)
+
+        pointcloud_values = (depth, intrinsic, extrinsic)
+        if any(value is not None for value in pointcloud_values) and not all(
+            value is not None for value in pointcloud_values
+        ):
             raise ValueError(
-                "Point-cloud training samples must provide both depth_primary and camera_intrinsics"
+                "Point-cloud training samples must provide depth_primary, camera_intrinsics, and camera_extrinsics"
             )
         if intrinsic is not None and intrinsic.shape != (3, 3):
             raise ValueError(
                 f"camera_intrinsics must have shape [3, 3], got {tuple(intrinsic.shape)}"
             )
+        if extrinsic is not None and extrinsic.shape != (4, 4):
+            raise ValueError("camera_extrinsics must have shape [4, 4]")
 
         if depth is not None:
             output["depth"] = depth
@@ -129,7 +138,8 @@ class RLDSBatchTransform:
 
         if intrinsic is not None:
             output["intrinsic"] = intrinsic
-        
+        if extrinsic is not None:
+            output["extrinsics"] = extrinsic
 
         return  output
     # some techinal words: collator = a function that create a batch of data
@@ -185,6 +195,10 @@ class RLDSDataset(IterableDataset):
                 ):
                     raise ValueError(
                         f"{dataset_name} must configure camera_intrinsics_key or a static camera_intrinsics matrix"
+                    )
+                if dataset_kwargs.get("camera_extrinsics_key") is None:
+                    raise ValueError(
+                        f"{dataset_name} must configure camera_extrinsics_key for world-frame point-cloud training"
                     )
         rlds_config = dict(
             traj_transform_kwargs=dict(

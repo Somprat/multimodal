@@ -100,7 +100,7 @@ for ep_id in range(args.n_trajs):
     timestep = 0
     while not (predicted_terminated or truncated):
         # step the model; "raw_action" is raw model action output; "action" is the processed action to be sent into maniskill env
-        raw_action, action = model.step(image, depth, intrinsic, instruction)
+        raw_action, action = model.step(image, depth, intrinsic, extrinsic, instruction)
         predicted_terminated = bool(action["terminate_episode"][0] > 0)
         if predicted_terminated:
             if not is_final_subtask:

@@ -161,7 +161,7 @@ def run_maniskill2_eval_single_episode(
     while not (predicted_terminated or truncated):
         # step the model; "raw_action" is raw model action output; "action" is the processed action to be sent into maniskill env
         raw_action, action = model.step(
-            image, depth, intrinsic,
+            image, depth, intrinsic, extrinsic,
             task_description, current_position=np.asarray(base_env.tcp.pose.p, dtype=np.float32),
             episode_first_frame=episode_first_frame,
         )

@@ -18,6 +18,7 @@ class TinyManiskillSpatial(tfds.core.GeneratorBasedBuilder):
                 "image": tfds.features.Tensor(shape=(self.height, self.width, 3), dtype=np.uint8),
                 "depth": tfds.features.Tensor(shape=(self.height, self.width, 1), dtype=np.float32),
                 "camera_intrinsics": tfds.features.Tensor(shape=(3, 3), dtype=np.float32),
+                "camera_extrinsics": tfds.features.Tensor(shape=(4,4), dtype=np.float32),
                 "proprio": tfds.features.Tensor(shape=(8,), dtype=np.float32),
             },
             "action": tfds.features.Tensor(shape=(7,), dtype=np.float32),
@@ -45,9 +46,10 @@ class TinyManiskillSpatial(tfds.core.GeneratorBasedBuilder):
         depth = .75+.25*yy.astype(np.float32)/max(self.height-1,1); depth[mask] = .48+.01*index; depth = depth[...,None]
         sx, sy = self.width/640, self.height/480
         intrinsic = np.array([[623.588*sx,0,319.501*sx],[0,623.588*sy,239.545*sy],[0,0,1]],np.float32)
+        extrinsic = np.eye(4, dtype=np.float32)
         proprio=np.zeros(8,np.float32); proprio[:3]=(.30+.01*index,-.1,.2); proprio[-1]=1
         action=np.zeros(7,np.float32); action[0]=.01; action[-1]=1
-        return {"observation":{"image":rgb,"depth":depth,"camera_intrinsics":intrinsic,"proprio":proprio},
+        return {"observation":{"image":rgb,"depth":depth,"camera_intrinsics":intrinsic,"camera_extrinsics": extrinsic,"proprio":proprio},
             "action":action,"language_instruction":"move the green object to the right",
             "is_first":index==0,"is_last":index==self.steps-1,"is_terminal":index==self.steps-1}
 

@@ -101,6 +101,7 @@ class VLAInference:
         self.image_history = deque(maxlen=self.horizon)
         self.depth_history = deque(maxlen=self.horizon)
         self.intrinsic_history = deque(maxlen=self.horizon)
+        self.extrinsic_history = deque(maxlen=self.horizon)
         if self.action_ensemble:
             self.action_ensembler = AdaptiveEnsembler(self.action_ensemble_horizon, self.adaptive_ensemble_alpha)
         else:
@@ -108,6 +109,7 @@ class VLAInference:
         self.num_image_history = 0
         self.num_depth_history = 0
         self.num_intrinsic_history = 0
+        self.num_extrinsic_history = 0
 
     def _add_image_to_history(self, image: np.ndarray) -> None:
         self.image_history.append(image)
@@ -121,6 +123,10 @@ class VLAInference:
         self.intrinsic_history.append(intrinsic)
         self.num_intrinsic_history = min(self.num_intrinsic_history+1, self.horizon)
 
+    def _add_extrinsic_to_history(self, extrinsic: np.float64) -> None:
+        self.extrinsic_history.append(extrinsic)
+        self.num_extrinsic_history = min(self.num_extrinsic_history+1, self.horizon)
+
     def finish_episode(self, success):
         self.vla.finish_episode(success)
 
@@ -129,11 +135,13 @@ class VLAInference:
         self.image_history.clear()
         self.depth_history.clear()
         self.intrinsic_history.clear()
+        self.extrinsic_history.clear()
         if self.action_ensemble:
             self.action_ensembler.reset()
         self.num_image_history = 0
         self.num_depth_history = 0
         self.num_intrinsic_history = 0
+        self.num_extrinsic_history = 0
 
         self.sticky_action_is_on = False
         self.gripper_action_repeat = 0
@@ -142,6 +150,7 @@ class VLAInference:
 
     def step(
         self, image: np.ndarray, depth: np.float64, intrinsic:np.float64,
+        extrinsic:np.float64,
             task_description: Optional[str] = None,
             current_position: Optional[list] = None,
             episode_first_frame: str = 'False',
@@ -170,12 +179,15 @@ class VLAInference:
                 raise ValueError("pointcloud mode requires depth")
             if intrinsic is None:
                 raise ValueError("pointcloud mode requires camera intrinsics")
+            if extrinsic is None:
+                raise ValueError("pointcloud mode requires camera extrinsics")
         self._add_image_to_history(self._resize_image(image))
         self._add_depth_to_history(depth)
         self._add_intrinsic_to_history(intrinsic)
+        self._add_extrinsic_to_history(extrinsic)
         image: Image.Image = Image.fromarray(image)
         spatial_inputs = (
-            {"depth": depth, "intrinsics": intrinsic}
+            {"depth": depth, "intrinsics": intrinsic, "extrinsics": extrinsic}
             if self.spatial_mode == "pointcloud"
             else {}
         )

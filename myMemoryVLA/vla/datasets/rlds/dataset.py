@@ -46,6 +46,7 @@ def make_dataset_from_rlds(
     depth_obs_keys: Dict[str, Optional[str]] = {},
     camera_intrinsics_key: Optional[str] = None,
     camera_intrinsics: Optional[Sequence[Sequence[float]]] = None,
+    camera_extrinsics_key: Optional[str] = None,
     state_obs_keys: List[Optional[str]] = (),
     language_key: Optional[str] = None,
     action_proprio_normalization_type: NormalizationType = NormalizationType.NORMAL,
@@ -92,6 +93,8 @@ def make_dataset_from_rlds(
             If a value of `old` is None, inserts a padding image instead (empty string).
         depth_obs_keys (Mapping[str, str|None]): Same as `image_obs_keys`, but for depth images. Keys will be
             prefixed with "depth_" instead of "image_".
+        camera_intrinsics_key (str, optional): Per-step or static camera intrinsic matrix key.
+        camera_extrinsics_key (str, optional): Per-step or static world-to-camera extrinsic matrix key.
         state_obs_keys (Sequence[str|None]): List of 1-dimensional proprioception keys to be extracted from the
             "observation" dict, concatenated, and mapped to "proprio". Inserts 1 element of padding for each None entry.
         language_key (str, optional): If provided, the "task" dict will contain the key "language_instruction",
@@ -172,6 +175,20 @@ def make_dataset_from_rlds(
             if intrinsics.shape != (3, 3):
                 raise ValueError("camera_intrinsics must have shape [3, 3]")
             new_obs["camera_intrinsics"] = tf.repeat(intrinsics[None], traj_len, axis=0)
+
+        if camera_extrinsics_key is not None:
+            extrinsics = tf.cast(old_obs[camera_extrinsics_key], tf.float32)
+            if extrinsics.shape.rank == 2:
+                extrinsics = tf.repeat(extrinsics[None], traj_len, axis=0)
+            elif extrinsics.shape.rank != 3:
+                raise ValueError(
+                    f"{camera_extrinsics_key} must have shape [4, 4] or [T, 4, 4]"
+                )
+            if extrinsics.shape[-2:] != (4, 4):
+                raise ValueError(
+                    f"{camera_extrinsics_key} must have shape [4, 4] or [T, 4, 4]"
+                )
+            new_obs["camera_extrinsics"] = extrinsics
 
         if state_obs_keys:
             new_obs["proprio"] = tf.concat(
