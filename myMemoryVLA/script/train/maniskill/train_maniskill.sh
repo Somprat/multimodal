@@ -5,7 +5,14 @@ set -euo pipefail
 project_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 cd "${project_root}"
 
-pretrained_ckpt="${PRETRAINED_CKPT:-./pretrained/CogACT-Large/checkpoints/CogACT-Large.pt}"
+# Use the repository runtime configuration and Python environment even when
+# this launcher is called from a fresh shell.
+source "${project_root}/script/setup/env.sh"
+if [[ -x "${project_root}/.venv/bin/python" ]]; then
+    export PATH="${project_root}/.venv/bin:${PATH}"
+fi
+
+pretrained_ckpt="${PRETRAINED_CKPT:-../models/model_b/checkpoints/memvla-bridge.pt}"
 data_root_dir="${DATA_ROOT_DIR:-./data}"
 run_root_dir="${RUN_ROOT_DIR:-./log/maniskill}"
 experiment_mode="${EXPERIMENT_MODE:-full}"

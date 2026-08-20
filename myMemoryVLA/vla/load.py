@@ -189,7 +189,9 @@ def load_vla(
         model_cfg.llm_backbone_id,
         llm_max_length=model_cfg.llm_max_length,
         hf_token=hf_token,
-        inference_mode=not load_for_training,
+        # The MemoryVLA checkpoint contains the complete LLM state. Build the
+        # architecture from config instead of downloading gated base weights.
+        inference_mode=True,
     )
 
     # Load VLM using `from_pretrained` (clobbers HF syntax... eventually should reconcile)
@@ -207,5 +209,12 @@ def load_vla(
         image_resize_strategy=model_cfg.image_resize_strategy,
         **kwargs,
     )
+
+    if load_for_training:
+        # Restore the training behavior normally configured when base weights
+        # are loaded through Transformers.
+        llm_backbone.inference_mode = False
+        llm_backbone.llm.config.use_cache = False
+        llm_backbone.llm.enable_input_require_grads()
 
     return vla
