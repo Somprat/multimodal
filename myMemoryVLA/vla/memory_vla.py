@@ -194,28 +194,7 @@ MODALITY_SCORE_WEIGHTS = {
         "position": 0.20,
     },
 }
-TASK_MEMORY_BUDGETS = {
-    "navigation": {
-        "cog": 1,
-        "per": 3,
-        "spatial": 4,
-    },
-    "object_state": {
-        "cog": 2,
-        "per": 4,
-        "spatial": 2,
-    },
-    "temporal": {
-        "cog": 4,
-        "per": 2,
-        "spatial": 2,
-    },
-    "default": {
-        "cog": 2,
-        "per": 3,
-        "spatial": 3,
-    },
-}
+
 
 class CogMemBank(nn.Module):
     modality = 'cog'
@@ -461,15 +440,7 @@ class CogMemBank(nn.Module):
                         current_position=position,
                         task_type=task_type
                     ) # become a list of (id, cognitive features, image_embedding)
-    # def _select_history_by_modals(
-    #         self,
-    #         hist,
-    #         instruction,
-    #         timestep,
-    #         tokens,
-    #         current_position,
-    #         task_type
-    # ):
+
                 hist_feats = [memory.feat for memory in hist]
                 episode_mem = torch.stack(hist_feats, dim=0).reshape(-1, D).unsqueeze(0)  # (1, T*N, D)
 
@@ -631,13 +602,7 @@ class CogMemBank(nn.Module):
 
 
 
-# @dataclass
-# class BankEntry:
-#     timestep: Optional[torch.Tensor]
-#     feat: torch.tensor
-#     image_embedding: Optional[torch.Tensor]
-#     task_tags: tuple[str, ...]
-#     position: Optional[torch.Tensor] = None
+
 
     @staticmethod
     def _as_float_timestep(timestep) -> Optional[float]:
@@ -647,49 +612,8 @@ class CogMemBank(nn.Module):
             return float(timestep.detach().cpu().item())
         return float(timestep)
     
-TASK_MEMORY_BUDGETS = {
-    "navigation": {
-        "cog": 3,
-        "per": 1,
-        "spatial": 4,
-    },
-    "object_state": {
-        "cog": 2,
-        "per": 4,
-        "spatial": 2,
-    },
-    "temporal": {
-        "cog": 4,
-        "per": 2,
-        "spatial": 2,
-    },
-    "default": {
-        "cog": 2,
-        "per": 3,
-        "spatial": 3,
-    },
-}
 
-MODALITY_SCORE_WEIGHTS = {
-    "cog": {
-        "token": 0.75,
-        "task": 0.15,
-        "time": 0.10,
-        "position": 0.00,
-    },
-    "per": {
-        "token": 0.75,
-        "task": 0.15,
-        "time": 0.10,
-        "position": 0.00,
-    },
-    "spatial": {
-        "token": 0.65,
-        "task": 0.10,
-        "time": 0.05,
-        "position": 0.20,
-    },
-}
+
 
 class PerMemBank(CogMemBank):
     modality='per'
@@ -1755,7 +1679,7 @@ class MemoryVLA(nn.Module):
         @return Unnormalized (continuous) action vector --> end-effector deltas.
         """
         image_transform, tokenizer = self.vlm.vision_backbone.image_transform, self.vlm.llm_backbone.tokenizer
-
+ 
         # Build VLA Prompt
         positions = torch.as_tensor(
             current_position,

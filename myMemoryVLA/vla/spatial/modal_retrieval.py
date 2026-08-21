@@ -133,26 +133,7 @@ class RetrievalResult:
     mode: RetrievalMode = None
     budget: str = "default"
 
-MODALITY_SCORE_WEIGHTS = {
-    "cog": {
-        "token": 0.75,
-        "task": 0.15,
-        "time": 0.10,
-        "position": 0.00,
-    },
-    "per": {
-        "token": 0.75,
-        "task": 0.15,
-        "time": 0.10,
-        "position": 0.00,
-    },
-    "spatial": {
-        "token": 0.65,
-        "task": 0.10,
-        "time": 0.05,
-        "position": 0.20,
-    },
-}
+
 TASK_MEMORY_BUDGETS = {
     "navigation": {
         "cog": 3,
@@ -356,19 +337,7 @@ class ModalMemoryRetriever:
         memories: Sequence[ModalMemoryRecord],
         modal: str
     ) -> list[RetrievalResult]:
-        # weights here is the RetrievalWeights data class
-        # mode = self.router.route(query)
-        # if mode == RetrievalMode.NAVIGATION:
-        #     budget_name = "navigation"
-        # elif mode == RetrievalMode.OBJECT_STATE:
-        #     budget_name = "object_state"
-        # elif mode in {
-        #     RetrievalMode.AUDIO_TEMPORAL_VISUAL,
-        #     RetrievalMode.SEMANTIC_SPATIAL_RECENT,
-        # }:
-        #     budget_name= "temporal"
-        # else:
-        #     budget_name = "default"
+
         budget_name = self.router.route(query)
         top_k = TASK_MEMORY_BUDGETS[budget_name][modal]
         
