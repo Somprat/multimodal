@@ -174,7 +174,27 @@ class GateFusion(nn.Module):
         fused = scale * x1 + (1 - scale) * x2
         return fused
     
-MODALITY_SCORE_WEIGHTS = {
+
+MODALITY_SCORES_SWEEP = [{
+    "cog": {
+        "token": 0.8,
+        "task": 0.10,
+        "time": 0.10,
+        "position": 0.00,
+    },
+    "per": {
+        "token": 0.8,
+        "task": 0.10,
+        "time": 0.10,
+        "position": 0.00,
+    },
+    "spatial": {
+        "token": 0.65,
+        "task": 0.10,
+        "time": 0.05,
+        "position": 0.20,
+    }},
+    {
     "cog": {
         "token": 0.75,
         "task": 0.15,
@@ -192,8 +212,48 @@ MODALITY_SCORE_WEIGHTS = {
         "task": 0.10,
         "time": 0.05,
         "position": 0.20,
+    }},
+    {
+    "cog": {
+        "token": 0.75,
+        "task": 0.10,
+        "time": 0.15,
+        "position": 0.00,
     },
-}
+    "per": {
+        "token": 0.75,
+        "task": 0.10,
+        "time": 0.15,
+        "position": 0.00,
+    },
+    "spatial": {
+        "token": 0.65,
+        "task": 0.10,
+        "time": 0.05,
+        "position": 0.20,
+    }},
+    {
+    "cog": {
+        "token": 0.75,
+        "task": 0.15,
+        "time": 0.10,
+        "position": 0.00,
+    },
+    "per": {
+        "token": 0.75,
+        "task": 0.15,
+        "time": 0.10,
+        "position": 0.00,
+    },
+    "spatial": {
+        "token": 0.80,
+        "task": 0.05,
+        "time": 0.05,
+        "position": 0.10,
+    }},
+]
+
+episodic_sweep = [(5,2), (10, 4), (20, 8)]
 
 
 class CogMemBank(nn.Module):
@@ -211,6 +271,9 @@ class CogMemBank(nn.Module):
                  query_retrieval_mode: str = "off",
                  query_retrieval_top_k: int = 4,
                  use_query_classifier: bool = False,
+                 modality_weights: dict = MODALITY_SCORES_SWEEP,
+                 modality_weights_index: int = 1,
+                 episodic_sweep_index: int = 1
                  ):
         super().__init__()
         assert dataloader_type in ('stream', 'group')
@@ -243,6 +306,9 @@ class CogMemBank(nn.Module):
             CrossTransformerBlock(self.token_size)
             for _ in range(self.retrieval_layers)
         ])
+        self.modality_weights = modality_weights
+        self.modality_weights_index = modality_weights_index
+        self.episodic_sweep_index = episodic_sweep_index
 
         if self.fusion_type == 'gate':
             self.gate_fusion_blocks = GateFusion(self.token_size)
@@ -595,7 +661,7 @@ class CogMemBank(nn.Module):
         results = self.modal_retriever.retrieve(
             query=query,
             memories=memories,
-            weights=MODALITY_SCORE_WEIGHTS[self.modality],
+            weights=self.modality_weights[self.modality_weights_index][self.modality],
             modal = self.modality
         )
         return [hist[int(result.memory.id)] for result in results]
@@ -629,7 +695,8 @@ class PerMemBank(CogMemBank):
                  update_fused: bool = False,
                  query_retrieval_mode: str = "off",
                  query_retrieval_top_k: int = 4,
-                 current_position: Optional[list] = None
+                 current_position: Optional[list] = None,
+                 modality_weights_index: int = 1,
                  ):
         super().__init__(
             dataloader_type=dataloader_type,
@@ -643,6 +710,8 @@ class PerMemBank(CogMemBank):
             update_fused=update_fused,
             query_retrieval_mode=query_retrieval_mode,
             query_retrieval_top_k=query_retrieval_top_k,
+            modality_weights=MODALITY_SCORES_SWEEP,
+            modality_weights_index=modality_weights_index,
         )
 
 
@@ -660,6 +729,7 @@ class SpatialMemBank(CogMemBank):
                  update_fused: bool = False,
                  query_retrieval_mode: str = "off",
                  query_retrieval_top_k: int = 4,
+                 modality_weights_index: int = 1,
                  ):
         super().__init__(
             dataloader_type=dataloader_type,
@@ -673,6 +743,8 @@ class SpatialMemBank(CogMemBank):
             update_fused=update_fused,
             query_retrieval_mode=query_retrieval_mode,
             query_retrieval_top_k=query_retrieval_top_k,
+            modality_weights=MODALITY_SCORES_SWEEP,
+            modality_weights_index=modality_weights_index,
         )
 class SpatialEncoder(nn.Module):
     def __init__(self, spatial_token_size: int, depth_patch_size: int = 16):
@@ -888,6 +960,8 @@ class MemoryVLA(nn.Module):
         experiment_mode: str = "full",
         freeze_vlm: bool = True,
         freeze_action_model: bool = False,
+        modality_weights_index: int = 1,
+        episodic_sweep_index: int = 1,
 
 
         max_steps: int = 5,
@@ -905,6 +979,11 @@ class MemoryVLA(nn.Module):
         if experiment_mode not in {"baseline", "full"}:
             raise ValueError(
                 f"experiment_mode must be 'baseline' or 'full', got {experiment_mode!r}"
+            )
+        if not 0 <= modality_weights_index < len(MODALITY_SCORES_SWEEP):
+            raise ValueError(
+                "modality_weights_index must be between 0 and "
+                f"{len(MODALITY_SCORES_SWEEP) - 1}, got {modality_weights_index}"
             )
 
         self.vlm = vlm
@@ -934,6 +1013,9 @@ class MemoryVLA(nn.Module):
         self.kick_method = kick_method
         self.top_k = top_k
         self.novelty_threshold = novelty_threshold
+        self.modality_weights_index = modality_weights_index
+        self.episodic_sweep_index = episodic_sweep_index
+
         
 
         self.cur_timestep = 0
@@ -972,6 +1054,7 @@ class MemoryVLA(nn.Module):
             update_fused=self.update_fused,
             query_retrieval_mode=self.query_retrieval_mode,
             query_retrieval_top_k=self.query_retrieval_top_k,
+            modality_weights_index=self.modality_weights_index
         )
 
         self.per_mem_bank = PerMemBank(
@@ -986,9 +1069,12 @@ class MemoryVLA(nn.Module):
             update_fused=self.update_fused,
             query_retrieval_mode=self.query_retrieval_mode,
             query_retrieval_top_k=self.query_retrieval_top_k,
+            modality_weights_index=self.modality_weights_index
         )
-
-        self.episodic_bank = EpisodicMemBank(max_steps=5,
+        max_steps_sweep = [5, 10, 20]
+        top_k_episodic_sweep = [2, 4, 8]
+        bank_sweep =[(5,2), (10, 4), (20, 8)]
+        self.episodic_bank = EpisodicMemBank(max_steps=max_steps_sweep[0],
                                              
                  dataloader_type = "stream",
                  group_size = self.group_size,
@@ -1000,7 +1086,7 @@ class MemoryVLA(nn.Module):
                  consolidate_type = self.consolidate_type,
                  update_fused = self.update_fused,
                  query_retrieval_mode = self.query_retrieval_mode,
-                 query_retrieval_top_k = self.query_retrieval_top_k)
+                 query_retrieval_top_k = top_k_episodic_sweep[1])
         
         self.spatial_encoder = SpatialEncoder(
             spatial_token_size = self.per_token_size,
@@ -1029,6 +1115,7 @@ class MemoryVLA(nn.Module):
             update_fused=self.update_fused,
             query_retrieval_mode=self.query_retrieval_mode,
             query_retrieval_top_k=self.query_retrieval_top_k,
+            modality_weights_index=self.modality_weights_index
         )
         self.spatial_to_per_fusion = CrossTransformerBlock(self.per_token_size)
         self.per_spatial_gate = GateFusion(self.per_token_size)
@@ -1875,7 +1962,6 @@ class MemoryVLA(nn.Module):
         mask = action_norm_stats.get("mask", np.ones_like(action_norm_stats["q01"], dtype=bool))
         action_high, action_low = np.array(action_norm_stats["q99"]), np.array(action_norm_stats["q01"])
         normalized_actions = np.clip(normalized_actions, -1, 1)
-        normalized_actions[:, 6] = np.where(normalized_actions[:, 6] < 0.5, 0, 1) 
         actions = np.where(
             mask,
             0.5 * (normalized_actions + 1) * (action_high - action_low) + action_low,

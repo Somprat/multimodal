@@ -1,0 +1,1432 @@
+EchoVLA: Synergistic Declarative Memory for
+VLA-Driven Mobile Manipulation
+
+Min Lin1, Xiwen Liang1, Bingqian Lin2, Liu Jingzhi1, Zijian Jiao1, Kehan Li1,
+Yu Sun1, Weijia Liufu1, Yuhan Ma1, Yuecheng Liu3, Shen Zhao1, Yuzheng
+Zhuang3, and Xiaodan Liang1
+
+1 Shenzhen Campus of Sun Yat-sen University, Shenzhen, China
+2 Shanghai Jiao Tong University, Shanghai, China
+3 Huawei Noah’s Ark Lab, China
+xdliang32@gmail.com
+
+Abstract. Recent progress in Vision–Language–Action (VLA) models
+has enabled embodied agents to interpret multimodal instructions and
+perform complex tasks. However, existing VLAs are mostly confined to
+short-horizon, table-top manipulation, lacking the memory and reasoning
+capability required for mobile manipulation, where agents must coordi-
+nate navigation and manipulation under changing spatial contexts. In
+this work, we present EchoVLA, a memory-aware VLA model for mobile
+manipulation. EchoVLA incorporates a synergistic declarative memory
+inspired by the human brain, consisting of a scene memory that main-
+tains a collection of spatial–semantic maps and an episodic memory that
+stores task-level experiences with multimodal contextual features. The
+two memories are individually stored, updated, and retrieved based on
+current observations, task history, and instructions, and their retrieved
+representations are fused via coarse- and fine-grained attention to guide
+base–arm diffusion policies. To support large-scale training, we further
+introduce MoMani, an automated benchmark that generates expert-level
+trajectories through multimodal large language model (MLLM)–guided
+planning and feedback-driven refinement, supplemented with real-robot
+demonstrations. Comprehensive simulated and real-world results demon-
+strate that EchoVLA substantially improves overall performance, e.g., it
+achieves the highest success rates of 0.52 on manipulation/navigation
+tasks and 0.31 on mobile manipulation tasks in simulation, exceeding
+the strong baseline π0.5 by +0.20 and +0.11, respectively.
+
+6
+2
+0
+2
+
+r
+a
+
+M
+6
+
+]
+
+O
+R
+.
+s
+c
+[
+
+2
+v
+2
+1
+1
+8
+1
+.
+1
+1
+5
+2
+:
+v
+i
+X
+r
+a
+
+1
+
+Introduction
+
+Recent advances in Vision–Language–Action (VLA) models [2,4,12,19,21,36,40,
+43, 52] have shown strong potential for general-purpose robot learning, enabling
+embodied agents to interpret multimodal inputs and perform diverse manip-
+ulation tasks. Models such as RT-2 [53], OpenVLA [23], and ManipLLM [27]
+demonstrate that large-scale vision–language pretraining can be extended to
+robot control, achieving impressive zero-shot generalization across unseen objects
+
+ 
+ 
+ 
+ 
+ 
+ 
+2
+
+M. Lin et al.
+
+Fig. 1: Comparison of memory designs for mobile manipulation control. (a) BSC-
+Nav [38] uses a memory bank with landmark memory and a cognitive map to support
+LLM-based reasoning and planning. (b) MemoryVLA [39] builds a memory bank with
+perceptual memory and cognitive memory to condition a diffusion policy. (c) EchoVLA
+(ours) introduces dual memories: a persistent scene memory (voxel map) and a time-
+indexed episodic memory (token buffer), fused via coarse- and fine-grained cross atten-
+tion for context-aware per-part diffusion control (arm/base).
+
+and scenes. However, most existing VLAs are restricted to short-horizon, table-
+top manipulation, and rely on Markovian control, where each decision depends
+solely on the current observation. This limitation prevents consistent reasoning
+over extended task sequences and hinders long-term spatial understanding.
+
+To overcome this limitation, we draw inspiration from the declarative mem-
+ory system in the human brain, which comprises complementary subsystems for
+spatial and experiential memory encoding, respectively. The parahippocampal
+cortex (PHC) and related retrosplenial regions represent the spatial and semantic
+structure of scenes, providing contextual information about environmental lay-
+outs and object relations [1, 14, 15]. These regions project to the hippocampus,
+which integrates contextual inputs into temporally organized episodic traces that
+capture individual experiences and task outcomes [13, 35]. Such a dual-system
+interaction allows humans to remember where things are and how tasks were ac-
+complished—offering a useful analogy for memory-guided embodied reasoning.
+Building on this insight, we propose EchoVLA, a memory-aware Vision–
+Language–Action model for mobile manipulation. EchoVLA introduces two com-
+plementary memories: a scene memory parallels the PHC by maintaining a
+persistent spatial representation as a voxel map, and an episodic memory
+mirrors hippocampal processing by storing time-indexed multimodal tokens to
+track task progress. As shown in Figure 1, prior work such as BSC-Nav [38]
+organizes memory as landmark descriptors and a cognitive map for LLM-based
+reasoning and planning, while MemoryVLA [39] builds perceptual and cognitive
+memories to condition diffusion control. In contrast, EchoVLA retrieves from
+
+ProprioceptionObservationInstructionDetection / LLM / DINO-v2Memory BankLandmark Memory•category, 3D position, description•…Cognitive Mapvoxel featuresLLM ReasonerPlannerObservationInstructionVision EncodersMemory BankPerceptual MemoryVLMProprioceptionCognitive Memory……Arm Diffusion PolicyObservationInstructionProprioceptionMultimodal EncodersNeuro-inspired Synergistic Declarative Memory MechanismPer-part Diffusion Policy(Arm / Base)(a) BSC-Nav(b) MemoryVLA(c) Ours…Token-Buffer Episodic MemoryHippocampusParahippocampal Cortex(PHC)CA1CA3DGVoxel-Map Scene MemoryTime 1Open DrawerTime 2Open CabinetTime n……coarse-and fine-grained cross attentionEchoVLA
+
+3
+
+scene memory and episodic memory with separate coarse- and fine-grained cross
+attention, and fuses them to guide per-part diffusion policies (arm/base). This
+neuro-inspired dual-memory with attention-guided formulation helps maintain
+coherent spatial context and consistent task execution over long horizons.
+
+We further introduce MoMani, an automated benchmark for mobile manip-
+ulation that generates expert-level trajectories via MLLM-guided planning and
+feedback-based refinement. Compared with existing mobile manipulation bench-
+marks—which remain limited in scale and task diversity—as well as datasets
+like RoboTwin 2.0 [8] and RoboCasa [31], MoMani offers richer task coverage
+and collects real-robot demonstrations on a holonomic mobile platform [47] to
+support large scale training.
+
+Both simulation and real-world validation reveal that our EchoVLA main-
+tains strong robustness in long-horizon mobile manipulation tasks by leveraging
+its synergistic declarative memory. On the RoboCasa [31] simulator, EchoVLA
+brings significant performance gain in SR over strong baseline π0.5 [20] on ma-
+nipulation/navigation tasks and mobile manipulation tasks by 0.20 and 0.11,
+respectively. Real-world experiments on the TidyBot++ platform [47] across a
+7m × 7m arena shows that EchoVLA achieves the highest SR of 0.44, outper-
+forming π0.5 [20] (0.33) and Diffusion Policy [9] (0.32).
+Our contributions are summarized as follows:
+
+– We propose EchoVLA, a neuro-inspired memory-aware VLA model equipped
+
+with synergistic scene and episodic memory for mobile manipulation.
+
+– We introduce MoMani, an automated benchmark that provides expert-level
+multimodal trajectories with real-robot demonstrations for scalable embod-
+ied data generation.
+
+– Extensive simulated and real-world results demonstrate that EchoVLA con-
+sistently outperforms strong baselines on various mobile manipulation tasks.
+
+2 Related Work
+
+2.1 Vision-Language-Action Model
+
+Driven by advances in visual–language foundation models [6, 29, 34] and large-
+scale robot datasets [5, 32], Vision–Language–Action (VLA) models unify per-
+ception, reasoning, and control within a single multimodal policy. Representative
+works such as RT-2 [53], OpenVLA [23], and ManipLLM [27] discretize continu-
+ous actions into token sequences and perform autoregressive prediction, enabling
+large-scale pretraining but limiting motion continuity. Recent approaches (e.g.,
+CogACT [26], DexVLA [45], HybridVLA [28]) introduce diffusion- or regression-
+based action heads to capture the multimodal distribution of robot trajectories,
+while AC-DiT [7] explicitly models coordination between the mobile base and
+the manipulator through adaptive diffusion. Notable works π0 and π0.5 [3, 20]
+address hierarchical trajectory diffusion for mobile manipulation. π0 models the
+full robot action space, while π0.5 introduces per-part decomposition for mobile
+
+4
+
+M. Lin et al.
+
+base and manipulator, adding partial episodic memory. Despite improved tra-
+jectory fidelity, both lack explicit scene-level memory for planning. Meanwhile,
+AnywhereVLA [17] adopts a modular design that combines classical SLAM with
+a fine-tuned VLA head for robust real-world pick-and-place, highlighting the
+practicality of hybrid systems. However, most existing VLAs remain Markovian,
+relying only on current observations without structured memory for reasoning.
+In this work, we take inspiration from the memory system of human brain
+and propose EchoVLA, which constructs a synergistic declarative memory com-
+posed of scene and episodic memories. The scene memory explicitly builds a
+spatial–semantic map of object layouts and environmental structure, while the
+episodic memory records task-specific experience traces for contextual retrieval.
+This dual-memory mechanism enables reasoning in mobile-manipulation tasks
+beyond the capability of prior single-memory VLAs. A concurrent work Mem-
+oryVLA [39] augments VLAs with a perceptual–cognitive memory that caches
+visual features to enhance manipulation stability. However, its memory remains
+an implicit perceptual cache without an explicit spatial representation or task-
+level experience storage, limiting its ability for long-horizon task reasoning.
+
+2.2 Mobile Manipulation Benchmark
+
+Early embodied benchmarks such as RoboTHOR [10] for sim-to-real indoor nav-
+igation and iGibson 2.0 [24] for object-centric household tasks mainly offer mo-
+bile perception and basic interaction. Habitat 2.0 [42] further supports interac-
+tive rearrangement with articulated objects, but the mobile–manipulation cou-
+pling is still limited to predefined skills. Large-scale suites like BEHAVIOR-100
+/ 1K [25, 41] and ManiSkill2 [16] broaden the task families to 100–1000 house-
+hold activities or 20+ manipulation families, yet most tasks assume a fixed or
+simplified manipulation setting rather than full mobile manipulation. More re-
+cent, robotics-oriented simulators move closer to real mobile manipulation: Robo-
+Casa [31] targets realistic kitchen scenes with 120+ layouts and 2,500+ assets but
+the task spectrum is still mostly kitchen rearrangement; MoMa-Kitchen [51] pro-
+vides 100K+ affordance-grounded samples for “last-mile” base positioning but is
+domain-specific to kitchens; RoboTwin 2.0 [8] automates data generation for 50
+dual-arm tasks in 731-object settings but does not involve base navigation; Tidy-
+Bot [46] shows LLM-guided, user-conditioned tidy-up on a mobile manipulator,
+while TidyBot++ [47] mainly contributes an open-source holonomic mobile-
+manipulation platform for data collection rather than a broad, automatic task
+generator. Different from existing benchmarks, our constructed MoMani provides
+a unified, automated pipeline that produces expert-level trajectories for diverse
+mobile-manipulation tasks and augments them with real-robot demonstrations.
+
+3 EchoVLA
+
+EchoVLA is a memory-augmented vision–language–action framework designed
+for mobile manipulation. Its key idea is to maintain two complementary memory
+
+EchoVLA
+
+5
+
+Fig. 2: Overview of EchoVLA. Multi-modal observations (RGB views, point clouds,
+language, and proprioception) are encoded into a unified token sequence. The model
+retrieves relevant information from both episodic and scene memory through coarse-
+and fine-grained cross-attention. The retrieved memory augments the diffusion policy,
+which generates base and arm actions through a per-part denoising process.
+
+systems—scene memory and episodic memory—and integrate them into a coarse-
+to-fine retrieval hierarchy that improves spatial consistency, temporal reasoning,
+and manipulation precision. The overall architecture as illustrated in Figure 2
+consists of: (1) multimodal state representation (Sec. 3.2), (2) memory retrieval
+and interaction (Sec. 3.3), and (3) diffusion-based action generation (Sec. 3.4).
+We first present the problem formulation of the mobile manipulation task in
+Sec. 3.1, then we describe each component of EchoVLA in detail.
+
+3.1 Problem Formulation
+
+At timestep t, the agent observes multi-view RGB-D images Ot, proprioceptive
+states st, and a natural-language instruction I. The goal is to output continuous
+arm and base actions:
+
+(aarm
+t
+
+, abase
+t
+
+) = πθ(I, O1:t, s1:t).
+
+(1)
+
+We focus on non-Markovian tasks— two visually similar frames may corre-
+spond to completely different progress states (e.g., “cabinet opened” vs. “about
+to open”). Thus, a memory mechanism is needed.
+
+3.2 Multimodal State Representation
+
+EchoVLA encodes language, appearance, 3D structure, and robot configuration
+into a unified token sequence that drives memory retrieval and action generation.
+Each modality is processed with a dedicated backbone: language and multi-view
+RGB images use frozen SigLIP encoders [50], while 3D structure is modeled by
+a task-adaptive PointAttn network [44].
+
+TextEncoderPick the cereal from the counter and place it in the cabinet.MLPEEF StateArm StateBase StateLeft ViewRight ViewEE ViewPoint cloudProprioceptionLanguage3D EncoderImage EncoderMemory BankScene Memory…Episodic Memory…Fine-grained Cross Attention……Base ActionArm ActionEpisodic RetrievalScene Retrieval  Memory RetrievalDiTBlockNoised actionDiTBlockMLPMLPDiTBlockDiTBlock………Coarse-grained Cross AttentionSceneQueryEpisodicQueryScene KeyEpisodic Key6
+
+M. Lin et al.
+
+The instruction is encoded using the text tower of SigLIP, producing lan-
+guage tokens L without updating the pretrained parameters. Multi-view RGB
+images from three fixed cameras are processed independently by the SigLIP
+vision tower, also kept frozen, yielding per-view features V(i)
+. These tokens pre-
+t
+serve SigLIP’s cross-modal alignment, allowing the policy and memory modules
+to reason within a consistent semantic embedding space. The view-specific tokens
+are concatenated and projected into a shared feature space to form Vt.
+
+Depth observations are fused into a point cloud, which is encoded by a train-
+able PointAttn backbone. [44]. The resulting tokens Pt provide fine-grained ge-
+ometric cues—such as free-space structure, support surfaces, and object bound-
+aries—and adapt to the specific robot embodiment and scene characteristics,
+complementing the frozen SigLIP features with manipulable 3D information.
+
+The proprioceptive state st is transformed into tokens Rt using a small MLP,
+supplying the model with the robot’s internal configuration. We then form a
+unified token sequence:
+
+St = [L, Vt, Pt, Rt],
+
+(2)
+
+which serves as the query for hierarchical memory retrieval and conditions the
+diffusion policy.
+
+3.3 Memory Retrieval and Interaction
+
+EchoVLA maintains two complementary memory banks—scene memory and
+episodic memory—and retrieves information from them using a two-level hi-
+erarchical (coarse-to-fine) attention mechanism. The hierarchy comes from the
+semantic granularity of the two memories: scene memory provides slowly vary-
+ing spatial structure, while episodic memory captures fine-grained, time-indexed
+task progress. The retrieved memory features are later fused with the current
+tokens and used to condition the diffusion policy.
+
+Scene memory
+Scene Memory
+maintains a voxelized 3D feature map
+that accumulates spatial information
+across episodes within the same en-
+Instead of storing fea-
+vironment.
+tures in temporal order, the memory
+represents a persistent, environment-
+specific 3D structure that is refined
+as new episodes unfold. At the be-
+ginning of training in a new environ-
+ment, the memory is initialized as an
+empty voxel grid. As the agent interacts with the environment across multiple
+episodes, depth observations are aggregated into this voxel grid and encoded by
+the PointAttn network, producing a 3D feature volume (see Figure 3):
+
+Fig. 3: Visualization of the voxelized 3D
+feature map, which encodes local geomet-
+ric structure from depth observations.
+
+V3D
+
+t ∈ RX×Y ×Z×C.
+
+(3)
+
+EchoVLA
+
+7
+
+To incorporate new observations while avoiding redundant updates, the mem-
+ory applies a discrepancy-driven rule: the current voxel features V3D
+are com-
+pared with a reconstruction generated from the existing memory. Regions whose
+reconstruction error exceeds a threshold are updated with the new PointAttn
+features, while unchanged areas retain their previous values. This update mech-
+anism allows the scene map to evolve consistently across episodes, gradually
+converging to a stable representation of the environment’s geometry.
+
+t
+
+During inference, the scene memory continues to refine itself using the same
+discrepancy-based rule, enabling the model to adapt online if the environment
+differs from the training episodes or undergoes rearrangement. The resulting
+memory provides a compact but spatially coherent representation of the scene,
+capturing structural elements such as surfaces, free space, and container geome-
+try that remain stable across episodes but are not fully observable in any single
+timestep.
+
+Episodic Memory Episodic memory stores a short horizon of recent token se-
+quences, each associated with its timestep. Formally, we maintain a time-indexed
+buffer:
+
+Mepi = {(St−k, t − k), . . . , (St−1, t − 1)},
+
+(4)
+
+where the window size k is determined by the memory capacity.
+
+Unlike scene memory, which evolves slowly and captures stable 3D structure,
+episodic memory preserves fine-grained temporal information tied to recent in-
+teractions—such as whether a drawer has been opened, whether an object has
+already been grasped, or the precise end-effector configuration in the immedi-
+ate past. The memory is maintained as a fixed-size FIFO buffer updated at
+each timestep, ensuring that temporally coherent information is retained while
+avoiding unbounded growth. By storing the original encoded tokens instead of
+compressing them into abstract summaries, the model preserves detailed tempo-
+ral cues that are essential for resolving non-Markov ambiguities and maintaining
+consistent task execution across visually similar states.
+
+Memory Matching and Attention EchoVLA accesses its two memory banks
+in two steps: it first matches the current representations to memory entries using
+cosine similarity, and then interacts with the selected entries via cross-attention.
+For scene memory, the query is the current voxelized 3D feature map V3D
+.
+and stored scene maps in Mscene,
+
+We compute cosine similarity between V3D
+select the top-k matches Mscene
+
+, and apply coarse cross-attention:
+
+t
+
+t
+
+sel
+
+Zscene
+t
+
+= CrossAttn(cid:0)q = V3D
+
+t
+
+, k / v = Mscene
+
+sel
+
+(cid:1).
+
+(5)
+
+For episodic memory, the query is the current multi-modal state tokens St.
+We match St to historical states in Mepi, select the most relevant subset Mepi
+sel ,
+and apply fine cross-attention:
+
+t = CrossAttn(cid:0)q = St, k / v = Mepi
+Zepi
+
+sel
+
+(cid:1).
+
+(6)
+
+8
+
+M. Lin et al.
+
+The outputs of the two interactions are combined into a memory-augmented
+
+representation:
+
+t
+which serves as the conditioning input for the diffusion-based action policy.
+
+Ht = (cid:2)Zscene
+
+, Zepi
+t
+
+(cid:3),
+
+(7)
+
+3.4 Diffusion-based Action Generation
+
+To model the heterogeneous dynamics of mobile-base motion and arm manip-
+ulation, we propose a per-part diffusion policy conditioned on the memory-
+augmented representation Ht.
+
+Each action subspace p ∈ {base, arm} is generated by an independent denois-
+ing diffusion process. For part p, the denoiser predicts the noise of a perturbed
+action sample:
+
+ϵ(p)
+θ = Denoiserp(zt, Ht, t),
+
+p ∈ {base, arm}
+
+(8)
+
+where zt is the noisy action at diffusion step t, Ht captures the fused current
+observation with retrieved scene-level and episodic context.
+
+During training, the objective minimizes the denoising loss for each part:
+(cid:104)
+∥ϵ − ϵ(p)
+
+θ (zt, Ht, t)∥2(cid:105)
+.
+
+Et,zt
+
+L =
+
+(cid:88)
+
+(9)
+
+p∈{base,arm}
+
+This per-part design enables structured action generation, allowing coordi-
+nated yet decoupled learning of locomotion and manipulation behaviors, which
+improves scene generalization and cross-task transfer.
+
+4 MoMani
+
+We introduce MoMani, an
+automated benchmark for high-
+quality mobile manipulation
+data generation. As shown
+in Table 1, while frameworks
+like ManiSkill2 [16] and Robo-
+Casa [31]
+focus on static
+tasks, MoMani provides a uni-
+fied pipeline for integrated
+“navigation + manipulation”
+(Co-Gen) data.
+
+composition across
+
+Fig. 4: Dataset
+simulation
+and real-world tasks. The simulation set includes
+four mobile manipulation tasks (TOF, PnPS2C,
+PnPC2S, TOS) and a large pure-navigation sub-
+set. The real-world tasks (CM, OD, OR, PCIS, RK,
+EnP) involve mobile manipulation.
+
+Distinguishing itself from
+simulation-only platforms like
+BEHAVIOR-1K [25] and In-
+finitedWorld [37], MoMani
+uniquely incorporates both simulated (S) and real-robot (R) data sources. It
+stands as the only benchmark to support a full spectrum of automated gener-
+ation modes across both Mobile-M (Sim) and Real-Robot platforms, delivering
+expert-level trajectories for complex, multi-stage embodied tasks.
+
+57.0%10.8%10.7%10.7%10.7%Total7889Simulation Dataset20.8%20.8%20.8%20.8%8.3%8.3%Total1200Real-world DatasetNav onlyPnPC2STOFTOSPnPS2CCMPCISODORRKEnPEchoVLA
+
+9
+
+Table 1: Comparison of MoMani with other representative embodied AI platforms
+and datasets. The Sub-tasks column indicates the number of sub-tasks contained
+within each trajectory. In the Data Source column, R and S represent Real-world
+and Simulation data, respectively. In the Generation column, Navigation, Manipu-
+lation, and Co-Gen denote the automated programmatic generation of corresponding
+trajectories. In the Robotic Platforms column, Mobile-M refers to mobile ma-
+nipulators in simulation environments, and Real-Robot indicates the availability of
+physical robot data or validation. In the Action column, N and M stand for Naviga-
+tion and Manipulation.
+
+Name
+
+Sub-tasks
+
+Data Source
+
+Automated Generation
+
+Robotic Platforms
+
+Real (R) Sim (S) Navigation Manipulation Co-Gen Mobile-M (Sim) Real-Robot
+
+Action
+
+ManiSkill2 [16]
+Social Nav [33]
+HomeRobot [48]
+ProcTHOR [11]
+Behavior-1K [25]
+Open X-Embodiment [32]
+RoboCasa365 [18]
+InfinitedWorld [37]
+
+MoMani (Ours)
+
+1-2
+1
+3
+3
+> 5
+1-3
+2-16
+3
+
+2-3
+
+-
+-
+-
+-
+-
+✓
+-
+-
+
+✓
+
+✓
+✓
+✓
+✓
+✓
+-
+✓
+✓
+
+✓
+
+-
+✓
+✓
+✓
+✓
+-
+✓
+✓
+
+✓
+
+✓
+-
+✓
+✓
+✓
+-
+✓
+✓
+
+✓
+
+-
+-
+-
+-
+-
+-
+-
+✓
+
+✓
+
+✓
+✓
+✓
+✓
+✓
+✓
+✓
+✓
+
+✓
+
+-
+-
+✓
+-
+-
+✓
+-
+-
+
+✓
+
+M
+N, M
+N, M
+N, M
+N, M
+M
+N, M
+N, M
+
+N, M
+
+4.1 Simulation Data Construction
+
+As shown in Fig. 5, MoMani employs a two-stage automated pipeline to generate
+high-quality long-horizon trajectories.
+
+Stage I: Online Candidate Generation. Task specifications are processed
+via an MMLM prompter to execute sequential Target-Aligned Sampling (L1),
+Safety-Aware Navigation (L2), and Continuous Nav-Manip Stitching (L3). Cru-
+cially, our engine supports simultaneous base and arm execution, utilizing contin-
+uous collision detection to generate coordinated “nav-manip” trajectories. Candi-
+dates must pass Hard Quality Gates—verifying zero collisions, precise alignment
+(∆pos < 0.05m, ∆ori < 5◦), and 100% task success—before entering the feasible
+pool Dpool.
+
+Stage II: Offline Selection & Audit. Candidates in Dpool undergo Lexi-
+cographic Ranking (L4) based on path length and planning cost to identify the
+expert-level Top-K set DtopK. A final Scene-Camera Audit ensures the dataset
+is training-ready, enabling the scalable generation of 5, 000+ multimodal trajec-
+tories that bridge the gap between navigation and manipulation.
+
+4.2 Real-Robot Demonstration Collection
+
+To bridge the simulation-to-real gap, we collect a real-world dataset using a
+hardware configuration based on TidyBot++ [47]. Our platform features a Ki-
+nova Gen3 7-DoF manipulator on a holonomic mobile base, equipped with front
+RGB-D and top-view stereo cameras synchronized via ROS. We utilize a web-
+based teleoperation interface to record multimodal data streams at 30 Hz, which
+are then segmented into motion primitives. Successful trajectories are verified
+via replay, while failed attempts are discarded.
+
+10
+
+M. Lin et al.
+
+Fig. 5: Overview of the Quality-Controlled Data Engine. (I) Online Candidate
+Generation synthesizes trajectories filtered by hard quality gates (e.g., collision-free,
+task success). (II) Offline Selection & Audit ranks candidates via lexicographic criteria
+(path length, cost) to ensure a high-quality, training-ready dataset.
+
+4.3 Dataset Distribution
+
+As summarized in Figure 4, our dataset comprises:
+
+– Simulation (7,889 episodes): Primarily consists of a large navigation-only
+subset (57.0%), supplemented by diverse mobile manipulation tasks includ-
+ing PnPC2S (PickPlaceCounterToStove, 10.8%), PnPS2C (PickPlaceSink-
+ToCounter, 10.7%), TOS (TurnOnStove, 10.7%), and TOF (TurnOnSink-
+Faucet, 10.7%).
+
+– Real-world (1,200 episodes): Features a balanced distribution (20.8%
+each) of manipulation tasks including OR (Open refrigerator door), CM
+(Close the microwave), OD (Open the drawer), and PCIS (Place the cup
+from the rack into the sink), along with additional tasks such as EnP (Enter
+the room and place the pears on the cabinet) and RK (Rotate the knob of
+a microwave) (8.3% each).
+
+5 Experiment
+
+5.1 Experimental Setup
+
+We evaluate our proposed EchoVLA model in both simulation and real-world
+environments. In simulation, experiments are conducted in the RoboCasa sim-
+ulator using multiple mobile manipulation tasks. For real-world experiments,
+we deploy EchoVLA using the TidyBot++ platform [47] in a 7m × 7m arena to
+execute diverse household tasks, notably EnP (Enter and Pick).
+
+EchoVLA
+
+11
+
+Fig. 6: Real-world rollouts generated by EchoVLA. The robot successfully completes
+four mobile manipulation tasks—turning off the microwave, placing the cup from the
+rack into the sink, opening the drawer, and opening the refrigerator.
+
+Unlike other stationary or single-room tasks, EnP requires cross-room navi-
+gation and manipulation, moving from a starting corridor into a target room to
+retrieve objects. This validates the model’s capability in handling long-horizon
+spatial transitions and multi-stage logic in complex environments.
+
+We train EchoVLA on 8 NVIDIA A100 GPUs with observations including
+multi-view RGB-D images and robot states. And the action space is decomposed
+into mobile base and arm actions following the per-part diffusion design.
+
+5.2 Comparison with Baselines in RoboCasa Simulation
+
+We evaluate EchoVLA against representative baselines including BC-T [30],
+Diffusion Policy [9], DP3 [49], π0.5 [20], and WB-VIMA [22]. The evaluation
+spans four core tasks in the RoboCasa simulator: PickPlaceCounterToStove,
+PickPlaceSinkToCounter, TurnOnSinkFaucet, and TurnOnStove. To assess Mo-
+bile Manipulation, we introduce additional challenges by initializing the robot
+at a distance from targets or requiring follow-up navigation post-manipulation.
+Performance is analyzed across three categories: (1) Manipulation (arm-
+only), (2) Navigation (base precision), and (3) Mobile Manipulation (coor-
+dinated control). We report the Success Rate (SR) averaged over three ran-
+dom seeds and 50 evaluation episodes per task. These findings are consolidated in
+Table 2, highlighting the inherent difficulty of coordinated mobile manipulation.
+The results in Table 2 reveal several important observations:
+
+Closethe microwavePlacethe cupfrom therack intothe sinkOpenthe drawerOpenthe refrigeratorRotate the knob of a microwaveEnter the room and place the pears on the cabinet12
+
+M. Lin et al.
+
+Table 2: Success Rate (SR) comparison on Manipulation, Navigation, and Mobile Ma-
+nipulation tasks. EchoVLA (Ours) achieves the highest performance in most scenarios.
+
+Category Method
+
+BC-T
+Diffusion Policy
+DP3
+WB-VIMA
+π0.5
+
+PnP
+C2S
+
+PnP
+S2C
+
+TOF
+
+TOS
+
+0.04
+0.00
+0.03
+0.00
+0.18
+
+0.46
+0.00
+0.25
+0.12
+0.20
+
+0.33
+0.03
+0.43
+0.11
+0.44
+
+0.45
+0.00
+0.26
+0.19
+0.52
+
+Nav
+only
+
+0.10
+0.03
+0.13
+0.31
+0.24
+
+Avg
+SR
+
+0.28
+0.01
+0.22
+0.15
+0.32
+
+EchoVLA (Ours)
+
+0.21
+
+0.68
+
+0.51
+
+0.67
+
+0.51
+
+0.52
+
+BC-T
+DP3
+WB-VIMA
+π0.5
+
+0.00
+0.00
+0.00
+0.08
+
+0.11
+0.10
+0.12
+0.25
+
+0.04
+0.08
+0.11
+0.18
+
+0.04
+0.04
+0.19
+0.27
+
+EchoVLA (Ours)
+
+0.17
+
+0.34
+
+0.29
+
+0.43
+
+–
+–
+–
+–
+
+–
+
+0.05
+0.06
+0.11
+0.20
+
+0.31
+
+/
+
+.
+p
+i
+n
+a
+M
+
+.
+v
+a
+N
+
+e
+l
+i
+b
+o
+M
+
+.
+p
+i
+n
+a
+M
+
+1) Method Comparison. For Manipulation and Navigation tasks, tradi-
+tional behavior cloning (BC-T) and Diffusion Policy exhibit low performance,
+with Diffusion Policy often achieving near-zero success rates. π0.5 shows im-
+proved performance, while our proposed EchoVLA achieves the highest average
+success rate (Avg Success = 0.52), demonstrating robust task execution.
+
+2) Increased Difficulty in Mobile Manipulation. Coordinating base
+and arm control significantly increases complexity, causing success rates to drop
+across all methods. For instance, π0.5’s average success decreases from 0.47 to
+0.36, while BC-T exhibits a drastic decline from 0.28 to 0.05.
+
+3) Superiority of EchoVLA. Despite the increased difficulty, EchoVLA
+maintains the highest success rate (0.31) in Mobile Manipulation tasks, outper-
+forming all other methods. This highlights the method’s effectiveness in handling
+coordinated base–arm motion, long-range navigation, and sequential manipula-
+tion tasks.
+
+4) Task-specific Performance Variations. Tasks such as PickPlaceSink-
+ToCounter and TurnOnSinkFaucet show larger performance variations across
+methods, reflecting higher requirements for spatial understanding and precise
+manipulation. EchoVLA consistently achieves strong performance on these chal-
+lenging tasks, demonstrating its capability in multi-modal perception and action
+reasoning.
+
+5.3 Ablation Study
+
+Ablations are performed on two representative RoboCasa tasks, PnP Counter
+to Stove (Mobile) and PnP Counter to Stove, and results are reported as
+Success Rate (SR) averaged over 50 episodes.
+
+1) Observation Ablation. We examine the effect of removing point cloud
+input from the observation space. When the agent relies solely on RGB features
+without 3D geometric cues, its spatial grounding ability decreases notably. As
+shown in Table 3, removing point cloud input results in consistent performance
+
+EchoVLA
+
+13
+
+Table 3: Ablation results: Observation modalities and memory modules.
+
+RGB
+
+PC
+
+EM
+
+SM
+
+(a)
+(b)
+(c)
+(d)
+
+Ours
+
+✗
+✓
+✓
+✓
+
+✓
+
+✓
+✗
+✓
+✓
+
+✓
+
+✓
+✓
+✓
+✗
+
+✓
+
+✓
+✓
+✗
+✓
+
+✓
+
+M
+
+0.02
+0.08
+0.09
+0.14
+
+S
+
+0.13
+0.15
+0.16
+0.13
+
+0.17
+
+0.21
+
+drops across both mobile and non-mobile variants, demonstrating the importance
+of geometric depth information for accurate object localization and grasping.
+
+2) Memory Module Ablation. We further analyze the roles of our two
+memory mechanisms: Episodic Memory (EM) and Scene Memory (SM).
+The ablation rows in Table 3 show that disabling either EM or SM leads to
+substantial degradation, and removing both RGB or PC signals further com-
+pounds these effects. Overall, the results highlight that observation diversity
+(RGB + PC) and hierarchical memory (EM + SM) are both essential for ro-
+bust performance in manipulation and mobile manipulation tasks in RoboCasa.
+
+Table 4: Sensitivity analysis of hyperpa-
+rameters on the PnPC2S (Mobile) task.
+L = 8 and τ = 0.5 are selected as opti-
+mal values for EchoVLA.
+
+3) Sensitivity Analysis. We
+evaluate EchoVLA’s sensitivity to EM
+window size L and update threshold
+τ . As shown in Table 4, a small L (2
+or 4) leads to “plan forgetting” and os-
+cillations, while L = 16 introduces la-
+tency with diminishing returns. L =
+8 provides the optimal performance-
+efficiency balance. Furthermore, a low
+threshold (τ = 0.1) causes representa-
+tion instability, whereas a high thresh-
+old (τ = 0.7) results in outdated scene memory. τ = 0.5 strikes the best balance,
+ensuring memory freshness and stable spatial grounding for long-horizon tasks.
+
+0.11 0.14 0.17 0.13
+
+0.08 0.12 0.17 0.15
+
+Window Size(L)
+
+Threshold (τ )
+
+SR ↑
+
+SR ↑
+
+0.7
+
+0.1
+
+0.5
+
+0.3
+
+16
+
+4
+
+8
+
+2
+
+5.4 Real Robot Experiment
+
+We evaluate EchoVLA across a diverse set of tasks, including opening a drawer
+(OD), closing a microwave (CM ), placing a cup into the sink (PCIS ), opening
+a refrigerator (OR), rotating a knob (RK ), and entering a room to place pears
+(EnP ). For each task, we conduct 20 independent trials with randomized initial
+robot base positions to ensure statistical significance.
+
+1) Real-World Performance. As reported in Table 5, EchoVLA achieves
+a 0.44 mean success rate, outperforming π0.5 (0.33) and Diffusion Policy (0.32).
+While baselines show efficacy in shorter or specific semantic tasks like OD and
+OR, EchoVLA demonstrates superior robustness in complex scenarios such as
+CM (0.70) and RK (0.50). Notably, it maintains a lead in the most challenging
+
+14
+
+M. Lin et al.
+
+long-horizon task, EnP (362.0 frames), confirming that our synergistic mem-
+ory architecture effectively stabilizes control and mitigates perceptual noise in
+unconstrained environments.
+Table 5: Success rates for real robot mobile manipulation tasks. We report perfor-
+mance on six basic actions. Avg SR is the mean success rate. (Notes: OD: Open the
+drawer, CM: Close the microwave, PCIS: Place the cup from the rack into the sink,
+OR: Open refrigerator door, RK: Rotate the knob of a microwave, EnP: Enter the
+room and place the pears on the cabinet.)
+
+Method
+
+OD CM PCIS OR RK EnP
+
+Avg SR
+
+0.35
+π0.5
+Diffusion Policy
+0.40
+EchoVLA (Ours) 0.45
+
+0.55
+0.60
+0.70
+
+0.20
+0.50
+0.50
+
+0.50
+0.30
+0.40
+
+0.40
+0.10
+0.50
+
+0.00
+0.03
+0.10
+
+0.33
+0.32
+0.44
+
+2) Robustness to Real-World Perceptual Noise. As shown in Table 5,
+EchoVLA achieves a mean success rate of 0.44, surpassing Diffusion Policy (0.32).
+EchoVLA excels in long-horizon precision, achieving 50% SR on RK while base-
+lines fail (10%) due to memory drift. This gap suggests that temporal context
+from EM acts as a corrective anchor, compensating for spatial inaccuracies like
+voxel map “ghosting” in SM.
+
+3) Failure Analysis on Dynamic Occlusion. Despite its robustness, per-
+formance drops in OR due to dynamic occlusion. As the fridge door opens,
+rapidly changing geometry degrades EchoVLA’s explicit 3D Scene Memory. Con-
+versely, baselines relying on implicit “muscle memory” are more robust to such
+blind spots where explicit geometry fails. This confirms that while synergistic
+memory ensures overall stability, explicit 3D representations remain sensitive to
+extreme structural dynamics.
+
+6 Conclusion
+
+We present EchoVLA, a memory-aware vision–language–action framework for
+mobile manipulation. EchoVLA combines a scene memory that preserves 3D
+spatial structure with an episodic memory that captures recent task context,
+enabling a memory-augmented diffusion policy to handle non-Markov decision-
+making and generalize across diverse tasks. We also introduce MoMani, a new
+benchmark covering both procedurally generated simulation tasks and real-robot
+evaluations. Extensive experiments demonstrate consistent improvements over
+strong baselines.
+Limitations. EchoVLA’s performance is constrained by its reliance on high-
+quality depth and pose stream. In real-world deployments, cumulative odome-
+try drift often leads to spatial misalignments or “ghosting” in the reconstructed
+Voxel Map within the Scene Memory. While our multi-memory architecture of-
+fers some robustness through cross-modal compensation, severe tracking errors
+during tasks remain a challenge. Future work will explore integrating loop-closure
+or visual-SLAM to further mitigate these perceptual inaccuracies.
+
+EchoVLA
+
+15
+
+References
+
+1. Aminoff, E.M., Kveraga, K., Bar, M.: The role of the parahippocampal cortex in
+
+cognition. Trends in cognitive sciences 17(8), 379–390 (2013)
+
+2. Bjorck, J., Castañeda, F., Cherniadev, N., Da, X., Ding, R., Fan, L., Fang, Y., Fox,
+D., Hu, F., Huang, S., et al.: Gr00t n1: An open foundation model for generalist
+humanoid robots. arXiv preprint arXiv:2503.14734 (2025)
+
+3. Black, K., Brown, N., Driess, D., Esmail, A., Equi, M., Finn, C., Fusai, N., Groom,
+L., Hausman, K., Ichter, B., Jakubczak, S., Jones, T., Ke, L., Levine, S., Li-Bell,
+A., Mothukuri, M., Nair, S., Pertsch, K., Shi, L.X., Tanner, J., Vuong, Q., Walling,
+A., Wang, H., Zhilinsky, U.: π0: A vision-language-action flow model for general
+robot control (2024), https://arxiv.org/abs/2410.24164
+
+4. Brohan, A., Brown, N., Carbajal, J., Chebotar, Y., Dabis, J., Finn, C., Gopalakr-
+ishnan, K., Hausman, K., Herzog, A., Hsu, J., et al.: Rt-1: Robotics transformer
+for real-world control at scale. arXiv preprint arXiv:2212.06817 (2022)
+
+5. Bu, Q., Cai, J., Chen, L., Cui, X., Ding, Y., Feng, S., Gao, S., He, X., Hu, X.,
+Huang, X., et al.: Agibot world colosseo: A large-scale manipulation platform for
+scalable and intelligent embodied systems. arXiv preprint arXiv:2503.06669 (2025)
+6. Caron, M., Touvron, H., Misra, I., Jégou, H., Mairal, J., Bojanowski, P., Joulin,
+A.: Emerging properties in self-supervised vision transformers. In: Proceedings of
+the IEEE/CVF international conference on computer vision. pp. 9650–9660 (2021)
+7. Chen, S., Liu, J., Qian, S., Jiang, H., Li, L., Zhang, R., Liu, Z., Gu, C., Hou, C.,
+Wang, P., et al.: Ac-dit: Adaptive coordination diffusion transformer for mobile
+manipulation. arXiv preprint arXiv:2507.01961 (2025)
+
+8. Chen, T., Chen, Z., Chen, B., Cai, Z., Liu, Y., Li, Z., Liang, Q., Lin, X., Ge, Y.,
+Gu, Z., et al.: Robotwin 2.0: A scalable data generator and benchmark with strong
+domain randomization for robust bimanual robotic manipulation. arXiv preprint
+arXiv:2506.18088 (2025)
+
+9. Chi, C., Xu, Z., Feng, S., Cousineau, E., Du, Y., Burchfiel, B., Tedrake, R., Song,
+S.: Diffusion policy: Visuomotor policy learning via action diffusion (2024), https:
+//arxiv.org/abs/2303.04137
+
+10. Deitke, M., Han, W., Herrasti, A., Kembhavi, A., Kolve, E., Mottaghi, R., Sal-
+vador, J., Schwenk, D., VanderBilt, E., Wallingford, M., et al.: Robothor: An open
+simulation-to-real embodied ai platform. In: Proceedings of the IEEE/CVF con-
+ference on computer vision and pattern recognition. pp. 3164–3174 (2020)
+
+11. Deitke, M., VanderBilt, E., Herrasti, A., Weihs, L., Ehsani, K., Salvador, J., Han,
+W., Kolve, E., Kembhavi, A., Mottaghi, R.: Procthor: Large-scale embodied ai
+using procedural generation. Advances in Neural Information Processing Systems
+35, 5982–5994 (2022)
+
+12. Ding, P., Ma, J., Tong, X., Zou, B., Luo, X., Fan, Y., Wang, T., Lu, H., Mo,
+P., Liu, J., et al.: Humanoid-vla: Towards universal humanoid control with visual
+integration. arXiv preprint arXiv:2502.14795 (2025)
+
+13. Eichenbaum, H.: On the integration of space, time, and memory. Neuron 95(5),
+
+1007–1018 (2017)
+
+14. Epstein, R., Kanwisher, N.: A cortical representation of the local visual environ-
+
+ment. Nature 392(6676), 598–601 (1998)
+
+15. Epstein, R.A.: Parahippocampal and retrosplenial contributions to human spatial
+
+navigation. Trends in cognitive sciences 12(10), 388–396 (2008)
+
+16. Gu, J., Xiang, F., Li, X., Ling, Z., Liu, X., Mu, T., Tang, Y., Tao, S., Wei, X., Yao,
+Y., et al.: Maniskill2: A unified benchmark for generalizable manipulation skills.
+arXiv preprint arXiv:2302.04659 (2023)
+
+16
+
+M. Lin et al.
+
+17. Gubernatorov, K., Voronov, A., Voronov, R., Pasynkov, S., Perminov, S., Guo,
+Z., Tsetserukou, D.: Anywherevla: Language-conditioned exploration and mobile
+manipulation (2025), https://arxiv.org/abs/2509.21006
+
+18. He, Z., Zhang, Y., Zhou, Y., Tao, M., Li, H., Tian, Y., Zeng, J., Wang, T., Cai, W.,
+Chen, Y., et al.: Nimbus: A unified embodied synthetic data generation framework.
+arXiv preprint arXiv:2601.21449 (2026)
+
+19. Huang, W., Wang, C., Zhang, R., Li, Y., Wu, J., Fei-Fei, L.: Voxposer: Composable
+3d value maps for robotic manipulation with language models. arXiv preprint
+arXiv:2307.05973 (2023)
+
+20. Intelligence, P., Black, K., Brown, N., Darpinian, J., Dhabalia, K., Driess, D.,
+Esmail, A., Equi, M., Finn, C., Fusai, N., Galliker, M.Y., Ghosh, D., Groom, L.,
+Hausman, K., Ichter, B., Jakubczak, S., Jones, T., Ke, L., LeBlanc, D., Levine, S.,
+Li-Bell, A., Mothukuri, M., Nair, S., Pertsch, K., Ren, A.Z., Shi, L.X., Smith, L.,
+Springenberg, J.T., Stachowicz, K., Tanner, J., Vuong, Q., Walke, H., Walling, A.,
+Wang, H., Yu, L., Zhilinsky, U.: π0.5: a vision-language-action model with open-
+world generalization (2025), https://arxiv.org/abs/2504.16054
+
+21. Jiang, Y., Gupta, A., Zhang, Z., Wang, G., Dou, Y., Chen, Y., Fei-Fei, L., Anand-
+kumar, A., Zhu, Y., Fan, L.: Vima: General robot manipulation with multimodal
+prompts. arXiv preprint arXiv:2210.03094 2(3), 6 (2022)
+
+22. Jiang, Y., Zhang, R., Wong, J., Wang, C., Ze, Y., Yin, H., Gokmen, C., Song,
+S., Wu, J., Fei-Fei, L.: Behavior robot suite: Streamlining real-world whole-body
+manipulation for everyday household activities (2025), https://arxiv.org/abs/
+2503.05652
+
+23. Kim, M.J., Pertsch, K., Karamcheti, S., Xiao, T., Balakrishna, A., Nair, S.,
+Rafailov, R., Foster, E., Lam, G., Sanketi, P., et al.: Openvla: An open-source
+vision-language-action model. arXiv preprint arXiv:2406.09246 (2024)
+
+24. Li, C., Xia, F., Martín-Martín, R., Lingelbach, M., Srivastava, S., Shen, B., Vainio,
+K., Gokmen, C., Dharan, G., Jain, T., et al.: igibson 2.0: Object-centric simulation
+for robot learning of everyday household tasks. arXiv preprint arXiv:2108.03272
+(2021)
+
+25. Li, C., Zhang, R., Wong, J., Gokmen, C., Srivastava, S., Martín-Martín, R., Wang,
+C., Levine, G., Ai, W., Martinez, B., et al.: Behavior-1k: A human-centered, em-
+bodied ai benchmark with 1,000 everyday activities and realistic simulation. arXiv
+preprint arXiv:2403.09227 (2024)
+
+26. Li, Q., Liang, Y., Wang, Z., Luo, L., Chen, X., Liao, M., Wei, F., Deng, Y., Xu, S.,
+Zhang, Y., et al.: Cogact: A foundational vision-language-action model for synergiz-
+ing cognition and action in robotic manipulation. arXiv preprint arXiv:2411.19650
+(2024)
+
+27. Li, X., Zhang, M., Geng, Y., Geng, H., Long, Y., Shen, Y., Zhang, R., Liu, J.,
+Dong, H.: Manipllm: Embodied multimodal large language model for object-centric
+robotic manipulation. In: Proceedings of the IEEE/CVF Conference on Computer
+Vision and Pattern Recognition. pp. 18061–18070 (2024)
+
+28. Liu, J., Chen, H., An, P., Liu, Z., Zhang, R., Gu, C., Li, X., Guo, Z., Chen, S.,
+Liu, M., et al.: Hybridvla: Collaborative diffusion and autoregression in a unified
+vision-language-action model. arXiv preprint arXiv:2503.10631 (2025)
+
+29. Liu, S., Zeng, Z., Ren, T., Li, F., Zhang, H., Yang, J., Jiang, Q., Li, C., Yang,
+J., Su, H., et al.: Grounding dino: Marrying dino with grounded pre-training for
+open-set object detection. In: European conference on computer vision. pp. 38–55
+(2024)
+
+EchoVLA
+
+17
+
+30. Mandlekar, A., Xu, D., Wong, J., Nasiriany, S., Wang, C., Kulkarni, R., Fei-Fei,
+L., Savarese, S., Zhu, Y., Martín-Martín, R.: What matters in learning from offline
+human demonstrations for robot manipulation (2021), https://arxiv.org/abs/
+2108.03298
+
+31. Nasiriany, S., Maddukuri, A., Zhang, L., Parikh, A., Lo, A., Joshi, A., Mandlekar,
+A., Zhu, Y.: Robocasa: Large-scale simulation of everyday tasks for generalist
+robots. arXiv preprint arXiv:2406.02523 (2024)
+
+32. O’Neill, A., Rehman, A., Maddukuri, A., Gupta, A., Padalkar, A., Lee, A., Poo-
+ley, A., Gupta, A., Mandlekar, A., Jain, A., et al.: Open x-embodiment: Robotic
+learning datasets and rt-x models: Open x-embodiment collaboration 0. In: 2024
+IEEE International Conference on Robotics and Automation (ICRA). pp. 6892–
+6903 (2024)
+
+33. Puig, X., Undersander, E., Szot, A., Cote, M.D., Yang, T.Y., Partsey, R., Desai, R.,
+Clegg, A.W., Hlavac, M., Min, S.Y., et al.: Habitat 3.0: A co-habitat for humans,
+avatars and robots. arXiv preprint arXiv:2310.13724 (2023)
+
+34. Radford, A., Kim, J.W., Hallacy, C., Ramesh, A., Goh, G., Agarwal, S., Sastry, G.,
+Askell, A., Mishkin, P., Clark, J., et al.: Learning transferable visual models from
+natural language supervision. In: International conference on machine learning. pp.
+8748–8763 (2021)
+
+35. Ranganath, C., Ritchey, M.: Two cortical systems for memory-guided behaviour.
+
+Nature reviews neuroscience 13(10), 713–726 (2012)
+
+36. Reed, S., Zolna, K., Parisotto, E., Colmenarejo, S.G., Novikov, A., Barth-Maron,
+G., Gimenez, M., Sulsky, Y., Kay, J., Springenberg, J.T., et al.: A generalist agent.
+arXiv preprint arXiv:2205.06175 (2022)
+
+37. Ren, P., Li, M., Luo, Z., Song, X., Chen, Z., Liufu, W., Yang, Y., Zheng, H., Xu,
+R., Huang, Z., et al.: Infiniteworld: A unified scalable simulation framework for
+general visual-language robot interaction. arXiv preprint arXiv:2412.05789 (2024)
+38. Ruan, S., Wang, L., Kang, C., Zhu, Q., Liu, S., Wei, X., Su, H.: From reactive
+to cognitive: brain-inspired spatial intelligence for embodied agents. intelligence
+(AGI) 3(9), 10 (2025)
+
+39. Shi, H., Xie, B., Liu, Y., Sun, L., Liu, F., Wang, T., Zhou, E., Fan, H., Zhang,
+X., Huang, G.: Memoryvla: Perceptual-cognitive memory in vision-language-action
+models for robotic manipulation. arXiv preprint arXiv:2508.19236 (2025)
+
+40. Shridhar, M., Manuelli, L., Fox, D.: Cliport: What and where pathways for robotic
+
+manipulation. In: Conference on robot learning. pp. 894–906 (2022)
+
+41. Srivastava, S., Li, C., Lingelbach, M., Martín-Martín, R., Xia, F., Vainio, K.E.,
+Lian, Z., Gokmen, C., Buch, S., Liu, K., et al.: Behavior: Benchmark for every-
+day household activities in virtual, interactive, and ecological environments. In:
+Conference on robot learning. pp. 477–490 (2022)
+
+42. Szot, A., Clegg, A., Undersander, E., Wijmans, E., Zhao, Y., Turner, J., Maestre,
+N., Mukadam, M., Chaplot, D.S., Maksymets, O., et al.: Habitat 2.0: Training home
+assistants to rearrange their habitat. Advances in neural information processing
+systems 34, 251–266 (2021)
+
+43. Team, O.M., Ghosh, D., Walke, H., Pertsch, K., Black, K., Mees, O., Dasari, S.,
+Hejna, J., Kreiman, T., Xu, C., et al.: Octo: An open-source generalist robot policy.
+arXiv preprint arXiv:2405.12213 (2024)
+
+44. Wang, J., Guo, D., et al.: Pointattn: You only need attention for point cloud com-
+pletion. In: Proceedings of the AAAI Conference on Artificial Intelligence (2023)
+45. Wen, J., Zhu, Y., Li, J., Tang, Z., Shen, C., Feng, F.: Dexvla: Vision-language
+model with plug-in diffusion expert for general robot control. arXiv preprint
+arXiv:2502.05855 (2025)
+
+18
+
+M. Lin et al.
+
+46. Wu, J., Antonova, R., Kan, A., Lepert, M., Zeng, A., Song, S., Bohg, J.,
+Rusinkiewicz, S., Funkhouser, T.: Tidybot: Personalized robot assistance with large
+language models. Autonomous Robots 47(8), 1087–1102 (2023)
+
+47. Wu, J., Chong, W., Holmberg, R., Prasad, A., Gao, Y., Khatib, O., Song, S.,
+Rusinkiewicz, S., Bohg, J.: Tidybot++: An open-source holonomic mobile manip-
+ulator for robot learning. arXiv preprint arXiv:2412.10447 (2024)
+
+48. Yenamandra, S., Ramachandran, A., Yadav, K., Wang, A., Khanna, M., Gervet, T.,
+Yang, T.Y., Jain, V., Clegg, A.W., Turner, J., et al.: Homerobot: Open-vocabulary
+mobile manipulation. arXiv preprint arXiv:2306.11565 (2023)
+
+49. Ze, Y., Zhang, G., Zhang, K., Hu, C., Wang, M., Xu, H.: 3d diffusion policy:
+Generalizable visuomotor policy learning via simple 3d representations (2024),
+https://arxiv.org/abs/2403.03954
+
+50. Zhai, X., Mustafa, B., Kolesnikov, A., Beyer, L.: Sigmoid loss for language image
+
+pre-training (2023), https://arxiv.org/abs/2303.15343
+
+51. Zhang, P., Gao, X., Wu, Y., Liu, K., Wang, D., Wang, Z., Zhao, B., Ding, Y., Li, X.:
+Moma-kitchen: A 100k+ benchmark for affordance-grounded last-mile navigation
+in mobile manipulation. arXiv preprint arXiv:2503.11081 (2025)
+
+52. Zhao, T.Z., Kumar, V., Levine, S., Finn, C.: Learning fine-grained bimanual ma-
+
+nipulation with low-cost hardware. arXiv preprint arXiv:2304.13705 (2023)
+
+53. Zitkovich, B., Yu, T., Xu, S., Xu, P., Xiao, T., Xia, F., Wu, J., Wohlhart, P.,
+Welker, S., Wahid, A., et al.: Rt-2: Vision-language-action models transfer web
+knowledge to robotic control. In: Conference on Robot Learning. pp. 2165–2183
+(2023)
+
+

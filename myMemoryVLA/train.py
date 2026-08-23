@@ -20,7 +20,6 @@ from vla import MemoryVLA
 from vla import get_vla_dataset_and_collator
 from vla.datasets.rlds.utils.data_utils import save_dataset_statistics
 
-
 # Sane Defaults
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
@@ -74,7 +73,7 @@ class TrainConfig:
     per_token_size: int = 256 # Token size for perception compression
     mem_length: int = 16 # Memory length
     retrieval_layers: int = 2 # Number of layers of memory retrieval
-    query_retrieval_mode: str = "query" # One of: off, query, shuffled
+    query_retrieval_mode: str = "by_modal" # One of: off, query, shuffled, by_modal
     query_retrieval_top_k: int = 4 # Historical cognition records selected per query
     experiment_mode: str = "full" # One of: baseline, full
     freeze_vlm: bool = True # Recompute VLM features without updating PrismaticVLM
@@ -86,6 +85,7 @@ class TrainConfig:
     load_depth: bool = True # Whether to load depth observations from RLDS
     load_proprio: bool = True # Whether to load proprioceptive observations from RLDS
     use_spatial_features: bool = True # Whether to load/use precomputed spatial features if available
+    modality_weights_index:int = 1
 
     # the same thing as per_token_size in memory_vla.py
     # spatial_token_size: int = 256

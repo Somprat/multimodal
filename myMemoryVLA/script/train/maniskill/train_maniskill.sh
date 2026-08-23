@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 
+
 set -euo pipefail
 
 project_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
@@ -13,7 +14,7 @@ if [[ -x "${project_root}/.venv/bin/python" ]]; then
 fi
 
 pretrained_ckpt="${PRETRAINED_CKPT:-../models/model_b/checkpoints/memvla-bridge.pt}"
-data_root_dir="${DATA_ROOT_DIR:-./data}"
+data_root_dir="${DATA_ROOT_DIR:-../datasets}"
 run_root_dir="${RUN_ROOT_DIR:-./log/maniskill}"
 experiment_mode="${EXPERIMENT_MODE:-full}"
 freeze_vlm="${FREEZE_VLM:-true}"
@@ -49,55 +50,57 @@ done
 
 dataset_info="${data_root_dir}/maniskill_dataset_converted_externally_to_rlds/0.1.0/dataset_info.json"
 
-train_command=(
-    torchrun --nproc_per_node="${n_gpu}" train.py
-    --pretrained_checkpoint "${pretrained_ckpt}"
-    --vla.type prism-dinosiglip-224px+oxe+diffusion
-    --vla.data_mix maniskill
-    --vla.expected_world_size "${n_gpu}"
-    --vla.per_device_batch_size "${per_device_batch_size}"
-    --vla.global_batch_size "$((n_gpu * per_device_batch_size))"
-    --vla.learning_rate "${LEARNING_RATE:-2e-5}"
-    --vla.max_steps "${max_steps}"
-    --vla.shuffle_buffer_size "${shuffle_buffer_size}"
-    --data_root_dir "${data_root_dir}"
-    --run_root_dir "${run_root_dir}"
-    --run_id "${run_id}"
-    --experiment_mode "${experiment_mode}"
-    --freeze_vlm "${freeze_vlm}"
-    --freeze_action_model "${freeze_action_model}"
-    --image_aug "${IMAGE_AUG:-true}"
-    --save_interval "${save_interval}"
-    --repeated_diffusion_steps "${DIFFUSION_STEPS:-4}"
-    --future_action_window_size "${FUTURE_ACTION_WINDOW_SIZE:-15}"
-    --action_model_type DiT-L
-    --dataloader_type stream
-    --is_resume false
-    --resume_step 0
-    --resume_epoch 0
-    --wandb_project "${WANDB_PROJECT:-memvla}"
-    --wandb_entity "${WANDB_ENTITY:-}"
-    --hf_token "${HF_TOKEN_PATH:-.hf_token}"
-)
-
 echo "ManiSkill training: mode=${experiment_mode}, freeze_vlm=${freeze_vlm}, freeze_action_model=${freeze_action_model}, steps=${max_steps}, GPUs=${n_gpu}"
-if [[ "${dry_run}" == "true" ]]; then
-    printf 'CUDA_VISIBLE_DEVICES=%q ' "${cuda_devices}"
-    printf '%q ' "${train_command[@]}"
-    printf '\n'
-    exit 0
-fi
-
-if [[ ! -f "${pretrained_ckpt}" ]]; then
+if [[ "${dry_run}" != "true" && ! -f "${pretrained_ckpt}" ]]; then
     echo "Missing pretrained checkpoint: ${pretrained_ckpt}" >&2
     echo "Set PRETRAINED_CKPT to the CogACT-Large checkpoint." >&2
     exit 1
 fi
 
-if [[ ! -f "${dataset_info}" ]]; then
+if [[ "${dry_run}" != "true" && ! -f "${dataset_info}" ]]; then
     echo "Missing ManiSkill RLDS dataset metadata: ${dataset_info}" >&2
     echo "Set DATA_ROOT_DIR to the TFDS data root containing the ManiSkill dataset directory." >&2
     exit 1
 fi
 
-CUDA_VISIBLE_DEVICES="${cuda_devices}" "${train_command[@]}"
+for i in 0 1 2 3; do
+    train_command=(
+        torchrun --nproc_per_node="${n_gpu}" train.py
+        --pretrained_checkpoint "${pretrained_ckpt}"
+        --vla.type prism-dinosiglip-224px+oxe+diffusion
+        --vla.data_mix maniskill
+        --vla.expected_world_size "${n_gpu}"
+        --vla.per_device_batch_size "${per_device_batch_size}"
+        --vla.global_batch_size "$((n_gpu * per_device_batch_size))"
+        --vla.learning_rate "${LEARNING_RATE:-2e-5}"
+        --vla.max_steps "${max_steps}"
+        --vla.shuffle_buffer_size "${shuffle_buffer_size}"
+        --data_root_dir "${data_root_dir}"
+        --run_root_dir "${run_root_dir}"
+        --run_id "${run_id}_weights_${i}"
+        --experiment_mode "${experiment_mode}"
+        --freeze_vlm "${freeze_vlm}"
+        --freeze_action_model "${freeze_action_model}"
+        --image_aug "${IMAGE_AUG:-true}"
+        --save_interval "${save_interval}"
+        --repeated_diffusion_steps "${DIFFUSION_STEPS:-4}"
+        --future_action_window_size "${FUTURE_ACTION_WINDOW_SIZE:-15}"
+        --action_model_type DiT-L
+        --dataloader_type stream
+        --is_resume false
+        --resume_step 0
+        --resume_epoch 0
+        --wandb_project "${WANDB_PROJECT:-memvla}"
+        --wandb_entity "${WANDB_ENTITY:-}"
+        --hf_token "${HF_TOKEN_PATH:-.hf_token}"
+        --modality_weights_index "${i}"
+    )
+
+    if [[ "${dry_run}" == "true" ]]; then
+        printf 'CUDA_VISIBLE_DEVICES=%q ' "${cuda_devices}"
+        printf '%q ' "${train_command[@]}"
+        printf '\n'
+    else
+        CUDA_VISIBLE_DEVICES="${cuda_devices}" "${train_command[@]}"
+    fi
+done

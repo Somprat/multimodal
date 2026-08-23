@@ -38,6 +38,11 @@ def parse_local_args(argv):
     parser = argparse.ArgumentParser(add_help=False)
     parser.add_argument("--use_bf16", action="store_true")
     parser.add_argument(
+        "--unnorm-key",
+        default=None,
+        help="Dataset statistics key used to unnormalize predicted actions.",
+    )
+    parser.add_argument(
         "--experiment-mode",
         choices=("baseline", "full"),
         default="full",
@@ -67,6 +72,8 @@ if __name__ == "__main__":
     cli_args = vars(args)
     if local_args.use_bf16 is not None:
         cli_args["use_bf16"] = local_args.use_bf16
+    if local_args.unnorm_key is not None:
+        cli_args["unnorm_key"] = local_args.unnorm_key
     cli_args["experiment_mode"] = local_args.experiment_mode
     merged_args = deep_update(yaml_args.copy(), cli_args)
     args = Namespace(**merged_args)

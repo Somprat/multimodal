@@ -51,6 +51,16 @@ class VLAInference:
                 # Set 2 for google_robot to fix the window size of motion scale between each frame. see appendix in our paper for details
                 action_ensemble_horizon = 2
             self.sticky_gripper_num_repeat = 10
+        elif policy_setup == "maniskill_panda":
+            unnorm_key = (
+                "maniskill_dataset_converted_externally_to_rlds"
+                if unnorm_key is None
+                else unnorm_key
+            )
+            if action_ensemble_horizon is None:
+                action_ensemble_horizon = 1
+            self.sticky_gripper_num_repeat = 1
+
         else:
             raise NotImplementedError(
                 f"Policy setup {policy_setup} not supported for octo models. The other datasets can be found in the huggingface config.json file."
@@ -98,7 +108,7 @@ class VLAInference:
         self.sticky_action_is_on = False
         self.gripper_action_repeat = 0
         self.sticky_gripper_action = 0.0
-        self.previous_gripper_action = None
+        self.previous_gripper_action = 1.0 if self.policy_setup == "maniskill_panda" else None
 
         self.task_description = None
         self.image_history = deque(maxlen=self.horizon)
@@ -149,7 +159,8 @@ class VLAInference:
         self.sticky_action_is_on = False
         self.gripper_action_repeat = 0
         self.sticky_gripper_action = 0.0
-        self.previous_gripper_action = None
+        self.previous_gripper_action = 1.0 if self.policy_setup == "maniskill_panda" else None
+
 
     def step(
         self, image: np.ndarray, depth: np.float64, intrinsic:np.float64,
@@ -207,15 +218,30 @@ class VLAInference:
             )
 
         # binarize the gripper action
-        raw_actions[:, 6] = np.clip(raw_actions[:, 6], -1, 1)
-        raw_actions[:, 6] = np.where(raw_actions[:, 6] < 0.5, 0, 1)
+        # to remove
+        # raw_actions[:, 6] = np.clip(raw_actions[:, 6], -1, 1)
+        # raw_actions[:, 6] = np.where(raw_actions[:, 6] < 0.5, 0, 1)
+
+
 
         if self.action_ensemble:
             raw_actions = self.action_ensembler.ensemble_action(raw_actions)[None]
+        
+        a = np.asarray(raw_actions[0], dtype=np.float32)
+
+        if a.shape != (7,):
+            raise ValueError(f"Expected action shape (7,) got {a.shape}")
+
+        if not np.all(np.isfinite(a)):
+            raise ValueError(f"Action contains non-finite values: {a}")
+
+        a = np.clip(a, -1.0, 1.0)
+
+            
         raw_action = {
-            "world_vector": np.array(raw_actions[0, :3]),
-            "rotation_delta": np.array(raw_actions[0, 3:6]),
-            "open_gripper": np.array(raw_actions[0, 6:7]),
+            "world_vector": np.array(a[:3]),
+            "rotation_delta": np.array(a[3:6]),
+            "open_gripper": np.array(a[6:7]),
         }
 
         # process raw_action to obtain the action to be sent to the maniskill2 environment
@@ -223,10 +249,13 @@ class VLAInference:
         action["world_vector"] = raw_action["world_vector"] * self.action_scale
         action_rotation_delta = np.asarray(raw_action["rotation_delta"], dtype=np.float64)
 
-        roll, pitch, yaw = action_rotation_delta
-        axes, angles = euler2axangle(roll, pitch, yaw)
-        action_rotation_axangle = axes * angles
-        action["rot_axangle"] = action_rotation_axangle * self.action_scale
+        if self.policy_setup == "maniskill_panda":
+            action["rot_axangle"] = (action_rotation_delta * self.action_scale).astype(np.float32)
+        else:
+            roll, pitch, yaw = action_rotation_delta
+            axes, angles = euler2axangle(roll, pitch, yaw)
+            action_rotation_axangle = axes * angles
+            action["rot_axangle"] = action_rotation_axangle * self.action_scale
 
         if self.policy_setup == "google_robot":
             action["gripper"] = 0
@@ -257,8 +286,24 @@ class VLAInference:
 
         elif self.policy_setup == "widowx_bridge":
             action["gripper"] = 2.0 * (raw_action["open_gripper"] > 0.5) - 1.0
-        
-        action["terminate_episode"] = np.array([0.0])
+        elif self.policy_setup == "maniskill_panda":
+            score = float(a[6])
+
+            if score > 0.5:
+                gripper_command = 1.0
+            elif score < -0.5:
+                gripper_command = -1.0
+            else:
+                # Predictions around zero correspond to uncertainty/the terminal
+                # placeholder, so retain the preceding absolute command.
+                gripper_command = float(self.previous_gripper_action)
+
+            self.previous_gripper_action = gripper_command
+            action["gripper"] = np.array(
+                [gripper_command],
+                dtype=np.float32,
+            )
+        action["terminate_episode"] = np.array([0.0], dtype=np.float32)
         return raw_action, action
 
     def _resize_image(self, image: np.ndarray) -> np.ndarray:
