@@ -15,7 +15,6 @@ from __future__ import annotations
 import argparse
 import json
 import os
-from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
@@ -29,85 +28,18 @@ from simpler_env.utils.env.observation_utils import (
 )
 from simpler_env.utils.visualization import write_video
 
+from training_tasks import TRAINING_TASKS, TrainTask
+
+# Importing registers the Gym environment.
+import training_pick_place_env  # noqa: F401
+
 
 CONTROL_MODE = "arm_pd_ee_target_delta_pose_align2_gripper_pd_joint_pos"
 CAMERA_NAME = "3rd_view_camera"
 
-
-@dataclass(frozen=True)
-class TaskSpec:
-    env_name: str
-    robot: str
-    scene_name: str
-    robot_xy: tuple[float, float]
-    max_episode_steps: int
-    source_x_range: tuple[float, float]
-    source_y_range: tuple[float, float]
-    target_x_range: tuple[float, float] | None
-    target_y_range: tuple[float, float] | None
-    min_object_separation: float
-    grasp_z_offset: float
-    placement_clearance: float
-
-
-TASKS: dict[str, TaskSpec] = {
-    "stack_cube": TaskSpec(
-        env_name="StackGreenCubeOnYellowCubeBakedTexInScene-v0",
-        robot="widowx",
-        scene_name="bridge_table_1_v1",
-        robot_xy=(0.147, 0.028),
-        max_episode_steps=60,
-        source_x_range=(-0.245, -0.075),
-        source_y_range=(-0.085, 0.085),
-        target_x_range=(-0.245, -0.075),
-        target_y_range=(-0.085, 0.085),
-        min_object_separation=0.10,
-        grasp_z_offset=0.005,
-        placement_clearance=0.006,
-    ),
-    "carrot_on_plate": TaskSpec(
-        env_name="PutCarrotOnPlateInScene-v0",
-        robot="widowx",
-        scene_name="bridge_table_1_v1",
-        robot_xy=(0.147, 0.028),
-        max_episode_steps=60,
-        source_x_range=(-0.245, -0.075),
-        source_y_range=(-0.085, 0.085),
-        target_x_range=(-0.245, -0.075),
-        target_y_range=(-0.085, 0.085),
-        min_object_separation=0.10,
-        grasp_z_offset=0.012,
-        placement_clearance=0.008,
-    ),
-    "spoon_on_towel": TaskSpec(
-        env_name="PutSpoonOnTableClothInScene-v0",
-        robot="widowx",
-        scene_name="bridge_table_1_v1",
-        robot_xy=(0.147, 0.028),
-        max_episode_steps=60,
-        source_x_range=(-0.245, -0.075),
-        source_y_range=(-0.085, 0.085),
-        target_x_range=(-0.245, -0.075),
-        target_y_range=(-0.085, 0.085),
-        min_object_separation=0.10,
-        grasp_z_offset=0.010,
-        placement_clearance=0.008,
-    ),
-    "eggplant_in_basket": TaskSpec(
-        env_name="PutEggplantInBasketScene-v0",
-        robot="widowx_sink_camera_setup",
-        scene_name="bridge_table_1_v2",
-        robot_xy=(0.127, 0.060),
-        max_episode_steps=120,
-        source_x_range=(-0.125, -0.085),
-        source_y_range=(0.170, 0.240),
-        target_x_range=None,
-        target_y_range=None,
-        min_object_separation=0.0,
-        grasp_z_offset=0.018,
-        placement_clearance=0.015,
-    ),
-}
+ROBOT_XY = (0.147, 0.028)
+TRAINING_ENV_NAME = "WidowXTrainingPickPlace-v0"
+ROBOT_NAME = "widowx"
 
 
 def _to_numpy(value: Any) -> np.ndarray:
@@ -139,7 +71,9 @@ def _sample_xy(rng: np.random.Generator, x_range, y_range) -> np.ndarray:
     )
 
 
-def _randomize_training_layout(base_env, spec: TaskSpec, rng: np.random.Generator) -> dict[str, list[float]]:
+def _randomize_training_layout(
+    base_env, spec: TrainTask, rng: np.random.Generator
+) -> dict[str, list[float]]:
     """Move objects off the finite official evaluation grid.
 
     The registered task reset selects an official configuration first because
@@ -315,7 +249,7 @@ class WidowXWaypointExpert:
                 gripper_open,
             )
 
-    def run(self, spec: TaskSpec) -> bool:
+    def run(self, spec: TrainTask) -> bool:
         source = np.asarray(self.base_env.source_obj_pose.p, dtype=np.float64)
         approach_source = source + np.array([0.0, 0.0, 0.12])
         grasp_source = source + np.array([0.0, 0.0, spec.grasp_z_offset])
@@ -342,7 +276,12 @@ class WidowXWaypointExpert:
         source_half_z = abs(float(self.base_env.episode_source_obj_bbox_world[2])) / 2
         target_half_z = abs(float(self.base_env.episode_target_obj_bbox_world[2])) / 2
         desired_source = target.copy()
-        desired_source[2] += source_half_z + target_half_z + spec.placement_clearance
+        if spec.relation == "in":
+            desired_source[2] += spec.placement_clearance
+        else:
+            desired_source[2] += (
+                source_half_z + target_half_z + spec.placement_clearance
+            )
         desired_tcp = desired_source - source_to_tcp
 
         above_target = desired_tcp.copy()
@@ -379,19 +318,20 @@ def _validate_episode(arrays: dict[str, np.ndarray]) -> None:
         raise ValueError("Expected a 7D SimplerEnv command")
 
 
-def _make_env(spec: TaskSpec):
+def _make_env(task):
     return gym.make(
-        spec.env_name,
+        TRAINING_ENV_NAME,
+        source_obj_name=task.source_asset,
+        target_obj_name=task.target_asset,
+        relation=task.relation,
+        instruction=task.instruction,
         obs_mode="rgbd",
-        robot=spec.robot,
+        robot=ROBOT_NAME,
         control_mode=CONTROL_MODE,
-        scene_name=spec.scene_name,
+        scene_name="bridge_table_1_v1",
         control_freq=5,
         sim_freq=500,
-        max_episode_steps=spec.max_episode_steps,
         camera_cfgs={"add_segmentation": True},
-        # Overlay RGB is intentionally disabled: RGB and depth must describe
-        # the same simulated geometry in a calibrated training example.
         rgb_overlay_path=None,
     )
 
@@ -402,7 +342,7 @@ def collect_attempt(
     output_root: Path,
     save_failures: bool,
 ) -> tuple[bool, Path | None]:
-    spec = TASKS[task_name]
+    spec = TRAINING_TASKS[task_name]
     rng = np.random.default_rng(seed)
     env = _make_env(spec)
     try:
@@ -413,7 +353,7 @@ def collect_attempt(
                 # actors are moved to continuous training positions below.
                 "obj_init_options": {"episode_id": 0},
                 "robot_init_options": {
-                    "init_xy": np.asarray(spec.robot_xy),
+                    "init_xy": np.asarray(ROBOT_XY),
                     "init_rot_quat": np.array([0.0, 0.0, 0.0, 1.0]),
                 },
             },
@@ -440,13 +380,13 @@ def collect_attempt(
         metadata = {
             "schema_version": 1,
             "task": task_name,
-            "env_name": spec.env_name,
+            "env_name": TRAINING_ENV_NAME,
             "instruction": instruction,
             "seed": seed,
             "success": success,
             "training_layout": layout,
             "reset_info": {key: str(value) for key, value in reset_info.items()},
-            "robot": spec.robot,
+            "robot": ROBOT_NAME,
             "control_mode": CONTROL_MODE,
             "control_freq_hz": 5,
             "sim_freq_hz": 500,
@@ -460,6 +400,9 @@ def collect_attempt(
         np.savez_compressed(
             output_path,
             **arrays,
+            K=arrays["camera_intrinsics"],
+            E=arrays["camera_extrinsics"],
+            expert_action=arrays["action"],
             instruction=np.asarray(instruction),
             success=np.asarray(success),
             metadata_json=np.asarray(json.dumps(metadata, sort_keys=True)),
@@ -472,7 +415,6 @@ def collect_attempt(
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--task", choices=tuple(TASKS), default="stack_cube")
     parser.add_argument("--num-successes", type=int, default=1)
     parser.add_argument("--max-attempts", type=int, default=20)
     parser.add_argument("--seed", type=int, default=100_000)
@@ -482,6 +424,11 @@ def parse_args() -> argparse.Namespace:
         default=Path("datasets/widowx_simpler_npz"),
     )
     parser.add_argument("--save-failures", action="store_true")
+    parser.add_argument(
+        "--task",
+        choices=("all", *TRAINING_TASKS),
+        default="all",
+    )
     return parser.parse_args()
 
 
@@ -491,27 +438,38 @@ def main() -> None:
     if args.num_successes < 1 or args.max_attempts < 1:
         raise ValueError("--num-successes and --max-attempts must be positive")
 
-    successes = 0
-    for attempt in range(args.max_attempts):
-        seed = args.seed + attempt
-        success, path = collect_attempt(
-            task_name=args.task,
-            seed=seed,
-            output_root=args.output_dir,
-            save_failures=args.save_failures,
-        )
-        print(
-            f"attempt={attempt + 1}/{args.max_attempts} seed={seed} "
-            f"success={success} path={path}"
-        )
-        successes += int(success)
-        if successes >= args.num_successes:
-            break
+    if not TRAINING_TASKS:
+        raise ValueError("TRAINING_TASKS is empty")
 
-    if successes < args.num_successes:
+    task_names = list(TRAINING_TASKS) if args.task == "all" else [args.task]
+    incomplete_tasks: list[tuple[str, int]] = []
+    for task_name in task_names:
+        successes = 0
+
+        for attempt in range(args.max_attempts):
+            success, path = collect_attempt(
+                task_name=task_name,
+                seed=args.seed + attempt,
+                output_root=args.output_dir,
+                save_failures=args.save_failures,
+            )
+
+            print(
+                f"task={task_name} attempt={attempt + 1}/{args.max_attempts} "
+                f"success={success} path={path}"
+            )
+            successes += int(success)
+
+            if successes >= args.num_successes:
+                break
+
+        if successes < args.num_successes:
+            incomplete_tasks.append((task_name, successes))
+
+    if incomplete_tasks:
         raise RuntimeError(
-            f"Collected {successes}/{args.num_successes} successes in "
-            f"{args.max_attempts} attempts. Inspect saved failures before scaling."
+            f"Incomplete tasks: {incomplete_tasks}; requested "
+            f"{args.num_successes} successes per task in {args.max_attempts} attempts"
         )
 
 

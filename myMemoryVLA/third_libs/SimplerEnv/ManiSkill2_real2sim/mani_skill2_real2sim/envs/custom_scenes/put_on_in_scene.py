@@ -126,6 +126,7 @@ class PutOnInSceneEnv(MoveNearInSceneEnv):
         self.episode_stats["is_src_obj_grasped"] = (
             self.episode_stats["is_src_obj_grasped"] or is_src_obj_grasped
         )
+
         self.episode_stats["consecutive_grasp"] = (
             self.episode_stats["consecutive_grasp"] or consecutive_grasp
         )
