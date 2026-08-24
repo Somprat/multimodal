@@ -46,7 +46,10 @@ def parse_local_args(argv):
         "--experiment-mode",
         choices=("baseline", "full"),
         default="full",
-        help="Evaluate the RGB baseline or the full spatial/query/episodic system.",
+        help=(
+            "Evaluate the paper PCMB baseline (without the new spatial and "
+            "cross-episode extensions) or the full system."
+        ),
     )
     return parser.parse_known_args(argv)
 

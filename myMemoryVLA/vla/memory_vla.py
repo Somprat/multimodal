@@ -1042,6 +1042,13 @@ class MemoryVLA(nn.Module):
             C_out=self.per_token_size,
         )
 
+        # The paper baseline uses the original PCMB over the complete
+        # within-episode history. Selective query retrieval is an extension
+        # used only by the full experiment mode.
+        pcmb_query_retrieval_mode = (
+            "off" if self.experiment_mode == "baseline" else self.query_retrieval_mode
+        )
+
         self.cog_mem_bank = CogMemBank(
             dataloader_type=self.dataloader_type,
             group_size=self.group_size,
@@ -1052,7 +1059,7 @@ class MemoryVLA(nn.Module):
             fusion_type=self.fusion_type,
             consolidate_type=self.consolidate_type,
             update_fused=self.update_fused,
-            query_retrieval_mode=self.query_retrieval_mode,
+            query_retrieval_mode=pcmb_query_retrieval_mode,
             query_retrieval_top_k=self.query_retrieval_top_k,
             modality_weights_index=self.modality_weights_index
         )
@@ -1067,14 +1074,14 @@ class MemoryVLA(nn.Module):
             fusion_type=self.fusion_type,
             consolidate_type=self.consolidate_type,
             update_fused=self.update_fused,
-            query_retrieval_mode=self.query_retrieval_mode,
+            query_retrieval_mode=pcmb_query_retrieval_mode,
             query_retrieval_top_k=self.query_retrieval_top_k,
             modality_weights_index=self.modality_weights_index
         )
-        max_steps_sweep = [5, 10, 20]
-        top_k_episodic_sweep = [2, 4, 8]
+        # max_steps_sweep = [5, 10, 20]
+        # top_k_episodic_sweep = [2, 4, 8]
         bank_sweep =[(5,2), (10, 4), (20, 8)]
-        self.episodic_bank = EpisodicMemBank(max_steps=max_steps_sweep[0],
+        self.episodic_bank = EpisodicMemBank(max_steps=episodic_sweep[self.episodic_sweep_index][0],
                                              
                  dataloader_type = "stream",
                  group_size = self.group_size,
@@ -1086,7 +1093,7 @@ class MemoryVLA(nn.Module):
                  consolidate_type = self.consolidate_type,
                  update_fused = self.update_fused,
                  query_retrieval_mode = self.query_retrieval_mode,
-                 query_retrieval_top_k = top_k_episodic_sweep[1])
+                 query_retrieval_top_k = episodic_sweep[self.episodic_sweep_index][1])
         
         self.spatial_encoder = SpatialEncoder(
             spatial_token_size = self.per_token_size,
@@ -1141,8 +1148,7 @@ class MemoryVLA(nn.Module):
 
         if self.experiment_mode == "baseline":
             inactive_modules = (
-                self.cog_mem_bank,
-                self.per_mem_bank,
+                self.episodic_bank,
                 self.spatial_encoder,
                 self.point_cloud_spatial_encoder,
                 self.spatial_mem_bank,
@@ -1491,6 +1497,21 @@ class MemoryVLA(nn.Module):
         per_tokens = self.per_compr(vision_feats)
         
 
+        if self.experiment_mode == "baseline":
+            # Reproduce the paper's original perceptual-cognitive memory bank:
+            # retrieve and consolidate the complete within-episode history,
+            # without the new selective-query, cross-episode, or spatial paths.
+            cog_tokens = self.cog_mem_bank.process_batch(
+                tokens=cog_tokens,
+                episode_ids=episode_ids,
+                timesteps=timesteps,
+            )
+            per_tokens = self.per_mem_bank.process_batch(
+                tokens=per_tokens,
+                episode_ids=episode_ids,
+                timesteps=timesteps,
+            )
+
         if self.experiment_mode == "full":
             retrieval_image_embeddings, retrieval_query_embeddings = (
                 self._encode_retrieval_inputs(images, instructions)
@@ -1824,6 +1845,25 @@ class MemoryVLA(nn.Module):
         assert episode_first_frame in ['True', 'False'], "episode_first_frame must be 'True' or 'False'"
         if episode_first_frame == 'True':
             self.cur_timestep = 0
+
+        if self.experiment_mode == "baseline":
+            if episode_first_frame == 'True':
+                print(" ** reset paper PCMB ** ")
+                self.cog_mem_bank.reset()
+                self.per_mem_bank.reset()
+
+            episode_ids = [0]
+            timesteps = [torch.tensor(self.cur_timestep, device=cog_tokens.device)]
+            cog_tokens = self.cog_mem_bank.process_batch(
+                tokens=cog_tokens,
+                episode_ids=episode_ids,
+                timesteps=timesteps,
+            )
+            per_tokens = self.per_mem_bank.process_batch(
+                tokens=per_tokens,
+                episode_ids=episode_ids,
+                timesteps=timesteps,
+            )
 
         if self.experiment_mode == "full":
             if episode_first_frame == 'True':

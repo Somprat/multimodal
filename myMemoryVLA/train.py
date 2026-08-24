@@ -86,6 +86,7 @@ class TrainConfig:
     load_proprio: bool = True # Whether to load proprioceptive observations from RLDS
     use_spatial_features: bool = True # Whether to load/use precomputed spatial features if available
     modality_weights_index:int = 1
+    eposdic_sweep_index: int = 1
 
     # the same thing as per_token_size in memory_vla.py
     # spatial_token_size: int = 256

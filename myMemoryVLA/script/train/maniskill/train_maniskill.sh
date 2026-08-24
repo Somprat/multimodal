@@ -64,43 +64,45 @@ if [[ "${dry_run}" != "true" && ! -f "${dataset_info}" ]]; then
 fi
 
 for i in 0 1 2 3; do
-    train_command=(
-        torchrun --nproc_per_node="${n_gpu}" train.py
-        --pretrained_checkpoint "${pretrained_ckpt}"
-        --vla.type prism-dinosiglip-224px+oxe+diffusion
-        --vla.data_mix maniskill
-        --vla.expected_world_size "${n_gpu}"
-        --vla.per_device_batch_size "${per_device_batch_size}"
-        --vla.global_batch_size "$((n_gpu * per_device_batch_size))"
-        --vla.learning_rate "${LEARNING_RATE:-2e-5}"
-        --vla.max_steps "${max_steps}"
-        --vla.shuffle_buffer_size "${shuffle_buffer_size}"
-        --data_root_dir "${data_root_dir}"
-        --run_root_dir "${run_root_dir}"
-        --run_id "${run_id}_weights_${i}"
-        --experiment_mode "${experiment_mode}"
-        --freeze_vlm "${freeze_vlm}"
-        --freeze_action_model "${freeze_action_model}"
-        --image_aug "${IMAGE_AUG:-true}"
-        --save_interval "${save_interval}"
-        --repeated_diffusion_steps "${DIFFUSION_STEPS:-4}"
-        --future_action_window_size "${FUTURE_ACTION_WINDOW_SIZE:-15}"
-        --action_model_type DiT-L
-        --dataloader_type stream
-        --is_resume false
-        --resume_step 0
-        --resume_epoch 0
-        --wandb_project "${WANDB_PROJECT:-memvla}"
-        --wandb_entity "${WANDB_ENTITY:-}"
-        --hf_token "${HF_TOKEN_PATH:-.hf_token}"
-        --modality_weights_index "${i}"
-    )
+    for j in 0 1 2; do
+        train_command=(
+            torchrun --nproc_per_node="${n_gpu}" train.py
+            --pretrained_checkpoint "${pretrained_ckpt}"
+            --vla.type prism-dinosiglip-224px+oxe+diffusion
+            --vla.data_mix maniskill
+            --vla.expected_world_size "${n_gpu}"
+            --vla.per_device_batch_size "${per_device_batch_size}"
+            --vla.global_batch_size "$((n_gpu * per_device_batch_size))"
+            --vla.learning_rate "${LEARNING_RATE:-2e-5}"
+            --vla.max_steps "${max_steps}"
+            --vla.shuffle_buffer_size "${shuffle_buffer_size}"
+            --data_root_dir "${data_root_dir}"
+            --run_root_dir "${run_root_dir}"
+            --run_id "${run_id}_weights_${i}"
+            --experiment_mode "${experiment_mode}"
+            --freeze_vlm "${freeze_vlm}"
+            --freeze_action_model "${freeze_action_model}"
+            --image_aug "${IMAGE_AUG:-true}"
+            --save_interval "${save_interval}"
+            --repeated_diffusion_steps "${DIFFUSION_STEPS:-4}"
+            --future_action_window_size "${FUTURE_ACTION_WINDOW_SIZE:-15}"
+            --action_model_type DiT-L
+            --dataloader_type stream
+            --is_resume false
+            --resume_step 0
+            --resume_epoch 0
+            --wandb_project "${WANDB_PROJECT:-memvla}"
+            --wandb_entity "${WANDB_ENTITY:-}"
+            --hf_token "${HF_TOKEN_PATH:-.hf_token}"
+            --modality_weights_index "${i}"
+            --episodic_weights_index "${j}"
+        )
 
-    if [[ "${dry_run}" == "true" ]]; then
-        printf 'CUDA_VISIBLE_DEVICES=%q ' "${cuda_devices}"
-        printf '%q ' "${train_command[@]}"
-        printf '\n'
-    else
-        CUDA_VISIBLE_DEVICES="${cuda_devices}" "${train_command[@]}"
-    fi
+        if [[ "${dry_run}" == "true" ]]; then
+            printf 'CUDA_VISIBLE_DEVICES=%q ' "${cuda_devices}"
+            printf '%q ' "${train_command[@]}"
+            printf '\n'
+        else
+            CUDA_VISIBLE_DEVICES="${cuda_devices}" "${train_command[@]}"
+        fi
 done

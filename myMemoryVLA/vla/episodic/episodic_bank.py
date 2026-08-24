@@ -36,7 +36,6 @@ class BankEntry:
 
 class EpisodicMemBank:
     def __init__(self, max_steps: int = 5,
-    
                  kick_method: str = "fifo",
                  top_k: int = 4,
                  novelty_threshold = 0.8,
