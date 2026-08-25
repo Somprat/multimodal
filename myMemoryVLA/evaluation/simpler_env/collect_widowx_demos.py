@@ -216,12 +216,16 @@ class WidowXWaypointExpert:
         )
 
     def _command(self, goal_world: np.ndarray, gripper_open: float) -> np.ndarray:
-        delta = np.asarray(goal_world, dtype=np.float64) - self._arm_target_world()
-        norm = np.linalg.norm(delta)
+        delta_world = np.asarray(goal_world, dtype=np.float64) - self._arm_target_world()
+        norm = np.linalg.norm(delta_world)
         if norm > self.max_translation:
-            delta *= self.max_translation / norm
+            delta_world *= self.max_translation / norm
+        base_quat_wxyz = np.asarray(self.base_env.agent.robot.pose.q)
+        delta_base = Rotation.from_quat(
+            base_quat_wxyz[[1, 2, 3, 0]]
+        ).inv().apply(delta_world)
         gripper_env = 1.0 if gripper_open >= 0.5 else -1.0
-        return np.concatenate([delta, np.zeros(3), [gripper_env]])
+        return np.concatenate([delta_base, np.zeros(3), [gripper_env]])
 
     def move_to(
         self,
@@ -249,6 +253,29 @@ class WidowXWaypointExpert:
                 gripper_open,
             )
 
+    def _contact_reached(
+        self, goal_world: np.ndarray, xy_tol: float, z_tol: float
+    ) -> bool:
+        tcp = np.asarray(self.base_env.tcp.pose.p)
+        goal = np.asarray(goal_world)
+        return bool(
+            np.linalg.norm(tcp[:2] - goal[:2]) <= xy_tol
+            and goal[2] - 0.01 <= tcp[2] <= goal[2] + z_tol
+        )
+
+    def _source_inside_target(self) -> bool:
+        source = np.asarray(self.base_env.source_obj_pose.p)
+        target = np.asarray(self.base_env.target_obj_pose.p)
+        source_half = np.abs(self.base_env.episode_source_obj_bbox_world) / 2
+        target_half = np.abs(self.base_env.episode_target_obj_bbox_world) / 2
+        offset = np.abs(source - target)
+        clearance = target_half[:2] - source_half[:2] + 0.005
+        return bool(
+            np.all(clearance >= 0)
+            and np.all(offset[:2] <= clearance)
+            and offset[2] + source_half[2] <= target_half[2] + 0.02
+        )
+
     def run(self, spec: TrainTask) -> bool:
         source = np.asarray(self.base_env.source_obj_pose.p, dtype=np.float64)
         approach_source = source + np.array([0.0, 0.0, 0.12])
@@ -256,7 +283,12 @@ class WidowXWaypointExpert:
 
         if not self.move_to(approach_source, gripper_open=1.0):
             return False
-        if not self.move_to(grasp_source, gripper_open=1.0, tolerance=0.009):
+        reached_grasp = self.move_to(
+            grasp_source, gripper_open=1.0, tolerance=0.009
+        )
+        if not reached_grasp and not self._contact_reached(
+            grasp_source, xy_tol=0.012, z_tol=0.10
+        ):
             return False
         self.hold(gripper_open=0.0, steps=7)
 
@@ -288,7 +320,10 @@ class WidowXWaypointExpert:
         above_target[2] = max(lift_tcp[2], desired_tcp[2] + 0.10)
         if not self.move_to(above_target, gripper_open=0.0):
             return False
-        if not self.move_to(desired_tcp, gripper_open=0.0, tolerance=0.012):
+        reached_place = self.move_to(
+            desired_tcp, gripper_open=0.0, tolerance=0.012
+        )
+        if not reached_place and not self._source_inside_target():
             return False
 
         self.hold(gripper_open=1.0, steps=7)
@@ -360,7 +395,9 @@ def collect_attempt(
         )
         base_env = env.unwrapped
         layout = _randomize_training_layout(base_env, spec, rng)
-        obs = env.get_obs()
+        # Refresh after moving the actors, then apply the same RGB-D conversion
+        # that the observation wrapper applies to reset() and step().
+        obs = env.get_wrapper_attr("observation")(env.unwrapped.get_obs())
         instruction = base_env.get_language_instruction()
 
         recorder = EpisodeRecorder(env, obs, instruction)

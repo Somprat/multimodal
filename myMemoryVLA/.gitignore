@@ -1,3 +1,6 @@
+# Locally downloaded and generated datasets
+datasets/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

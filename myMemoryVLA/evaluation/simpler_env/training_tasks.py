@@ -22,12 +22,17 @@ class TrainTask:
 
 
 TRAINING_TASKS = {
-    # Smoke-test entry. Replace with a reviewed Bridge V2 instruction before
-    # collecting the real training dataset.
-    "apple_on_sponge": TrainTask(
-        source_asset="apple",
-        target_asset="sponge",
-        relation="on",
-        instruction="put the apple on the sponge",
+    # Stable Bridge-asset task used for calibrated collection.
+    "green_cube_in_sink": TrainTask(
+        source_asset="green_cube_3cm",
+        target_asset="sink",
+        relation="in",
+        instruction="put the green cube in the sink",
+        source_x_range=(-0.080, -0.070),
+        source_y_range=(-0.060, 0.060),
+        target_x_range=(-0.245, -0.235),
+        target_y_range=(-0.060, 0.060),
+        min_object_separation=0.15,
+        grasp_z_offset=0.0,
     ),
 }

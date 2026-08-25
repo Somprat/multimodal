@@ -1,13 +1,13 @@
 import numpy as np
 from mani_skill2_real2sim.envs.custom_scenes.base_env import (
-    CustomOtherObjectsInSceneEnv,
+    CustomBridgeObjectsInSceneEnv,
 )
 from mani_skill2_real2sim.envs.custom_scenes.put_on_in_scene import PutOnInSceneEnv
 from mani_skill2_real2sim.utils.registration import register_env
 
 
 @register_env("WidowXTrainingPickPlace-v0", max_episode_steps=120)
-class WidowXTrainingPickPlaceEnv(PutOnInSceneEnv, CustomOtherObjectsInSceneEnv):
+class WidowXTrainingPickPlaceEnv(PutOnInSceneEnv, CustomBridgeObjectsInSceneEnv):
     """One reusable environment for manifest-selected source/target objects."""
 
     def __init__(
@@ -101,6 +101,7 @@ class WidowXTrainingPickPlaceEnv(PutOnInSceneEnv, CustomOtherObjectsInSceneEnv):
             )
             > 0.03
         )
+        success = success and moved_correct_obj
         self.episode_stats["moved_correct_obj"] = moved_correct_obj
         self.episode_stats["moved_wrong_obj"] = moved_wrong_obj
         self.episode_stats["src_on_target"] = success
