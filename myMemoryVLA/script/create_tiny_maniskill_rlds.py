@@ -32,11 +32,13 @@ class TinyManiskillSpatial(tfds.core.GeneratorBasedBuilder):
     def _split_generators(self, dl_manager):
         del dl_manager
         return {"train": self._generate_examples()}
+
     def _generate_examples(self):
         for episode in range(self.episodes):
             episode_id = f"episode_{episode:03d}"
             yield episode_id, {"steps": [self._step(episode, i) for i in range(self.steps)],
                 "episode_metadata": {"episode_id": episode_id, "source": "synthetic_maniskill_camera_fixture"}}
+    
     def _step(self, episode, index):
         yy, xx = np.mgrid[:self.height, :self.width]
         mask = (xx-self.width*(.35+.08*index))**2 + (yy-self.height*(.45+.03*episode))**2 <= (min(self.height,self.width)*.12)**2
@@ -52,6 +54,7 @@ class TinyManiskillSpatial(tfds.core.GeneratorBasedBuilder):
         return {"observation":{"image":rgb,"depth":depth,"camera_intrinsics":intrinsic,"camera_extrinsics": extrinsic,"proprio":proprio},
             "action":action,"language_instruction":"move the green object to the right",
             "is_first":index==0,"is_last":index==self.steps-1,"is_terminal":index==self.steps-1}
+
 
 def main():
     p=argparse.ArgumentParser(); p.add_argument("--output-root",type=Path,default=Path("artifacts/tiny_maniskill_rlds"))
