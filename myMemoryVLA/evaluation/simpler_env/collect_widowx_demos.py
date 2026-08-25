@@ -287,7 +287,7 @@ class WidowXWaypointExpert:
             grasp_source, gripper_open=1.0, tolerance=0.009
         )
         if not reached_grasp and not self._contact_reached(
-            grasp_source, xy_tol=0.012, z_tol=0.10
+            grasp_source, xy_tol=0.012, z_tol=0.04
         ):
             return False
         self.hold(gripper_open=0.0, steps=7)
