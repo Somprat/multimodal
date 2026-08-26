@@ -98,16 +98,22 @@ def _randomize_training_layout(
         actors_to_move.append((base_env.episode_target_obj, target_xy))
 
     for actor, desired_xy in actors_to_move:
-        current_com_xy = np.asarray(
-            actor.pose.transform(actor.cmass_local_pose).p[:2], dtype=np.float64
-        )
+        current_pose_xy = np.asarray(actor.pose.p[:2], dtype=np.float64)
+
         pose = actor.pose
-        pose.set_p(np.asarray(pose.p) + np.r_[desired_xy - current_com_xy, 0.025])
+        
+        if spec.source_asset == "bridge_carrot_generated_modified":
+            pose.set_p(np.asarray(pose.p) + np.r_[desired_xy - current_pose_xy, 0.002])
+        else:
+            pose.set_p(np.asarray(pose.p) + np.r_[desired_xy - current_pose_xy, 0.025])
         actor.set_pose(pose)
         actor.set_velocity(np.zeros(3))
         actor.set_angular_velocity(np.zeros(3))
 
-    base_env._settle(0.75)
+    if spec.source_asset == "bridge_carrot_generated_modified":
+        base_env._settle(0.25)
+    else:
+        base_env._settle(0.75)
 
     base_env.episode_obj_xyzs_after_settle = [
         np.asarray(obj.pose.p).copy() for obj in base_env.episode_objs
