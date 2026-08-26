@@ -41,13 +41,15 @@ TRAINING_TASKS = {
         relation="in",
         instruction="put the carrot in the sink",
 
-        source_x_range=(-0.080, -0.070),
-        source_y_range=(-0.060, 0.060),
+        # Keep the long carrot outside the sink collision footprint.
+        # The previous y range placed it inside the 39.3 cm-wide sink.
+        source_x_range=(-0.065, -0.055),
+        source_y_range=(-0.200, -0.160),
 
         target_x_range=(-0.245, -0.235),
-        target_y_range=(-0.060, 0.060),
+        target_y_range=(-0.040, 0.040),
 
-        min_object_separation=0.15,
+        min_object_separation=0.22,
         grasp_z_offset=0.0,
         placement_clearance=0.015,
     ),

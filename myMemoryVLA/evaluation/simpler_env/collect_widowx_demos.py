@@ -42,6 +42,10 @@ TRAINING_ENV_NAME = "WidowXTrainingPickPlace-v0"
 ROBOT_NAME = "widowx"
 
 
+class UnstableLayoutError(RuntimeError):
+    """Raised when randomized actors do not settle near sampled poses."""
+
+
 def _to_numpy(value: Any) -> np.ndarray:
     if hasattr(value, "detach"):
         value = value.detach()
@@ -97,23 +101,87 @@ def _randomize_training_layout(
     if spec.target_x_range is not None:
         actors_to_move.append((base_env.episode_target_obj, target_xy))
 
+    carrot_actor = None
+    sink_actor = None
+    sink_desired_xy = None
     for actor, desired_xy in actors_to_move:
         current_pose_xy = np.asarray(actor.pose.p[:2], dtype=np.float64)
 
         pose = actor.pose
-        
-        if spec.source_asset == "bridge_carrot_generated_modified":
-            pose.set_p(np.asarray(pose.p) + np.r_[desired_xy - current_pose_xy, 0.002])
+        if (
+            spec.source_asset == "bridge_carrot_generated_modified"
+            and actor is base_env.episode_source_obj
+        ):
+            # The carrot collision mesh can intersect the table and receive a
+            # large impulse when teleported only millimetres above it. Drop it
+            # from a safe height in a stable, yaw-only grasp orientation.
+            yaw = rng.uniform(-np.deg2rad(12.0), np.deg2rad(12.0))
+            pose.set_q(
+                np.array([np.cos(yaw / 2), 0.0, 0.0, np.sin(yaw / 2)])
+            )
+            pose.set_p(
+                np.asarray(pose.p)
+                + np.r_[desired_xy - current_pose_xy, 0.06]
+            )
+            actor.lock_motion(0, 0, 0, 1, 1, 0)
+            carrot_actor = actor
+        elif spec.target_asset == "sink" and actor is base_env.episode_target_obj:
+            # Leave the already-settled sink asleep while the carrot drops.
+            # Moving it first wakes its non-convex body during the long settle.
+            sink_actor = actor
+            sink_desired_xy = desired_xy
+            continue
         else:
-            pose.set_p(np.asarray(pose.p) + np.r_[desired_xy - current_pose_xy, 0.025])
+            pose.set_p(
+                np.asarray(pose.p)
+                + np.r_[desired_xy - current_pose_xy, 0.025]
+            )
+
         actor.set_pose(pose)
         actor.set_velocity(np.zeros(3))
         actor.set_angular_velocity(np.zeros(3))
 
-    if spec.source_asset == "bridge_carrot_generated_modified":
+    base_env._settle(0.75)
+    if carrot_actor is not None:
+        carrot_actor.lock_motion(0, 0, 0, 0, 0, 0)
+        carrot_actor.set_pose(carrot_actor.pose)
+        carrot_actor.set_velocity(np.zeros(3))
+        carrot_actor.set_angular_velocity(np.zeros(3))
+    if sink_actor is not None:
+        sink_pose = sink_actor.pose
+        sink_xy = np.asarray(sink_pose.p[:2], dtype=np.float64)
+        sink_pose.set_p(
+            np.asarray(sink_pose.p)
+            + np.r_[sink_desired_xy - sink_xy, 0.002]
+        )
+        sink_actor.set_pose(sink_pose)
+        sink_actor.set_velocity(np.zeros(3))
+        sink_actor.set_angular_velocity(np.zeros(3))
+    if carrot_actor is not None or sink_actor is not None:
         base_env._settle(0.25)
-    else:
-        base_env._settle(0.75)
+
+    actual_source = np.asarray(base_env.source_obj_pose.p)
+    actual_target = np.asarray(base_env.target_obj_pose.p)
+    source_drift = np.linalg.norm(actual_source[:2] - source_xy)
+    target_drift = np.linalg.norm(actual_target[:2] - target_xy)
+    source_speed = np.linalg.norm(base_env.episode_source_obj.velocity)
+    source_angular_speed = np.linalg.norm(
+        base_env.episode_source_obj.angular_velocity
+    )
+    if (
+        source_drift > 0.025
+        or target_drift > 0.025
+        or source_speed > 1e-3
+        or source_angular_speed > 1e-2
+    ):
+        raise UnstableLayoutError(
+            "Unstable randomized layout: "
+            f"source_drift={source_drift:.4f}, "
+            f"target_drift={target_drift:.4f}, "
+            f"source_speed={source_speed:.4f}, "
+            f"source_angular_speed={source_angular_speed:.4f}"
+        )
+
 
     base_env.episode_obj_xyzs_after_settle = [
         np.asarray(obj.pose.p).copy() for obj in base_env.episode_objs
@@ -127,6 +195,14 @@ def _randomize_training_layout(
         base_env.episode_obj_xyzs_after_settle[target_idx].copy()
     )
     base_env._initialize_episode_stats()
+
+    print(
+        "Settled positions:",
+        "source=", actual_source,
+        "target=", actual_target,
+        "source_drift=", source_drift,
+        "target_drift=", target_drift,
+    )
 
     return {
         "source_xy": np.asarray(base_env.source_obj_pose.p[:2]).tolist(),
@@ -269,6 +345,18 @@ class WidowXWaypointExpert:
             and goal[2] - 0.01 <= tcp[2] <= goal[2] + z_tol
         )
 
+    def _source_centered_over_target(self) -> bool:
+        source = np.asarray(self.base_env.source_obj_pose.p)
+        target = np.asarray(self.base_env.target_obj_pose.p)
+        source_half = np.abs(self.base_env.episode_source_obj_bbox_world) / 2
+        target_half = np.abs(self.base_env.episode_target_obj_bbox_world) / 2
+        clearance = target_half[:2] - source_half[:2] + 0.005
+        return bool(
+            np.all(clearance >= 0)
+            and np.all(np.abs(source[:2] - target[:2]) <= clearance)
+            and source[2] >= target[2]
+        )
+
     def _source_inside_target(self) -> bool:
         source = np.asarray(self.base_env.source_obj_pose.p)
         target = np.asarray(self.base_env.target_obj_pose.p)
@@ -296,7 +384,7 @@ class WidowXWaypointExpert:
             grasp_source, xy_tol=0.012, z_tol=0.04
         ):
             return False
-        self.hold(gripper_open=0.0, steps=7)
+        self.hold(gripper_open=0.0, steps=12)
 
         if not self.base_env.agent.check_grasp(self.base_env.episode_source_obj):
             return False
@@ -308,6 +396,8 @@ class WidowXWaypointExpert:
         lift_tcp = np.asarray(self.base_env.tcp.pose.p).copy()
         lift_tcp[2] += 0.14
         if not self.move_to(lift_tcp, gripper_open=0.0):
+            return False
+        if not self.base_env.agent.check_grasp(self.base_env.episode_source_obj):
             return False
 
         target = np.asarray(self.base_env.target_obj_pose.p, dtype=np.float64)
@@ -326,11 +416,18 @@ class WidowXWaypointExpert:
         above_target[2] = max(lift_tcp[2], desired_tcp[2] + 0.10)
         if not self.move_to(above_target, gripper_open=0.0):
             return False
+        if not self.base_env.agent.check_grasp(self.base_env.episode_source_obj):
+            return False
         reached_place = self.move_to(
             desired_tcp, gripper_open=0.0, tolerance=0.012
         )
-        if not reached_place and not self._source_inside_target():
-            return False
+        if not reached_place:
+            safely_centered = (
+                spec.relation == "in"
+                and self._source_centered_over_target()
+            )
+            if not safely_centered and not self._source_inside_target():
+                return False
 
         self.hold(gripper_open=1.0, steps=7)
         if not self.recorder.stopped:
@@ -407,7 +504,14 @@ def collect_attempt(
         instruction = base_env.get_language_instruction()
 
         recorder = EpisodeRecorder(env, obs, instruction)
-        expert = WidowXWaypointExpert(recorder)
+        max_translation = (
+            0.020
+            if spec.source_asset == "bridge_carrot_generated_modified"
+            else 0.025
+        )
+        expert = WidowXWaypointExpert(
+            recorder, max_translation=max_translation
+        )
         expert_success = expert.run(spec)
         success = bool(base_env.evaluate().get("success", False)) and expert_success
         arrays = recorder.arrays()
@@ -490,12 +594,19 @@ def main() -> None:
         successes = 0
 
         for attempt in range(args.max_attempts):
-            success, path = collect_attempt(
-                task_name=task_name,
-                seed=args.seed + attempt,
-                output_root=args.output_dir,
-                save_failures=args.save_failures,
-            )
+            try:
+                success, path = collect_attempt(
+                    task_name=task_name,
+                    seed=args.seed + attempt,
+                    output_root=args.output_dir,
+                    save_failures=args.save_failures,
+                )
+            except UnstableLayoutError as exc:
+                success, path = False, None
+                print(
+                    f"task={task_name} attempt={attempt + 1}/"
+                    f"{args.max_attempts} rejected_layout={exc}"
+                )
 
             print(
                 f"task={task_name} attempt={attempt + 1}/{args.max_attempts} "

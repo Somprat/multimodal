@@ -331,11 +331,11 @@ class MoveNearInSceneEnv(CustomSceneEnv):
             target_obj_id
         ]
         self.episode_source_obj_bbox_world = (
-            quat2mat(self.episode_source_obj.pose.q)
+            np.abs(quat2mat(self.episode_source_obj.pose.q))
             @ self.episode_source_obj_bbox_world
         )
         self.episode_target_obj_bbox_world = (
-            quat2mat(self.episode_target_obj.pose.q)
+            np.abs(quat2mat(self.episode_target_obj.pose.q))
             @ self.episode_target_obj_bbox_world
         )
 
