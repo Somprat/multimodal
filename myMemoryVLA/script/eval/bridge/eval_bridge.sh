@@ -82,3 +82,4 @@ for ckpt_path in "${ckpt_paths[@]}"; do
 done
 
 echo "All done!"
+
