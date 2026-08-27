@@ -76,9 +76,17 @@ OXE_DATASET_CONFIGS = {
         "state_encoding": StateEncoding.POS_EULER,
         "action_encoding": ActionEncoding.EEF_POS,
     },
-    "bridge_orig": {  # Original version of Bridge V2 from project website
-        "image_obs_keys": {"primary": "image_0", "secondary": "image_1", "wrist": None},
-        "depth_obs_keys": {"primary": None, "secondary": None, "wrist": None},
+    "bridge_orig": {
+        "image_obs_keys": {
+            "primary": "image_0",
+            "secondary": "image_1",
+            "wrist": None,
+        },
+        "depth_obs_keys": {
+            "primary": None,
+            "secondary": None,
+            "wrist": None,
+        },
         "state_obs_keys": ["EEF_state", None, "gripper_state"],
         "state_encoding": StateEncoding.POS_EULER,
         "action_encoding": ActionEncoding.EEF_POS,
@@ -645,6 +653,23 @@ OXE_DATASET_CONFIGS = {
         "action_encoding": ActionEncoding.EEF_POS,
     },
 
+    "widowx_simpler_rgbd": {
+        "image_obs_keys": {
+            "primary": "image",
+            "secondary": None,
+            "wrist": None,
+        },
+        "depth_obs_keys": {
+            "primary": "depth",
+            "secondary": None,
+            "wrist": None,
+        },
+        "camera_intrinsics_key": "camera_intrinsics",
+        "camera_extrinsics_key": "camera_extrinsics",
+        "state_obs_keys": ["proprio"],
+        "state_encoding": StateEncoding.POS_EULER,
+        "action_encoding": ActionEncoding.EEF_POS,
+    },
 
     ### Custom Finetuning Datasets
     "tiny_maniskill_spatial": {
