@@ -82,9 +82,12 @@ def decode_and_resize(
                 # this is a padding image
                 image = tf.zeros((*resize_size.get(name, (1, 1)), 3), dtype=tf.uint8)
             else:
-                image = tf.io.decode_image(image, expand_animations=False, dtype=tf.uint8)
+                image = tf.io.decode_image(
+                    image, channels=3, expand_animations=False, dtype=tf.uint8
+                )
         elif image.dtype != tf.uint8:
             raise ValueError(f"Unsupported image dtype: found image_{name} with dtype {image.dtype}")
+        image.set_shape([None, None, 3])
         if name == "primary":
             primary_source_hw = tf.cast(tf.shape(image)[:2], tf.float32)
         if name in resize_size:
@@ -103,9 +106,12 @@ def decode_and_resize(
             if tf.strings.length(depth) == 0:
                 depth = tf.zeros((*depth_resize_size.get(name, (1, 1)), 1), dtype=tf.float32)
             else:
-                depth = tf.io.decode_image(depth, expand_animations=False, dtype=tf.float32)[..., 0]
+                depth = tf.io.decode_image(
+                    depth, channels=1, expand_animations=False, dtype=tf.float32
+                )
         elif depth.dtype != tf.float32:
             raise ValueError(f"Unsupported depth dtype: found depth_{name} with dtype {depth.dtype}")
+        depth.set_shape([None, None, 1])
 
         if name in depth_resize_size:
             depth = dl.transforms.resize_depth_image(depth, size=depth_resize_size[name])

@@ -134,6 +134,11 @@ def make_dataset_from_rlds(
         REQUIRED_KEYS.add(language_key)
     if camera_intrinsics_key is not None and camera_intrinsics is not None:
         raise ValueError("Specify camera_intrinsics_key or camera_intrinsics, not both")
+    has_spatial_data = (
+        depth_obs_keys.get("primary") is not None
+        and (camera_intrinsics_key is not None or camera_intrinsics is not None)
+        and camera_extrinsics_key is not None
+    )
 
     def restructure(traj):
         # apply a standardization function, if provided
@@ -189,6 +194,20 @@ def make_dataset_from_rlds(
                     f"{camera_extrinsics_key} must have shape [4, 4] or [T, 4, 4]"
                 )
             new_obs["camera_extrinsics"] = extrinsics
+
+        # TensorFlow requires every dataset in an interleave to have the same
+        # nested element spec. Non-spatial datasets receive stack-only
+        # placeholders and an explicit false marker; downstream code must use
+        # spatial_valid rather than infer validity from key presence.
+        if "camera_intrinsics" not in new_obs:
+            new_obs["camera_intrinsics"] = tf.repeat(
+                tf.eye(3, dtype=tf.float32)[None], traj_len, axis=0
+            )
+        if "camera_extrinsics" not in new_obs:
+            new_obs["camera_extrinsics"] = tf.repeat(
+                tf.eye(4, dtype=tf.float32)[None], traj_len, axis=0
+            )
+        new_obs["spatial_valid"] = tf.fill([traj_len], has_spatial_data)
 
         if state_obs_keys:
             new_obs["proprio"] = tf.concat(
@@ -606,6 +625,9 @@ def make_interleaved_dataset(
             train=train,
         ).flatten(num_parallel_calls=threads)
         dataset = apply_per_dataset_frame_transforms(dataset, **dataset_frame_transform_kwargs)
+        # Decode and resize before interleaving so encoded Bridge images and
+        # already-decoded RGB-D arrays have compatible TensorFlow specs.
+        dataset = apply_frame_transforms(dataset, **frame_transform_kwargs, train=train)
         datasets.append(dataset)
 
     # Interleave at the Frame Level
@@ -619,9 +641,6 @@ def make_interleaved_dataset(
     #   =>> IMPORTANT :: Shuffle AFTER .cache(), or else memory will still leak!
     dataset = dataset.shuffle(shuffle_buffer_size)
 
-    # Apply Frame Transforms
-    overwatch.info("Applying frame transforms on dataset...")
-    dataset = apply_frame_transforms(dataset, **frame_transform_kwargs, train=train)
 
     # [Contract] When training VLA Policies, we let the Collator handle Batching!
     if batch_size is not None:
@@ -775,6 +794,9 @@ def make_interleaved_episodic_dataset(
             )
 
         dataset = apply_per_dataset_frame_transforms(dataset, **dataset_frame_transform_kwargs)
+        # Decode and resize before interleaving so encoded Bridge images and
+        # already-decoded RGB-D arrays have compatible TensorFlow specs.
+        dataset = apply_frame_transforms(dataset, **frame_transform_kwargs, train=train)
         datasets.append(dataset)
 
     # Interleave at the Frame Level
@@ -788,9 +810,6 @@ def make_interleaved_episodic_dataset(
     #   =>> IMPORTANT :: Shuffle AFTER .cache(), or else memory will still leak!
     dataset = dataset.shuffle(shuffle_buffer_size)
 
-    # Apply Frame Transforms
-    overwatch.info("Applying frame transforms on dataset...")
-    dataset = apply_frame_transforms(dataset, **frame_transform_kwargs, train=train)
 
     # [Contract] When training VLA Policies, we let the Collator handle Batching!
     if batch_size is not None:

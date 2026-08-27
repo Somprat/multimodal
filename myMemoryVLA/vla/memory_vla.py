@@ -1436,6 +1436,7 @@ class MemoryVLA(nn.Module):
         camera: Optional[torch.FloatTensor] = None,
         intrinsics: Optional[torch.FloatTensor] = None,
         extrinsics: Optional[torch.FloatTensor] = None,
+        spatial_valid: Optional[torch.BoolTensor] = None,
         input_ids: torch.LongTensor=None,
         attention_mask: Optional[torch.Tensor] = None,
         pixel_values: Optional[torch.FloatTensor] = None,
@@ -1546,42 +1547,59 @@ class MemoryVLA(nn.Module):
                 positions=positions,
             )
 
-            if depth is None or intrinsics is None or extrinsics is None:
-                raise ValueError(
-                    "Full experiment mode requires depth, intrinsics, and extrinsics"
-                )
-
             cog_tokens, per_tokens = self._fuse_episodic_tokens(
                 cog_tokens=cog_tokens,
                 per_tokens=per_tokens,
                 episode_mem_ids=episode_ids,
             )
-            points_camera, valid_masks = geometry.depth_to_points(
-                depth=depth,
-                intrinsics=intrinsics,
-                mask=None,
-                flatten=True,
-            )
-            points_world = geometry.transform_points(
-                points_camera,
-                torch.linalg.inv(extrinsics.float()),
-            )
-            spatial_tokens = self.point_cloud_spatial_encoder(
-                points=points_world,
-                proprio=proprio,
-                camera=camera,
-                point_mask=valid_masks,
-            )
-            per_tokens = self._fuse_spatial_tokens(
-                per_tokens=per_tokens,
-                spatial_tokens=spatial_tokens,
-                episode_ids=episode_ids,
-                timesteps=timesteps,
-                instructions=instructions,
-                retrieval_image_embeddings=retrieval_image_embeddings,
-                retrieval_query_embeddings=retrieval_query_embeddings,
-                positions=positions,
-            )
+            if spatial_valid is None:
+                spatial_valid = torch.ones(
+                    per_tokens.shape[0], device=per_tokens.device, dtype=torch.bool
+                )
+            else:
+                spatial_valid = torch.as_tensor(
+                    spatial_valid, device=per_tokens.device, dtype=torch.bool
+                )
+            if spatial_valid.ndim != 1 or spatial_valid.numel() != per_tokens.shape[0]:
+                raise ValueError("spatial_valid must have shape [batch_size]")
+            valid = spatial_valid.nonzero(as_tuple=True)[0]
+
+            if valid.numel() > 0:
+                if depth is None or intrinsics is None or extrinsics is None:
+                    raise ValueError(
+                        "Spatially valid samples require depth, intrinsics, and extrinsics"
+                    )
+                points_camera, valid_masks = geometry.depth_to_points(
+                    depth=depth[valid],
+                    intrinsics=intrinsics[valid],
+                    mask=None,
+                    flatten=True,
+                )
+                points_world = geometry.transform_points(
+                    points_camera,
+                    torch.linalg.inv(extrinsics[valid].float()),
+                )
+                spatial_tokens = self.point_cloud_spatial_encoder(
+                    points=points_world,
+                    proprio=proprio[valid] if proprio is not None else None,
+                    camera=camera[valid] if camera is not None else None,
+                    point_mask=valid_masks,
+                )
+                valid_cpu = valid.detach().cpu().tolist()
+                fused_valid = self._fuse_spatial_tokens(
+                    per_tokens=per_tokens[valid],
+                    spatial_tokens=spatial_tokens,
+                    episode_ids=[episode_ids[i] for i in valid_cpu],
+                    timesteps=[timesteps[i] for i in valid_cpu],
+                    instructions=[instructions[i] for i in valid_cpu],
+                    retrieval_image_embeddings=retrieval_image_embeddings[valid],
+                    retrieval_query_embeddings=retrieval_query_embeddings[valid],
+                    positions=positions[valid] if positions is not None else None,
+                )
+                fused_valid = fused_valid.to(
+                    device=per_tokens.device, dtype=per_tokens.dtype
+                )
+                per_tokens = per_tokens.index_copy(0, valid, fused_valid)
 
             for i in range(len(episode_ids)):
                 if bool(torch.as_tensor(episode_ends[i].item())):

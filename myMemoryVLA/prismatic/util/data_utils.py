@@ -165,15 +165,36 @@ class PaddedCollatorForActionPrediction:
         # clip model to get the feature embedding
         images = [instance["image"] for instance in instances]
 
+        spatial_valid = torch.tensor(
+            [bool(instance.get("spatial_valid", False)) for instance in instances],
+            dtype=torch.bool,
+        )
+
+        # Pad absent point-cloud inputs only to make mixed batches stackable.
+        # The model ignores these tensors wherever spatial_valid is false.
         optional_modalities = {}
-        for key in ("depth", "proprio", "spatial_features", "intrinsic", "extrinsics"):
+        pointcloud_keys = ("depth", "intrinsic", "extrinsics")
+        for index, (instance, is_valid) in enumerate(zip(instances, spatial_valid.tolist())):
+            if is_valid and any(key not in instance for key in pointcloud_keys):
+                raise ValueError(
+                    f"Sample {index} is spatially valid but is missing a point-cloud modality"
+                )
+        for key in pointcloud_keys:
+            values = [instance.get(key) for instance in instances]
+            reference = next((value for value in values if value is not None), None)
+            if reference is not None:
+                optional_modalities[key] = torch.stack([
+                    value if value is not None else torch.zeros_like(reference)
+                    for value in values
+                ])
+
+        for key in ("proprio", "spatial_features"):
             presence = [key in instance for instance in instances]
             if any(presence) and not all(presence):
                 raise ValueError(f"Optional modality {key!r} is missing from part of the batch")
             if all(presence):
                 optional_modalities[key] = torch.stack([instance[key] for instance in instances])
 
-        pointcloud_keys = ("depth", "intrinsic", "extrinsics")
         present = [key in optional_modalities for key in pointcloud_keys]
 
         if any(present) and not all(present):
@@ -207,6 +228,7 @@ class PaddedCollatorForActionPrediction:
             images = images,
             episode_end=episode_ends,
             episode_success=episode_successes,
+            spatial_valid=spatial_valid,
         )
 
         output.update(optional_modalities)

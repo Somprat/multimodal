@@ -174,6 +174,7 @@ class TrainingStrategy(ABC):
                         proprio=batch.get("proprio"),
                         intrinsics=batch.get("intrinsic"),
                         extrinsics=batch.get("extrinsics"),
+                        spatial_valid=batch["spatial_valid"],
                         camera=batch.get("camera"),
                         action_masks=batch["action_masks"],
                         labels=batch["labels"],

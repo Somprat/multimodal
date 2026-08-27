@@ -153,6 +153,9 @@ dmypy.json
 cache/
 data/
 
+# Training outputs (checkpoints, metrics, and W&B files)
+log/
+
 # Reproducible machine-local evaluation state
 .runtime/
 .venv/

@@ -13,7 +13,11 @@ OXE_NAMED_MIXTURES: Dict[str, List[Tuple[str, float]]] = {
     "bridge_generated_spatial": [
         ("bridge_orig", 1.0),
         ("generated", 2.0)
-    ]
+    ],
+    "bridge_widowx_simpler_rgbd": [
+        ("bridge_orig", 1.0),
+        ("widowx_simpler_rgbd", 2.0),
+    ],
     # === Bridge V2 Dataset ===
     "bridge": [
         # ("bridge_oxe", 1.0),                                    # Version of Bridge V2 in Open-X GCP Bucket

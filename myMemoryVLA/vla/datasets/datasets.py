@@ -131,6 +131,15 @@ class RLDSBatchTransform:
         if extrinsic is not None and extrinsic.shape != (4, 4):
             raise ValueError("camera_extrinsics must have shape [4, 4]")
 
+        # Placeholders make heterogeneous RLDS datasets stackable; this marker
+        # distinguishes real RGB-D calibration from those placeholders.
+        spatial_marker = observation.get("spatial_valid")
+        output["spatial_valid"] = (
+            bool(torch.as_tensor(spatial_marker[0]).item())
+            if spatial_marker is not None
+            else all(value is not None for value in pointcloud_values)
+        )
+
         if depth is not None:
             output["depth"] = depth
         if proprio is not None:
@@ -185,20 +194,19 @@ class RLDSDataset(IterableDataset):
             for dataset_kwargs in per_dataset_kwargs:
                 dataset_name = dataset_kwargs["name"]
                 primary_depth_key = dataset_kwargs.get("depth_obs_keys", {}).get("primary")
-                if primary_depth_key is None:
+                has_intrinsics = (
+                    dataset_kwargs.get("camera_intrinsics_key") is not None
+                    or dataset_kwargs.get("camera_intrinsics") is not None
+                )
+                has_extrinsics = (
+                    dataset_kwargs.get("camera_extrinsics_key") is not None
+                    or dataset_kwargs.get("camera_extrinsics") is not None
+                )
+                configured = (primary_depth_key is not None, has_intrinsics, has_extrinsics)
+                if any(configured) and not all(configured):
                     raise ValueError(
-                        f"{dataset_name} has no primary depth key configured for point-cloud training"
-                    )
-                if (
-                    dataset_kwargs.get("camera_intrinsics_key") is None
-                    and dataset_kwargs.get("camera_intrinsics") is None
-                ):
-                    raise ValueError(
-                        f"{dataset_name} must configure camera_intrinsics_key or a static camera_intrinsics matrix"
-                    )
-                if dataset_kwargs.get("camera_extrinsics_key") is None:
-                    raise ValueError(
-                        f"{dataset_name} must configure camera_extrinsics_key for world-frame point-cloud training"
+                        f"{dataset_name} must configure depth, intrinsics, and extrinsics together "
+                        "for point-cloud training"
                     )
         rlds_config = dict(
             traj_transform_kwargs=dict(
@@ -215,7 +223,7 @@ class RLDSDataset(IterableDataset):
             dataset_kwargs_list=per_dataset_kwargs,
             shuffle_buffer_size=shuffle_buffer_size,
             sample_weights=weights,
-            balance_weights=True,
+            balance_weights=False,
             traj_transform_threads=len(mixture_spec),
             traj_read_threads=len(mixture_spec),
             train=train,
