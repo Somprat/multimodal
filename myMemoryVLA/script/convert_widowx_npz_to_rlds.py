@@ -7,6 +7,7 @@ from pathlib import Path
 import numpy as np
 import torch
 import tensorflow_datasets as tfds
+from tensorflow_datasets.core import dataset_metadata
 
 
 NPZ_DIR = os.environ.get("WIDOWX_NPZ_DIR", "datasets/widowx_simpler_npz")
@@ -28,11 +29,17 @@ class RLDS:
 
 
 def find_npz_paths(npz_dir: str = NPZ_DIR) -> list[Path]:
-    npz_paths = sorted(Path(npz_dir).glob("*/success/*.npz"))
+    root = Path(npz_dir)
+    if root.name == "success":
+        pattern = "*.npz"
+    elif (root / "success").is_dir():
+        pattern = "success/*.npz"
+    else:
+        pattern = "*/success/*.npz"
+
+    npz_paths = sorted(root.glob(pattern))
     if not npz_paths:
-        raise FileNotFoundError(
-            f"No files found under {npz_dir}/*/success/*.npz"
-        )
+        raise FileNotFoundError(f"No successful NPZ files found under {root}")
     return npz_paths
 
 
@@ -90,6 +97,15 @@ class WidowxSimplerRgbd(tfds.core.GeneratorBasedBuilder):
 
     VERSION = tfds.core.Version("1.0.0")
 
+    @classmethod
+    def get_metadata(cls) -> dataset_metadata.DatasetMetadata:
+        """Provide metadata directly because this builder can run as __main__."""
+        return dataset_metadata.DatasetMetadata(
+            description=cls.__doc__ or "",
+            citation="",
+            tags=[],
+        )
+
     def __init__(self, npz_dir: str = NPZ_DIR, **kwargs):
         self.npz_paths = find_npz_paths(npz_dir)
         first_episode = load_episode(self.npz_paths[0])
@@ -137,6 +153,7 @@ class WidowxSimplerRgbd(tfds.core.GeneratorBasedBuilder):
         return {"train": self._generate_examples()}
 
     def _generate_examples(self):
+        episode_counts = 0
         for npz_path in self.npz_paths:
             episode = load_episode(npz_path)
             task = npz_path.parent.parent.name
@@ -168,6 +185,7 @@ class WidowxSimplerRgbd(tfds.core.GeneratorBasedBuilder):
                     "source": str(npz_path),
                 },
             }
+            print(f"{episode_count}/{len(self.npz_paths)} done")
 
 
 def write_rlds(

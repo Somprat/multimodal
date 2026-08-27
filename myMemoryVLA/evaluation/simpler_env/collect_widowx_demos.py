@@ -196,14 +196,6 @@ def _randomize_training_layout(
     )
     base_env._initialize_episode_stats()
 
-    print(
-        "Settled positions:",
-        "source=", actual_source,
-        "target=", actual_target,
-        "source_drift=", source_drift,
-        "target_drift=", target_drift,
-    )
-
     return {
         "source_xy": np.asarray(base_env.source_obj_pose.p[:2]).tolist(),
         "target_xy": np.asarray(base_env.target_obj_pose.p[:2]).tolist(),
@@ -373,6 +365,7 @@ class WidowXWaypointExpert:
     def run(self, spec: TrainTask) -> bool:
         source = np.asarray(self.base_env.source_obj_pose.p, dtype=np.float64)
         approach_source = source + np.array([0.0, 0.0, 0.12])
+
         grasp_source = source + np.array([0.0, 0.0, spec.grasp_z_offset])
 
         if not self.move_to(approach_source, gripper_open=1.0):

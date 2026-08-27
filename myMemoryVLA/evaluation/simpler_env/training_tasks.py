@@ -82,7 +82,7 @@ TRAINING_TASKS = {
         target_y_range=(-0.085, 0.085),
 
         min_object_separation=0.10,
-        grasp_z_offset=0.0,
+        grasp_z_offset=0.005,
         placement_clearance=0.008,
     )
     }

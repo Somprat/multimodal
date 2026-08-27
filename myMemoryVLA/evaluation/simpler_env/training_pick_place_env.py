@@ -87,6 +87,7 @@ class WidowXTrainingPickPlaceEnv(PutOnInSceneEnv, CustomBridgeObjectsInSceneEnv)
         inside_xy = fits_target and bool(np.all(offset[:2] <= xy_clearance))
         inside_z = bool(offset[2] + source_half[2] <= target_half[2] + 0.02)
         is_grasped = bool(self.agent.check_grasp(self.episode_source_obj))
+        # for the "in" task, it needs the robot to not be gripping the object
         success = inside_xy and inside_z and not is_grasped
 
         moved_correct_obj = bool(
@@ -95,6 +96,7 @@ class WidowXTrainingPickPlaceEnv(PutOnInSceneEnv, CustomBridgeObjectsInSceneEnv)
             )
             > 0.03
         )
+
         moved_wrong_obj = bool(
             np.linalg.norm(
                 self.episode_target_obj_xyz_after_settle[:2] - target_pos[:2]
