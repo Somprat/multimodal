@@ -53,11 +53,11 @@ TRAINING_TASKS = {
         grasp_z_offset=0.0,
         placement_clearance=0.015,
     ),
-    "green_cube_on_yellow_cube": TrainTask(
-        source_asset="green_cube_3cm",
-        target_asset="yellow_cube_3cm",
+    "yellow_cube_on_green_cube": TrainTask(
+        source_asset="yellow_cube_3cm",
+        target_asset="green_cube_3cm",
         relation="on",
-        instruction="stack the green cube on the yellow cube",
+        instruction="stack the yellow cube on the green cube",
 
         source_x_range=(-0.245, -0.075),
         source_y_range=(-0.085, 0.085),

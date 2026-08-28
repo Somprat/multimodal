@@ -1211,8 +1211,13 @@ class MemoryVLA(nn.Module):
             self.vlm.requires_grad_(False)
             self.vlm.eval()
             self.vlm.trainable_module_keys = []
+            # Freeze the learned paper PCMB path together with its VLM source.
+            # Spatial memory/fusion and episodic modules remain trainable.
+            self.cog_mem_bank.requires_grad_(False)
+            self.per_mem_bank.requires_grad_(False)
+
+        self.action_model.requires_grad_(not self.freeze_action_model)
         if self.freeze_action_model:
-            self.action_model.requires_grad_(False)
             self.action_model.eval()
         self._refresh_trainable_module_keys()
 

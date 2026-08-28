@@ -33,6 +33,12 @@ dp_step=4
 future_action_window_size=15
 
 image_aug=True
+freeze_action_model="${FREEZE_ACTION_MODEL:-false}"
+if [[ "${freeze_action_model}" != "true" && "${freeze_action_model}" != "false" ]]; then
+  echo "FREEZE_ACTION_MODEL must be true or false, got: ${freeze_action_model}" >&2
+  exit 1
+fi
+
 run_root_dir='./log/bridge_generated'
 run_id='memvla_bridge_generated_spatial'
 
@@ -67,4 +73,4 @@ CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 \
   --vla.shuffle_buffer_size ${shuffle_buffer_size} \
   --experiment_mode full \
   --freeze_vlm true \
-  --freeze_action_model false
+  --freeze_action_model "${freeze_action_model}"
