@@ -223,6 +223,7 @@ class EpisodeRecorder:
             "action": [],
             "commanded_action": [],
             "is_grasping": [],
+            "gripper_open_state": [],
         }
 
     @property
@@ -258,13 +259,29 @@ class EpisodeRecorder:
         self.frames["is_grasping"].append(
             bool(self.base_env.agent.check_grasp(self.base_env.episode_source_obj))
         )
+        gripper_open_state = 1.0 - np.clip(
+            float(self.base_env.agent.get_gripper_closedness()),
+            0.0,
+            1.0,
+        )
+
+        self.frames["gripper_open_state"].append(
+            np.asarray([gripper_open_state], dtype=np.float32)
+        )
 
         self.obs, _, self.terminated, self.truncated, self.last_info = self.env.step(
             commanded_action.astype(np.float32)
         )
 
+
         state_after = _pose_in_robot_base(self.base_env, self.base_env.tcp.pose)
-        reached_delta = _wrap_angle_delta(state_after - state_before)
+
+        translation_delta = state_after[:3] - state_before[:3]
+        rotation_delta = np.zeros(3, dtype=np.float32)
+
+        reached_delta = np.concatenate(
+            [translation_delta, rotation_delta]
+        )
         self.frames["action"].append(
             np.concatenate([reached_delta, [gripper_open]]).astype(np.float32)
         )

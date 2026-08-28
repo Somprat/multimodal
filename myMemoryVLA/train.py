@@ -75,7 +75,7 @@ class TrainConfig:
     retrieval_layers: int = 2 # Number of layers of memory retrieval
     query_retrieval_mode: str = "by_modal" # One of: off, query, shuffled, by_modal
     query_retrieval_top_k: int = 4 # Historical cognition records selected per query
-    experiment_mode: str = "full" # One of: baseline, full
+    experiment_mode: str = "full" # One of: baseline, query_episodic, full
     freeze_vlm: bool = True # Recompute VLM features without updating PrismaticVLM
     freeze_action_model: bool = False # Keep False for matched ManiSkill adaptation
     use_timestep_pe: bool = True # Whether to use timestep positional encoding
@@ -121,6 +121,19 @@ class TrainConfig:
 @draccus.wrap()
 def train(cfg: TrainConfig) -> None:
     overwatch.info("MemoryVLA Training :: Warming Up")
+
+    valid_experiment_modes = {"baseline", "query_episodic", "full"}
+    if cfg.experiment_mode not in valid_experiment_modes:
+        raise ValueError(
+            "experiment_mode must be one of "
+            f"{sorted(valid_experiment_modes)}, got {cfg.experiment_mode!r}"
+        )
+
+    # RGB-only modes must not ask the RLDS pipeline for calibrated spatial data.
+    # Keep the user switches as opt-outs for full mode.
+    use_spatial = cfg.experiment_mode == "full"
+    cfg.load_depth = use_spatial and cfg.load_depth
+    cfg.use_spatial_features = use_spatial and cfg.use_spatial_features
 
     # Note => Under `torchrun` initializing `overwatch` will automatically set up `torch.distributed`
     torch.cuda.set_device(device_id := overwatch.local_rank())
@@ -218,6 +231,7 @@ def train(cfg: TrainConfig) -> None:
         "Training scope =>> "
         f"experiment_mode={cfg.experiment_mode}, freeze_vlm={cfg.freeze_vlm}, "
         f"freeze_action_model={cfg.freeze_action_model}, "
+        f"load_depth={cfg.load_depth}, "
         f"trainable_modules={vla.trainable_module_keys}"
     )
 

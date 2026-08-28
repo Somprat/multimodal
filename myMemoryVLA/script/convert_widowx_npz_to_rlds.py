@@ -58,7 +58,7 @@ def load_episode(npz_path: Path) -> list[RLDS]:
                 (
                     episode["proprio"][t],
                     np.zeros(1, dtype=np.float32),
-                    action[t, -1:],
+                    episode["gripper_open_state"][t],
                 )
             ).astype(np.float32)
 
@@ -95,7 +95,7 @@ def load_episodes(npz_dir: str = NPZ_DIR) -> list[list[RLDS]]:
 class WidowxSimplerRgbd(tfds.core.GeneratorBasedBuilder):
     """Write the in-memory RLDS records using TensorFlow Datasets."""
 
-    VERSION = tfds.core.Version("1.0.0")
+    VERSION = tfds.core.Version("2.0.0")
 
     @classmethod
     def get_metadata(cls) -> dataset_metadata.DatasetMetadata:
@@ -153,7 +153,7 @@ class WidowxSimplerRgbd(tfds.core.GeneratorBasedBuilder):
         return {"train": self._generate_examples()}
 
     def _generate_examples(self):
-        episode_counts = 0
+        episode_count = 0
         for npz_path in self.npz_paths:
             episode = load_episode(npz_path)
             task = npz_path.parent.parent.name
@@ -177,6 +177,7 @@ class WidowxSimplerRgbd(tfds.core.GeneratorBasedBuilder):
                         "is_terminal": step.is_terminal,
                     }
                 )
+            episode_count += 1
 
             yield episode_id, {
                 "steps": steps,

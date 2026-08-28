@@ -117,37 +117,36 @@ class RLDSBatchTransform:
         if "camera_extrinsics" in observation:
             extrinsic = torch.tensor(observation["camera_extrinsics"][0], dtype=torch.float32)
 
-        pointcloud_values = (depth, intrinsic, extrinsic)
-        if any(value is not None for value in pointcloud_values) and not all(
-            value is not None for value in pointcloud_values
-        ):
-            raise ValueError(
-                "Point-cloud training samples must provide depth_primary, camera_intrinsics, and camera_extrinsics"
-            )
-        if intrinsic is not None and intrinsic.shape != (3, 3):
-            raise ValueError(
-                f"camera_intrinsics must have shape [3, 3], got {tuple(intrinsic.shape)}"
-            )
-        if extrinsic is not None and extrinsic.shape != (4, 4):
-            raise ValueError("camera_extrinsics must have shape [4, 4]")
-
-        # Placeholders make heterogeneous RLDS datasets stackable; this marker
-        # distinguishes real RGB-D calibration from those placeholders.
+        # RLDS interleaving inserts identity calibration placeholders for
+        # non-spatial datasets. Trust the explicit marker and do not expose
+        # those placeholders to RGB-only modes.
         spatial_marker = observation.get("spatial_valid")
-        output["spatial_valid"] = (
+        pointcloud_values = (depth, intrinsic, extrinsic)
+        spatial_valid = (
             bool(torch.as_tensor(spatial_marker[0]).item())
             if spatial_marker is not None
             else all(value is not None for value in pointcloud_values)
         )
+        if spatial_valid and not all(value is not None for value in pointcloud_values):
+            raise ValueError(
+                "Point-cloud training samples must provide depth_primary, camera_intrinsics, and camera_extrinsics"
+            )
+        if spatial_valid and intrinsic.shape != (3, 3):
+            raise ValueError(
+                f"camera_intrinsics must have shape [3, 3], got {tuple(intrinsic.shape)}"
+            )
+        if spatial_valid and extrinsic.shape != (4, 4):
+            raise ValueError("camera_extrinsics must have shape [4, 4]")
 
-        if depth is not None:
+        output["spatial_valid"] = spatial_valid
+
+        if spatial_valid:
             output["depth"] = depth
         if proprio is not None:
             output["proprio"] = proprio
 
-        if intrinsic is not None:
+        if spatial_valid:
             output["intrinsic"] = intrinsic
-        if extrinsic is not None:
             output["extrinsics"] = extrinsic
 
         return  output

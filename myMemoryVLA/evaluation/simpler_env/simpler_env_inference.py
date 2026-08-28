@@ -44,11 +44,11 @@ def parse_local_args(argv):
     )
     parser.add_argument(
         "--experiment-mode",
-        choices=("baseline", "full"),
+        choices=("baseline", "query_episodic", "full"),
         default="full",
         help=(
-            "Evaluate the paper PCMB baseline (without the new spatial and "
-            "cross-episode extensions) or the full system."
+            "Evaluate the paper PCMB baseline, query/episodic memory without "
+            "spatial inputs, or the full system."
         ),
     )
     return parser.parse_known_args(argv)

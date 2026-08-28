@@ -36,8 +36,8 @@ shuffle_buffer_size="${SHUFFLE_BUFFER_SIZE:-4096}"
 cuda_devices="${CUDA_VISIBLE_DEVICES:-0}"
 dry_run="${DRY_RUN:-false}"
 
-if [[ "${experiment_mode}" != "baseline" && "${experiment_mode}" != "full" ]]; then
-    echo "EXPERIMENT_MODE must be baseline or full, got: ${experiment_mode}" >&2
+if [[ "${experiment_mode}" != "baseline" && "${experiment_mode}" != "query_episodic" && "${experiment_mode}" != "full" ]]; then
+    echo "EXPERIMENT_MODE must be baseline, query_episodic, or full, got: ${experiment_mode}" >&2
     exit 1
 fi
 

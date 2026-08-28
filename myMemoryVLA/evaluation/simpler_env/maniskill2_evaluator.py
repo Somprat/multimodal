@@ -26,6 +26,31 @@ def _validate_probe_frames(frames):
         raise ValueError("Cannot save an empty probe episode")
 
 
+def _get_policy_observation(env, obs, camera_name, use_spatial):
+    if use_spatial:
+        return get_image_depth_intrinsics_from_maniskill2_obs_dict(
+            env, obs, camera_name=camera_name
+        )
+
+    if camera_name is None:
+        if "google_robot" in env.robot_uid:
+            camera_name = "overhead_camera"
+        elif "widowx" in env.robot_uid:
+            camera_name = "3rd_view_camera"
+        else:
+            raise NotImplementedError()
+    camera_observation = obs["image"][camera_name]
+    if "rgb" in camera_observation:
+        image = camera_observation["rgb"]
+    else:
+        # The native `image` observation mode exposes normalized RGBA under
+        # `Color`; avoid the RGB-D wrapper entirely for RGB-only experiments.
+        image = np.clip(camera_observation["Color"][..., :3] * 255, 0, 255).astype(
+            np.uint8
+        )
+    return image, None, None, None
+
+
 def run_maniskill2_eval_single_episode(
     model,
     ckpt_path,
@@ -75,8 +100,9 @@ def run_maniskill2_eval_single_episode(
         additional_env_build_kwargs = {}
 
     # Create environment
+    use_spatial = getattr(model, "experiment_mode", "full") == "full"
     kwargs = dict(
-        obs_mode="rgbd",
+        obs_mode="rgbd" if use_spatial else "image",
         robot=robot_name,
         sim_freq=sim_freq,
         control_mode=control_mode,
@@ -129,11 +155,10 @@ def run_maniskill2_eval_single_episode(
     print(task_description)
 
     # Initialize logging
-    image, depth, intrinsic, extrinsic = get_image_depth_intrinsics_from_maniskill2_obs_dict(env, obs, camera_name=obs_camera_name)
+    image, depth, intrinsic, extrinsic = _get_policy_observation(
+        env, obs, obs_camera_name, use_spatial
+    )
     images = [image]
-    depths = [depth]
-    intrinsics = [intrinsic]
-    extrinsics = [extrinsic]
     predicted_actions = []
     predicted_terminated, done, truncated = False, False, False
 
@@ -147,9 +172,6 @@ def run_maniskill2_eval_single_episode(
     # Step the environment
     frames = {
         "rgb": [],
-        "depth": [],
-        "camera_intrinsics": [],
-        "camera_extrinsics": [],
         "gripper_xyz": [],
         "object_xyz": [],
         "target_xyz": [],
@@ -157,6 +179,12 @@ def run_maniskill2_eval_single_episode(
         "instruction": [],
         "action": [],
     }
+    if use_spatial:
+        frames.update({
+            "depth": [],
+            "camera_intrinsics": [],
+            "camera_extrinsics": [],
+        })
     base_env = env.unwrapped
     while not (predicted_terminated or truncated):
         # step the model; "raw_action" is raw model action output; "action" is the processed action to be sent into maniskill env
@@ -169,9 +197,10 @@ def run_maniskill2_eval_single_episode(
         # Pair the observation consumed by the policy with its predicted action.
         # Logging after env.step() shifts observations by one timestep.
         frames["rgb"].append(_to_numpy(image))
-        frames["depth"].append(_to_numpy(depth))
-        frames["camera_intrinsics"].append(_to_numpy(intrinsic))
-        frames["camera_extrinsics"].append(_to_numpy(extrinsic))
+        if use_spatial:
+            frames["depth"].append(_to_numpy(depth))
+            frames["camera_intrinsics"].append(_to_numpy(intrinsic))
+            frames["camera_extrinsics"].append(_to_numpy(extrinsic))
         frames["gripper_xyz"].append(_to_numpy(base_env.tcp.pose.p))
         frames["object_xyz"].append(_to_numpy(base_env.source_obj_pose.p))
         frames["target_xyz"].append(_to_numpy(base_env.target_obj_pose.p))
@@ -213,11 +242,10 @@ def run_maniskill2_eval_single_episode(
 
 
 
-        image, depth, intrinsic, extrinsic = get_image_depth_intrinsics_from_maniskill2_obs_dict(env, obs, camera_name=obs_camera_name)
+        image, depth, intrinsic, extrinsic = _get_policy_observation(
+            env, obs, obs_camera_name, use_spatial
+        )
         images.append(image)
-        depths.append(depth)
-        intrinsics.append(intrinsic)
-        extrinsics.append(extrinsic)
         timestep += 1
     model.finish_episode(success=bool(done))
 
@@ -231,12 +259,8 @@ def run_maniskill2_eval_single_episode(
     output_path = os.path.join(output_dir, f"{env_name}_{episode_tag}.npz")
 
     _validate_probe_frames(frames)
-    np.savez_compressed(
-        output_path,
+    probe_arrays = dict(
         rgb=np.stack(frames["rgb"]).astype(np.uint8),
-        depth=np.stack(frames["depth"]).astype(np.float32),
-        camera_intrinsics = np.stack(frames["camera_intrinsics"]),
-        camera_extrinsics = np.stack(frames["camera_extrinsics"]),
         gripper_xyz = np.stack(frames["gripper_xyz"]),
         object_xyz = np.stack(frames["object_xyz"]),
         target_xyz = np.stack(frames["target_xyz"]),
@@ -246,6 +270,13 @@ def run_maniskill2_eval_single_episode(
         timestep=np.arange(len(frames["rgb"]), dtype=np.int32),
         episode_success=np.asarray(bool(done)),
     )
+    if use_spatial:
+        probe_arrays.update(
+            depth=np.stack(frames["depth"]).astype(np.float32),
+            camera_intrinsics=np.stack(frames["camera_intrinsics"]),
+            camera_extrinsics=np.stack(frames["camera_extrinsics"]),
+        )
+    np.savez_compressed(output_path, **probe_arrays)
     
 
 

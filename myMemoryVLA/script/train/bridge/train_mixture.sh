@@ -10,11 +10,24 @@ if [[ ! -x "${python_bin}" ]]; then
   exit 1
 fi
 
-pretrained_ckpt='../models/model_b/checkpoints/memvla-bridge.pt'
-hf_token='YOUR_HF_TOKEN'
+pretrained_ckpt="${PRETRAINED_CKPT:-../models/model_b/checkpoints/memvla-bridge.pt}"
+hf_token="${HF_TOKEN:-YOUR_HF_TOKEN}"
 
-data_root_dir='./data/bridge-rlds'
-data_mix='bridge_widowx_simpler_rgbd'
+data_root_dir="${DATA_ROOT_DIR:-./data/bridge-rlds}"
+experiment_mode="${EXPERIMENT_MODE:-query_episodic}"
+
+if [[ "${experiment_mode}" != "baseline" && "${experiment_mode}" != "query_episodic" && "${experiment_mode}" != "full" ]]; then
+  echo "EXPERIMENT_MODE must be baseline, query_episodic, or full, got: ${experiment_mode}" >&2
+  exit 1
+fi
+
+if [[ -n "${DATA_MIX:-}" ]]; then
+  data_mix="${DATA_MIX}"
+elif [[ "${experiment_mode}" == "full" ]]; then
+  data_mix='bridge_widowx_simpler_rgbd'
+else
+  data_mix='bridge'
+fi
 
 n_gpu=1
 
@@ -34,7 +47,7 @@ future_action_window_size=15
 
 image_aug=True
 run_root_dir='./log/bridge_generated'
-run_id='memvla_bridge_generated_spatial'
+run_id="${RUN_ID:-memvla_bridge_${experiment_mode}}"
 
 is_resume=False
 resume_step=0
@@ -65,6 +78,6 @@ CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 \
   --trackers '[jsonl]' \
   --hf_token ${hf_token} \
   --vla.shuffle_buffer_size ${shuffle_buffer_size} \
-  --experiment_mode full \
+  --experiment_mode "${experiment_mode}" \
   --freeze_vlm true \
   --freeze_action_model false

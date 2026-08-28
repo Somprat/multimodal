@@ -25,8 +25,8 @@ experiment_mode="${EXPERIMENT_MODE:-full}"
 episode_start="${EPISODE_START:-0}"
 episode_end="${EPISODE_END:-24}"
 
-if [[ "${experiment_mode}" != "baseline" && "${experiment_mode}" != "full" ]]; then
-    echo "EXPERIMENT_MODE must be baseline or full, got: ${experiment_mode}" >&2
+if [[ "${experiment_mode}" != "baseline" && "${experiment_mode}" != "query_episodic" && "${experiment_mode}" != "full" ]]; then
+    echo "EXPERIMENT_MODE must be baseline, query_episodic, or full, got: ${experiment_mode}" >&2
     exit 1
 fi
 

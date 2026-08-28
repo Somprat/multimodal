@@ -67,11 +67,13 @@ class VLAInference:
             )
         self.policy_setup = policy_setup
         self.unnorm_key = unnorm_key
-        if experiment_mode not in {"baseline", "full"}:
+        if experiment_mode not in {"baseline", "query_episodic", "full"}:
             raise ValueError(
-                f"Unsupported experiment_mode={experiment_mode!r}; expected 'baseline' or 'full'."
+                "Unsupported experiment_mode="
+                f"{experiment_mode!r}; expected 'baseline', 'query_episodic', or 'full'."
             )
         self.experiment_mode = experiment_mode
+        self.use_spatial = experiment_mode == "full"
 
         print(
             f"*** policy_setup: {policy_setup}, unnorm_key: {unnorm_key}, "
@@ -188,7 +190,7 @@ class VLAInference:
                 self.reset(task_description)
 
         assert image.dtype == np.uint8
-        if self.experiment_mode == "full":
+        if self.use_spatial:
             if depth is None:
                 raise ValueError("pointcloud mode requires depth")
             if intrinsic is None:
@@ -196,13 +198,14 @@ class VLAInference:
             if extrinsic is None:
                 raise ValueError("pointcloud mode requires camera extrinsics")
         self._add_image_to_history(self._resize_image(image))
-        self._add_depth_to_history(depth)
-        self._add_intrinsic_to_history(intrinsic)
-        self._add_extrinsic_to_history(extrinsic)
+        if self.use_spatial:
+            self._add_depth_to_history(depth)
+            self._add_intrinsic_to_history(intrinsic)
+            self._add_extrinsic_to_history(extrinsic)
         image: Image.Image = Image.fromarray(image)
         spatial_inputs = (
             {"depth": depth, "intrinsics": intrinsic, "extrinsics": extrinsic}
-            if self.experiment_mode == "full"
+            if self.use_spatial
             else {}
         )
         raw_actions, normalized_actions = self.vla.predict_action(
