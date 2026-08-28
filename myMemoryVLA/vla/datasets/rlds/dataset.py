@@ -514,6 +514,18 @@ def make_single_dataset(
 
 
 # === Core Initializer ===
+def _share_bridge_action_statistics(all_dataset_statistics: Dict[str, Dict]) -> None:
+    """Normalize generated WidowX actions with the Bridge physical bounds."""
+    source_key = "bridge_orig"
+    target_key = "widowx_simpler_rgbd"
+    if source_key not in all_dataset_statistics or target_key not in all_dataset_statistics:
+        return
+
+    all_dataset_statistics[target_key]["action"] = copy.deepcopy(
+        all_dataset_statistics[source_key]["action"]
+    )
+
+
 def make_interleaved_dataset(
     dataset_kwargs_list: List[Dict],
     sample_weights: Optional[List[float]] = None,
@@ -575,6 +587,8 @@ def make_interleaved_dataset(
         )
         dataset_sizes.append(dataset_statistics["num_transitions"])
         all_dataset_statistics[dataset_kwargs["name"]] = dataset_statistics
+
+    _share_bridge_action_statistics(all_dataset_statistics)
 
     # Get the indices of the "primary" datasets (i.e., datasets with sample_weight == 1.0)
     primary_dataset_indices = np.array([idx for idx in range(len(sample_weights)) if sample_weights[idx] == 1.0])
@@ -718,6 +732,8 @@ def make_interleaved_episodic_dataset(
         )
         dataset_sizes.append(dataset_statistics["num_transitions"])
         all_dataset_statistics[dataset_kwargs["name"]] = dataset_statistics
+
+    _share_bridge_action_statistics(all_dataset_statistics)
 
     # Get the indices of the "primary" datasets (i.e., datasets with sample_weight == 1.0)
     primary_dataset_indices = np.array([idx for idx in range(len(sample_weights)) if sample_weights[idx] == 1.0])

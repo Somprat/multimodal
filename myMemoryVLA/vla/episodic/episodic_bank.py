@@ -34,7 +34,7 @@ class BankEntry:
 
 
 
-class EpisodicMemBank:
+class EpisodicMemBank(nn.Module):
     def __init__(self, max_steps: int = 5,
                  kick_method: str = "fifo",
                  top_k: int = 4,
@@ -52,6 +52,7 @@ class EpisodicMemBank:
                  query_retrieval_top_k: int = 4
                  
                  ):
+        super().__init__()
         self.max_steps = max_steps
         self.kick_method = kick_method
         self.top_k = top_k

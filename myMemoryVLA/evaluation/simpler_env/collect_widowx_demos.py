@@ -15,6 +15,11 @@ from __future__ import annotations
 import argparse
 import json
 import os
+
+# Keep Vulkan device selection deterministic in headless GPU containers.
+# SAPIEN will still select the CUDA-visible GPU explicitly in _make_env().
+os.environ.setdefault("NODEVICE_SELECT", "1")
+os.environ.setdefault("DISPLAY", "")
 from pathlib import Path
 from typing import Any
 
@@ -217,6 +222,7 @@ class EpisodeRecorder:
             "camera_intrinsics": [],
             "camera_extrinsics": [],
             "proprio": [],
+            "gripper_open_state": [],
             "tcp_pose_world": [],
             "source_pose_world": [],
             "target_pose_world": [],
@@ -240,12 +246,21 @@ class EpisodeRecorder:
             )
         )
         state_before = _pose_in_robot_base(self.base_env, self.base_env.tcp.pose)
+        gripper_open_state = np.float32(
+            1.0
+            - np.clip(
+                float(self.base_env.agent.get_gripper_closedness()),
+                0.0,
+                1.0,
+            )
+        )
 
         self.frames["rgb"].append(_to_numpy(image).astype(np.uint8))
         self.frames["depth"].append(_to_numpy(depth).astype(np.float32))
         self.frames["camera_intrinsics"].append(_to_numpy(intrinsic).astype(np.float32))
         self.frames["camera_extrinsics"].append(_to_numpy(extrinsic).astype(np.float32))
         self.frames["proprio"].append(state_before)
+        self.frames["gripper_open_state"].append(gripper_open_state)
         self.frames["tcp_pose_world"].append(
             np.concatenate([self.base_env.tcp.pose.p, self.base_env.tcp.pose.q]).astype(np.float32)
         )
@@ -464,6 +479,26 @@ def _validate_episode(arrays: dict[str, np.ndarray]) -> None:
         raise ValueError("Expected 6D POS_EULER proprio and 7D EEF_POS action")
     if arrays["commanded_action"].shape[-1] != 7:
         raise ValueError("Expected a 7D SimplerEnv command")
+    if arrays["gripper_open_state"].shape != (len(arrays["action"]),):
+        raise ValueError("gripper_open_state must have shape [T]")
+    if not np.all(
+        (arrays["gripper_open_state"] >= 0.0)
+        & (arrays["gripper_open_state"] <= 1.0)
+    ):
+        raise ValueError("gripper_open_state must be in [0, 1]")
+    if not np.all(np.isfinite(arrays["action"])):
+        raise ValueError("Actions must be finite")
+    if not np.allclose(arrays["action"][:, 3:6], 0.0):
+        raise ValueError("Fixed-wrist expert must have zero rotation labels")
+
+    translation_norms = np.linalg.norm(arrays["action"][:, :3], axis=1)
+    invalid_steps = np.flatnonzero(translation_norms > 0.05)
+    if invalid_steps.size:
+        step = int(invalid_steps[0])
+        raise ValueError(
+            f"Implausible reached translation at step {step}: "
+            f"{arrays['action'][step, :3]} (norm={translation_norms[step]:.6f} m)"
+        )
 
 
 def _make_env(task):
@@ -479,6 +514,10 @@ def _make_env(task):
         scene_name="bridge_table_1_v1",
         control_freq=5,
         sim_freq=500,
+        renderer_kwargs={
+            "offscreen_only": True,
+            "device": os.environ.get("SAPIEN_RENDER_DEVICE", "cuda"),
+        },
         camera_cfgs={"add_segmentation": True},
         rgb_overlay_path=None,
     )

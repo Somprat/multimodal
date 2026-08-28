@@ -50,6 +50,13 @@ def load_episode(npz_path: Path) -> list[RLDS]:
     with np.load(npz_path, allow_pickle=False) as episode:
         action = episode["expert_action"]
         episode_length = action.shape[0]
+        if "gripper_open_state" not in episode:
+            raise ValueError(
+                f"{npz_path} has no measured gripper_open_state; "
+                "regenerate it with the v2 collector"
+            )
+        if episode["gripper_open_state"].shape != (episode_length,):
+            raise ValueError(f"{npz_path} has invalid gripper_open_state shape")
         instruction = str(episode["instruction"].item())
 
         each_episode = []
@@ -58,7 +65,14 @@ def load_episode(npz_path: Path) -> list[RLDS]:
                 (
                     episode["proprio"][t],
                     np.zeros(1, dtype=np.float32),
+<<<<<<< HEAD
                     episode["gripper_open_state"][t],
+=======
+                    np.asarray(
+                        episode["gripper_open_state"][t],
+                        dtype=np.float32,
+                    ).reshape(1),
+>>>>>>> ccb727ccab90af21ea0b06d3b613db5848954183
                 )
             ).astype(np.float32)
 
@@ -153,8 +167,12 @@ class WidowxSimplerRgbd(tfds.core.GeneratorBasedBuilder):
         return {"train": self._generate_examples()}
 
     def _generate_examples(self):
+<<<<<<< HEAD
         episode_count = 0
         for npz_path in self.npz_paths:
+=======
+        for episode_count, npz_path in enumerate(self.npz_paths, start=1):
+>>>>>>> ccb727ccab90af21ea0b06d3b613db5848954183
             episode = load_episode(npz_path)
             task = npz_path.parent.parent.name
             episode_id = f"{task}_{npz_path.stem}"

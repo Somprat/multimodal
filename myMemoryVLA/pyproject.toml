@@ -43,6 +43,7 @@ dependencies = [
     "protobuf",
     "rich",
     "sentencepiece==0.1.99",
+    "setuptools==70.3.0",  # SAPIEN 2.2.2 imports the legacy pkg_resources module
     "timm==0.9.10",
     "tokenizers==0.19.1",
     "transformers==4.40.1",
