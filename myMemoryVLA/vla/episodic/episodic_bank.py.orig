@@ -231,7 +231,6 @@ class EpisodicMemBank(nn.Module):
             images=list(initial_frame),
             return_tensors="pt",
         )
-        image_inputs = self._to_clip_device(image_inputs)
         current_embedding = self.clip_model.get_image_features(**image_inputs).float().detach().flatten()
 
         episode_embedding = memory_unit.scene_embedding.float().detach().flatten()

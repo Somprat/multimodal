@@ -80,6 +80,23 @@ def _sample_xy(rng: np.random.Generator, x_range, y_range) -> np.ndarray:
     )
 
 
+def _settle_with_robot_held(base_env, seconds: float) -> None:
+    """Advance physics while holding the robot at its current joint pose."""
+
+    controllers = base_env.agent.controller.controllers
+    for controller in controllers.values():
+        controller.set_drive_targets(controller.qpos.copy())
+
+    sim_steps = int(base_env.sim_freq * seconds)
+    for _ in range(sim_steps):
+        base_env.agent.before_simulation_step()
+        base_env._scene.step()
+
+    # Resetting the controller synchronizes its Cartesian target with the TCP's
+    # post-settle pose, preventing a large correction on the first env.step().
+    base_env.agent.set_control_mode(CONTROL_MODE)
+
+
 def _randomize_training_layout(
     base_env, spec: TrainTask, rng: np.random.Generator
 ) -> dict[str, list[float]]:
@@ -146,7 +163,7 @@ def _randomize_training_layout(
         actor.set_velocity(np.zeros(3))
         actor.set_angular_velocity(np.zeros(3))
 
-    base_env._settle(0.75)
+    _settle_with_robot_held(base_env, 0.75)
     if carrot_actor is not None:
         carrot_actor.lock_motion(0, 0, 0, 0, 0, 0)
         carrot_actor.set_pose(carrot_actor.pose)
@@ -163,7 +180,7 @@ def _randomize_training_layout(
         sink_actor.set_velocity(np.zeros(3))
         sink_actor.set_angular_velocity(np.zeros(3))
     if carrot_actor is not None or sink_actor is not None:
-        base_env._settle(0.25)
+        _settle_with_robot_held(base_env, 0.25)
 
     actual_source = np.asarray(base_env.source_obj_pose.p)
     actual_target = np.asarray(base_env.target_obj_pose.p)
@@ -304,6 +321,11 @@ class WidowXWaypointExpert:
         self.recorder = recorder
         self.base_env = recorder.base_env
         self.max_translation = max_translation
+        self.failure_reason: str | None = None
+
+    def _fail(self, reason: str) -> bool:
+        self.failure_reason = reason
+        return False
 
     def _arm_target_world(self) -> np.ndarray:
         arm = self.base_env.agent.controller.controllers["arm"]
@@ -385,24 +407,50 @@ class WidowXWaypointExpert:
             and offset[2] + source_half[2] <= target_half[2] + 0.02
         )
 
+    def _grasp_source(self, spec: TrainTask, max_attempts: int = 2) -> bool:
+        """Acquire the source, retrying once from its post-contact pose."""
+
+        for attempt in range(max_attempts):
+            source = np.asarray(self.base_env.source_obj_pose.p, dtype=np.float64)
+            approach_source = source + np.array([0.0, 0.0, 0.12])
+            grasp_source = source + np.array([0.0, 0.0, spec.grasp_z_offset])
+
+            if not self.move_to(
+                approach_source, gripper_open=1.0, max_steps=20
+            ):
+                self.failure_reason = "approach_source"
+            else:
+                reached_grasp = self.move_to(
+                    grasp_source,
+                    gripper_open=1.0,
+                    tolerance=0.009,
+                    max_steps=20,
+                )
+                if not reached_grasp and not self._contact_reached(
+                    grasp_source, xy_tol=0.012, z_tol=0.04
+                ):
+                    self.failure_reason = "reach_grasp"
+                else:
+                    self.hold(gripper_open=0.0, steps=12)
+                    if self.base_env.agent.check_grasp(
+                        self.base_env.episode_source_obj
+                    ):
+                        self.failure_reason = None
+                        return True
+                    self.failure_reason = "close_gripper"
+
+            if attempt + 1 < max_attempts and not self.recorder.stopped:
+                self.hold(gripper_open=1.0, steps=4)
+                retreat = np.asarray(self.base_env.tcp.pose.p).copy()
+                retreat[2] += 0.10
+                self.move_to(
+                    retreat, gripper_open=1.0, max_steps=10
+                )
+
+        return False
+
     def run(self, spec: TrainTask) -> bool:
-        source = np.asarray(self.base_env.source_obj_pose.p, dtype=np.float64)
-        approach_source = source + np.array([0.0, 0.0, 0.12])
-
-        grasp_source = source + np.array([0.0, 0.0, spec.grasp_z_offset])
-
-        if not self.move_to(approach_source, gripper_open=1.0):
-            return False
-        reached_grasp = self.move_to(
-            grasp_source, gripper_open=1.0, tolerance=0.009
-        )
-        if not reached_grasp and not self._contact_reached(
-            grasp_source, xy_tol=0.012, z_tol=0.04
-        ):
-            return False
-        self.hold(gripper_open=0.0, steps=12)
-
-        if not self.base_env.agent.check_grasp(self.base_env.episode_source_obj):
+        if not self._grasp_source(spec):
             return False
 
         source_to_tcp = (
@@ -412,9 +460,9 @@ class WidowXWaypointExpert:
         lift_tcp = np.asarray(self.base_env.tcp.pose.p).copy()
         lift_tcp[2] += 0.14
         if not self.move_to(lift_tcp, gripper_open=0.0):
-            return False
+            return self._fail("lift")
         if not self.base_env.agent.check_grasp(self.base_env.episode_source_obj):
-            return False
+            return self._fail("dropped_during_lift")
 
         target = np.asarray(self.base_env.target_obj_pose.p, dtype=np.float64)
         source_half_z = abs(float(self.base_env.episode_source_obj_bbox_world[2])) / 2
@@ -431,9 +479,9 @@ class WidowXWaypointExpert:
         above_target = desired_tcp.copy()
         above_target[2] = max(lift_tcp[2], desired_tcp[2] + 0.10)
         if not self.move_to(above_target, gripper_open=0.0):
-            return False
+            return self._fail("move_above_target")
         if not self.base_env.agent.check_grasp(self.base_env.episode_source_obj):
-            return False
+            return self._fail("dropped_during_transport")
         reached_place = self.move_to(
             desired_tcp, gripper_open=0.0, tolerance=0.012
         )
@@ -443,7 +491,7 @@ class WidowXWaypointExpert:
                 and self._source_centered_over_target()
             )
             if not safely_centered and not self._source_inside_target():
-                return False
+                return self._fail("reach_place")
 
         self.hold(gripper_open=1.0, steps=7)
         if not self.recorder.stopped:
@@ -451,7 +499,10 @@ class WidowXWaypointExpert:
             retreat[2] += 0.10
             self.move_to(retreat, gripper_open=1.0, max_steps=8)
 
-        return bool(self.base_env.evaluate().get("success", False))
+        success = bool(self.base_env.evaluate().get("success", False))
+        if not success:
+            return self._fail("final_evaluation")
+        return True
 
 
 def _validate_episode(arrays: dict[str, np.ndarray]) -> None:
@@ -554,6 +605,8 @@ def collect_attempt(
         )
         expert_success = expert.run(spec)
         success = bool(base_env.evaluate().get("success", False)) and expert_success
+        if not success:
+            print(f"task={task_name} seed={seed} expert_failure={expert.failure_reason}")
         arrays = recorder.arrays()
         _validate_episode(arrays)
 

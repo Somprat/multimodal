@@ -28,12 +28,15 @@ TRAINING_TASKS = {
         target_asset="sink",
         relation="in",
         instruction="put the green cube in the sink",
-        source_x_range=(-0.080, -0.070),
-        source_y_range=(-0.060, 0.060),
-        target_x_range=(-0.245, -0.235),
-        target_y_range=(-0.060, 0.060),
-        min_object_separation=0.15,
+        source_x_range=(-0.100, -0.060),
+        # Keep the cube outside the sink's wide collision footprint while the
+        # randomized actors settle.
+        source_y_range=(-0.210, -0.170),
+        target_x_range=(-0.250, -0.225),
+        target_y_range=(0.010, 0.050),
+        min_object_separation=0.255,
         grasp_z_offset=0.0,
+        placement_clearance=0.015,
     ),
     "carrot_in_sink": TrainTask(
         source_asset="bridge_carrot_generated_modified",
