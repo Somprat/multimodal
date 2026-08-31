@@ -10,8 +10,8 @@ import tensorflow_datasets as tfds
 from tensorflow_datasets.core import dataset_metadata
 
 
-NPZ_DIR = os.environ.get("WIDOWX_NPZ_DIR", "datasets/widowx_simpler_npz")
-RLDS_DIR = os.environ.get("WIDOWX_RLDS_DIR", "datasets/widowx_simpler_rlds")
+NPZ_DIR = os.environ.get("WIDOWX_NPZ_DIR", "datasets/widowx_simpler_npz_v2")
+RLDS_DIR = os.environ.get("WIDOWX_RLDS_DIR", "datasets/widowx_simpler_rlds_v2")
 
 
 @dataclass
@@ -147,6 +147,10 @@ class WidowxSimplerRgbd(tfds.core.GeneratorBasedBuilder):
         }
 
         return self.dataset_info_from_configs(
+            # The training input pipeline performs its own buffered shuffle.
+            # Avoid TFDS shuffle buckets here: they add a large temporary I/O
+            # load that is unreliable on the RunPod FUSE-backed volume.
+            disable_shuffling=True,
             features=tfds.features.FeaturesDict(
                 {
                     "steps": tfds.features.Dataset(step),
@@ -187,7 +191,10 @@ class WidowxSimplerRgbd(tfds.core.GeneratorBasedBuilder):
                     }
                 )
 
-            yield episode_id, {
+            # With DatasetInfo(disable_shuffling=True), TFDS uses this key to
+            # preserve generation order and requires an integer key. Keep the
+            # descriptive ID in episode_metadata below.
+            yield episode_count - 1, {
                 "steps": steps,
                 "episode_metadata": {
                     "episode_id": episode_id,

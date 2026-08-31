@@ -14,7 +14,7 @@ pretrained_ckpt="${PRETRAINED_CKPT:-../models/model_b/checkpoints/memvla-bridge.
 hf_token="${HF_TOKEN:-YOUR_HF_TOKEN}"
 
 data_root_dir="${DATA_ROOT_DIR:-./data/bridge-rlds}"
-experiment_mode="${EXPERIMENT_MODE:-query_episodic}"
+experiment_mode="${EXPERIMENT_MODE:-full}"
 
 if [[ "${experiment_mode}" != "baseline" && "${experiment_mode}" != "query_episodic" && "${experiment_mode}" != "full" ]]; then
   echo "EXPERIMENT_MODE must be baseline, query_episodic, or full, got: ${experiment_mode}" >&2
@@ -31,7 +31,7 @@ fi
 
 n_gpu=1
 
-"${python_bin}" -c "import rich, wandb, flash_attn, transformers, tensorflow, tensorflow_datasets, dlimp"
+"${python_bin}" -c "import rich, flash_attn, transformers, tensorflow, tensorflow_datasets, dlimp"
 available_gpus=$("${python_bin}" -c "import torch; print(torch.cuda.device_count())")
 if (( available_gpus < n_gpu )); then
   echo "Requested ${n_gpu} GPUs, but only ${available_gpus} are visible in this container." >&2
@@ -85,5 +85,7 @@ CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 \
   --hf_token ${hf_token} \
   --vla.shuffle_buffer_size ${shuffle_buffer_size} \
   --experiment_mode "${experiment_mode}" \
+  --query_retrieval_mode query \
+  --query_retrieval_top_k 8 \
   --freeze_vlm true \
   --freeze_action_model "${freeze_action_model}"

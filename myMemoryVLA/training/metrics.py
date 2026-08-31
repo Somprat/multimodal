@@ -13,10 +13,7 @@ from typing import Any, Dict, Optional, Protocol, Tuple, Union
 import jsonlines
 import numpy as np
 import torch
-import wandb
-
-
-wandb.init(mode="disabled")
+wandb = None
 
 from prismatic.overwatch import initialize_overwatch
 
@@ -62,6 +59,14 @@ class WeightsBiasesTracker:
         entity: Optional[str] = None,
         group: str = "align",
     ) -> None:
+        global wandb
+        if wandb is None:
+            try:
+                import wandb as wandb_module
+            except ImportError as exc:
+                raise ImportError("Install wandb to use the 'wandb' tracker.") from exc
+            wandb = wandb_module
+
         self.run_id, self.run_dir, self.hparams = run_id, run_dir, hparams
 
         # Get W&B-Specific Initialization Parameters

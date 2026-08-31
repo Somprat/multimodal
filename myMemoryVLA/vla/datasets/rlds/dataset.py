@@ -256,13 +256,20 @@ def make_dataset_from_rlds(
 
     builder = tfds.builder(name, data_dir=data_dir)
 
+    # TFDS forbids parallel or shuffled file reads for datasets built with
+    # disable_shuffling=True. Downstream trajectory transforms still provide
+    # the buffered randomization used for training.
+    ordered_dataset = bool(builder.info.disable_shuffling)
+    effective_parallel_reads = 1 if ordered_dataset else num_parallel_reads
+    effective_shuffle = False if ordered_dataset else shuffle
+
     # load or compute dataset statistics
     if isinstance(dataset_statistics, str):
         with tf.io.gfile.GFile(dataset_statistics, "r") as f:
             dataset_statistics = json.load(f)
     elif dataset_statistics is None:
         full_dataset = dl.DLataset.from_rlds(
-            builder, split="all", shuffle=False, num_parallel_reads=num_parallel_reads
+            builder, split="all", shuffle=False, num_parallel_reads=effective_parallel_reads
         ).traj_map(restructure, num_parallel_calls)
         # tries to load from cache, otherwise computes on the fly
         dataset_statistics = get_dataset_statistics(
@@ -293,7 +300,12 @@ def make_dataset_from_rlds(
     if load_all_data_for_training and train:
         split = "train"
 
-    dataset = dl.DLataset.from_rlds(builder, split=split, shuffle=shuffle, num_parallel_reads=num_parallel_reads)
+    dataset = dl.DLataset.from_rlds(
+        builder,
+        split=split,
+        shuffle=effective_shuffle,
+        num_parallel_reads=effective_parallel_reads,
+    )
 
     dataset = dataset.traj_map(restructure, num_parallel_calls)
     dataset = dataset.traj_map(
