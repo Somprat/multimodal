@@ -67,10 +67,13 @@ class VLAInference:
             )
         self.policy_setup = policy_setup
         self.unnorm_key = unnorm_key
-        if experiment_mode not in {"baseline", "query_episodic", "full"}:
+        valid_experiment_modes = {
+            "baseline", "episodic", "query", "query_episodic", "full"
+        }
+        if experiment_mode not in valid_experiment_modes:
             raise ValueError(
                 "Unsupported experiment_mode="
-                f"{experiment_mode!r}; expected 'baseline', 'query_episodic', or 'full'."
+                f"{experiment_mode!r}; expected one of {sorted(valid_experiment_modes)}."
             )
         self.experiment_mode = experiment_mode
         self.use_spatial = experiment_mode == "full"
@@ -90,6 +93,13 @@ class VLAInference:
           use_bf16=use_bf16,
           experiment_mode=experiment_mode,
           **kwargs,
+        )
+        print(
+            "*** memory settings: "
+            f"query_mode={self.vla.query_retrieval_mode}, "
+            f"query_top_k={self.vla.query_retrieval_top_k}, "
+            f"episodic_max_steps={self.vla.episodic_bank.max_steps}, "
+            f"episodic_top_k={self.vla.episodic_bank.top_k} ***"
         )
 
         dtype = torch.bfloat16 if use_bf16 else torch.float32

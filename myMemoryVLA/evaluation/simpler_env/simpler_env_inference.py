@@ -44,13 +44,15 @@ def parse_local_args(argv):
     )
     parser.add_argument(
         "--experiment-mode",
-        choices=("baseline", "query_episodic", "full"),
+        choices=("baseline", "episodic", "query", "query_episodic", "full"),
         default="full",
         help=(
-            "Evaluate the paper PCMB baseline, query/episodic memory without "
-            "spatial inputs, or the full system."
+            "Evaluate isolated paper-PCMB, episodic, query, combined, or full modes."
         ),
     )
+    parser.add_argument("--query-retrieval-top-k", type=int, default=None)
+    parser.add_argument("--episodic-max-steps", type=int, default=None)
+    parser.add_argument("--episodic-top-k", type=int, default=None)
     return parser.parse_known_args(argv)
 
 
@@ -78,6 +80,12 @@ if __name__ == "__main__":
     if local_args.unnorm_key is not None:
         cli_args["unnorm_key"] = local_args.unnorm_key
     cli_args["experiment_mode"] = local_args.experiment_mode
+    if local_args.query_retrieval_top_k is not None:
+        cli_args["query_retrieval_top_k"] = local_args.query_retrieval_top_k
+    if local_args.episodic_max_steps is not None:
+        cli_args["episodic_max_steps"] = local_args.episodic_max_steps
+    if local_args.episodic_top_k is not None:
+        cli_args["episodic_top_k"] = local_args.episodic_top_k
     merged_args = deep_update(yaml_args.copy(), cli_args)
     args = Namespace(**merged_args)
     np.random.seed(args.seed)

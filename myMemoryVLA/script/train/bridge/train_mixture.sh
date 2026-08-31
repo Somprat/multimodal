@@ -16,8 +16,8 @@ hf_token="${HF_TOKEN:-YOUR_HF_TOKEN}"
 data_root_dir="${DATA_ROOT_DIR:-./data/bridge-rlds}"
 experiment_mode="${EXPERIMENT_MODE:-full}"
 
-if [[ "${experiment_mode}" != "baseline" && "${experiment_mode}" != "query_episodic" && "${experiment_mode}" != "full" ]]; then
-  echo "EXPERIMENT_MODE must be baseline, query_episodic, or full, got: ${experiment_mode}" >&2
+if [[ "${experiment_mode}" != "baseline" && "${experiment_mode}" != "episodic" && "${experiment_mode}" != "query" && "${experiment_mode}" != "query_episodic" && "${experiment_mode}" != "full" ]]; then
+  echo "EXPERIMENT_MODE must be baseline, episodic, query, query_episodic, or full, got: ${experiment_mode}" >&2
   exit 1
 fi
 
@@ -46,10 +46,15 @@ dp_step=4
 future_action_window_size=15
 
 image_aug=True
-freeze_action_model="${FREEZE_ACTION_MODEL:-false}"
+freeze_action_model="${FREEZE_ACTION_MODEL:-true}"
 if [[ "${freeze_action_model}" != "true" && "${freeze_action_model}" != "false" ]]; then
   echo "FREEZE_ACTION_MODEL must be true or false, got: ${freeze_action_model}" >&2
   exit 1
+fi
+if [[ "${freeze_action_model}" == "true" && ( "${experiment_mode}" == "baseline" || "${experiment_mode}" == "query" ) ]]; then
+  echo "${experiment_mode} is an evaluation-only ablation with the pretrained path frozen; no training is needed." >&2
+  echo "Use script/eval/bridge/eval_bridge.sh with EXPERIMENT_MODE=${experiment_mode}." >&2
+  exit 2
 fi
 
 run_root_dir='./log/bridge_generated'
@@ -86,6 +91,8 @@ CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 \
   --vla.shuffle_buffer_size ${shuffle_buffer_size} \
   --experiment_mode "${experiment_mode}" \
   --query_retrieval_mode query \
-  --query_retrieval_top_k 8 \
+  --query_retrieval_top_k "${QUERY_RETRIEVAL_TOP_K:-4}" \
+  --episodic_max_steps "${EPISODIC_MAX_STEPS:-10}" \
+  --episodic_top_k "${EPISODIC_TOP_K:-2}" \
   --freeze_vlm true \
   --freeze_action_model "${freeze_action_model}"

@@ -157,11 +157,18 @@ class BottleneckSE(nn.Module):
 
 
 class GateFusion(nn.Module):
-    def __init__(self, dim: int):
+    def __init__(self, dim: int, preserve_first_input: bool = False):
         super().__init__()
         self.proj = nn.Linear(dim * 2, dim)
-        nn.init.normal_(self.proj.weight, mean=0.0, std=1e-3)
-        nn.init.normal_(self.proj.bias, mean=0.0, std=1e-3)
+        if preserve_first_input:
+            # Newly added branches must not corrupt a pretrained policy before
+            # they have learned useful features. sigmoid(6) ~= 0.9975, so the
+            # initial result is effectively x1 while gradients still flow.
+            nn.init.zeros_(self.proj.weight)
+            nn.init.constant_(self.proj.bias, 6.0)
+        else:
+            nn.init.normal_(self.proj.weight, mean=0.0, std=1e-3)
+            nn.init.normal_(self.proj.bias, mean=0.0, std=1e-3)
 
     def forward(self, x1: torch.Tensor, x2: torch.Tensor) -> torch.Tensor:
         scale = torch.sigmoid(
@@ -253,8 +260,9 @@ MODALITY_SCORES_SWEEP = [{
     }},
 ]
 
-episodic_sweep = [(5,2), (10, 4), (20, 8)]
-EXPERIMENT_MODES = frozenset({"baseline", "query_episodic", "full"})
+EXPERIMENT_MODES = frozenset(
+    {"baseline", "episodic", "query", "query_episodic", "full"}
+)
 
 
 class CogMemBank(nn.Module):
@@ -274,7 +282,6 @@ class CogMemBank(nn.Module):
                  use_query_classifier: bool = False,
                  modality_weights: dict = MODALITY_SCORES_SWEEP,
                  modality_weights_index: int = 1,
-                 episodic_sweep_index: int = 1
                  ):
         super().__init__()
         assert dataloader_type in ('stream', 'group')
@@ -282,7 +289,7 @@ class CogMemBank(nn.Module):
         assert consolidate_type in ('fifo', 'tome')
         if query_retrieval_mode not in ("off", "query", "shuffled", "by_modal"):
             raise ValueError(
-                "query_retrieval_mode must be one of: off, query, shuffled"
+                "query_retrieval_mode must be one of: off, query, shuffled, by_modal"
             )
         if query_retrieval_top_k < 1:
             raise ValueError("query_retrieval_top_k must be at least 1")
@@ -309,7 +316,6 @@ class CogMemBank(nn.Module):
         ])
         self.modality_weights = modality_weights
         self.modality_weights_index = modality_weights_index
-        self.episodic_sweep_index = episodic_sweep_index
 
         if self.fusion_type == 'gate':
             self.gate_fusion_blocks = GateFusion(self.token_size)
@@ -960,9 +966,10 @@ class MemoryVLA(nn.Module):
         query_retrieval_top_k: int = 4,
         experiment_mode: str = "full",
         freeze_vlm: bool = True,
-        freeze_action_model: bool = False,
+        freeze_action_model: bool = True,
         modality_weights_index: int = 1,
-        episodic_sweep_index: int = 1,
+        episodic_max_steps: int = 10,
+        episodic_top_k: int = 2,
 
 
         max_steps: int = 5,
@@ -990,8 +997,8 @@ class MemoryVLA(nn.Module):
 
         self.vlm = vlm
         self.experiment_mode = experiment_mode
-        self.use_query = experiment_mode in {"query_episodic", "full"}
-        self.use_episodic = experiment_mode in {"query_episodic", "full"}
+        self.use_query = experiment_mode in {"query", "query_episodic", "full"}
+        self.use_episodic = experiment_mode in {"episodic", "query_episodic", "full"}
         self.use_spatial = experiment_mode == "full"
         self.freeze_vlm = freeze_vlm
         self.freeze_action_model = freeze_action_model
@@ -1019,7 +1026,14 @@ class MemoryVLA(nn.Module):
         self.top_k = top_k
         self.novelty_threshold = novelty_threshold
         self.modality_weights_index = modality_weights_index
-        self.episodic_sweep_index = episodic_sweep_index
+        if episodic_max_steps < 1:
+            raise ValueError("episodic_max_steps must be at least 1")
+        if episodic_top_k < 1:
+            raise ValueError("episodic_top_k must be at least 1")
+        if episodic_top_k > episodic_max_steps:
+            raise ValueError("episodic_top_k cannot exceed episodic_max_steps")
+        self.episodic_max_steps = episodic_max_steps
+        self.episodic_top_k = episodic_top_k
 
         
 
@@ -1082,10 +1096,8 @@ class MemoryVLA(nn.Module):
             query_retrieval_top_k=self.query_retrieval_top_k,
             modality_weights_index=self.modality_weights_index
         )
-        # max_steps_sweep = [5, 10, 20]
-        # top_k_episodic_sweep = [2, 4, 8]
-        bank_sweep =[(5,2), (10, 4), (20, 8)]
-        self.episodic_bank = EpisodicMemBank(max_steps=episodic_sweep[self.episodic_sweep_index][0],
+        self.episodic_bank = EpisodicMemBank(max_steps=self.episodic_max_steps,
+                 top_k=self.episodic_top_k,
                                              
                  dataloader_type = "stream",
                  group_size = self.group_size,
@@ -1097,7 +1109,7 @@ class MemoryVLA(nn.Module):
                  consolidate_type = self.consolidate_type,
                  update_fused = self.update_fused,
                  query_retrieval_mode = self.query_retrieval_mode,
-                 query_retrieval_top_k = episodic_sweep[self.episodic_sweep_index][1])
+                 query_retrieval_top_k = self.episodic_top_k)
         
         self.spatial_encoder = SpatialEncoder(
             spatial_token_size = self.per_token_size,
@@ -1129,7 +1141,9 @@ class MemoryVLA(nn.Module):
             modality_weights_index=self.modality_weights_index
         )
         self.spatial_to_per_fusion = CrossTransformerBlock(self.per_token_size)
-        self.per_spatial_gate = GateFusion(self.per_token_size)
+        self.per_spatial_gate = GateFusion(
+            self.per_token_size, preserve_first_input=True
+        )
 
         self.action_model = ActionModel(
             model_type=action_model_type,
@@ -1145,8 +1159,12 @@ class MemoryVLA(nn.Module):
         self.episodic_cog_attn = CrossTransformerBlock(self.cog_token_size)
         self.episodic_per_attn = CrossTransformerBlock(self.per_token_size)
 
-        self.episodic_cog_gate = GateFusion(self.cog_token_size)
-        self.episodic_per_gate = GateFusion(self.per_token_size)
+        self.episodic_cog_gate = GateFusion(
+            self.cog_token_size, preserve_first_input=True
+        )
+        self.episodic_per_gate = GateFusion(
+            self.per_token_size, preserve_first_input=True
+        )
         self.active_ep_contexts = {}
         self.episode_recordings = {}
 
@@ -1220,7 +1238,9 @@ class MemoryVLA(nn.Module):
             self.vlm.eval()
             self.vlm.trainable_module_keys = []
             # Freeze the learned paper PCMB path together with its VLM source.
-            # Spatial memory/fusion and episodic modules remain trainable.
+            # per_compr is the learned vision-feature -> perceptual-token
+            # compressor and belongs to that same pretrained path.
+            self.per_compr.requires_grad_(False)
             self.cog_mem_bank.requires_grad_(False)
             self.per_mem_bank.requires_grad_(False)
 
@@ -1366,13 +1386,11 @@ class MemoryVLA(nn.Module):
 
         if episode_id is None:
             episode_id = self.active_ep_id
-
         self.episodic_bank.end_episode(
             success=success,
             episode_cog_banks=self.cog_mem_bank.bank.get(episode_id, []),
-            episode_per_banks=self.per_mem_bank.bank.get(episode_id, [])
+            episode_per_banks=self.per_mem_bank.bank.get(episode_id, []),
         )
-    
 
         finished_id = episode_id
 
@@ -1511,120 +1529,109 @@ class MemoryVLA(nn.Module):
         per_tokens = self.per_compr(vision_feats)
         
 
-        if self.experiment_mode == "baseline":
-            # Reproduce the paper's original perceptual-cognitive memory bank:
-            # retrieve and consolidate the complete within-episode history,
-            # without the new selective-query, cross-episode, or spatial paths.
-            cog_tokens = self.cog_mem_bank.process_batch(
-                tokens=cog_tokens,
-                episode_ids=episode_ids,
-                timesteps=timesteps,
-            )
-            per_tokens = self.per_mem_bank.process_batch(
-                tokens=per_tokens,
-                episode_ids=episode_ids,
-                timesteps=timesteps,
-            )
-
-        if self.use_query:
+        retrieval_image_embeddings = None
+        retrieval_query_embeddings = None
+        if self.use_query or self.use_episodic:
             retrieval_image_embeddings, retrieval_query_embeddings = (
                 self._encode_retrieval_inputs(images, instructions)
             )
 
-            if self.use_episodic:
-                for i in range(len(episode_ids)):
-                    episode_id = int(torch.as_tensor(episode_ids[i]).item())
-                    episode_timestep = int(torch.as_tensor(timesteps[i]).item())
-                    if episode_timestep == 0 and episode_id not in self.active_ep_contexts:
-                        self._begin_episode(
-                            images=[images[i]],
-                            instruction=instructions[i],
-                            episode_id=episode_id,
-                        )
+        if self.use_episodic:
+            for i in range(len(episode_ids)):
+                episode_id = int(torch.as_tensor(episode_ids[i]).item())
+                episode_timestep = int(torch.as_tensor(timesteps[i]).item())
+                if episode_timestep == 0 and episode_id not in self.active_ep_contexts:
+                    self._begin_episode(
+                        images=[images[i]],
+                        instruction=instructions[i],
+                        episode_id=episode_id,
+                    )
 
-            cog_tokens = self.cog_mem_bank.process_batch(
-                tokens=cog_tokens,
-                episode_ids=episode_ids,
-                timesteps=timesteps,
-                instructions=instructions,
-                retrieval_image_embeddings=retrieval_image_embeddings,
-                retrieval_query_embeddings=retrieval_query_embeddings,
-                positions=positions,
-            )
-            per_tokens = self.per_mem_bank.process_batch(
-                tokens=per_tokens,
-                episode_ids=episode_ids,
-                timesteps=timesteps,
-                instructions=instructions,
-                retrieval_image_embeddings=retrieval_image_embeddings,
-                retrieval_query_embeddings=retrieval_query_embeddings,
-                positions=positions,
+        # All ablations retain the published within-episode PCMB. Its configured
+        # retrieval mode is "off" unless use_query is true.
+        cog_tokens = self.cog_mem_bank.process_batch(
+            tokens=cog_tokens,
+            episode_ids=episode_ids,
+            timesteps=timesteps,
+            instructions=instructions,
+            retrieval_image_embeddings=retrieval_image_embeddings,
+            retrieval_query_embeddings=retrieval_query_embeddings,
+            positions=positions,
+        )
+        per_tokens = self.per_mem_bank.process_batch(
+            tokens=per_tokens,
+            episode_ids=episode_ids,
+            timesteps=timesteps,
+            instructions=instructions,
+            retrieval_image_embeddings=retrieval_image_embeddings,
+            retrieval_query_embeddings=retrieval_query_embeddings,
+            positions=positions,
+        )
+
+        if self.use_episodic:
+            cog_tokens, per_tokens = self._fuse_episodic_tokens(
+                cog_tokens=cog_tokens,
+                per_tokens=per_tokens,
+                episode_mem_ids=episode_ids,
             )
 
-            if self.use_episodic:
-                cog_tokens, per_tokens = self._fuse_episodic_tokens(
-                    cog_tokens=cog_tokens,
-                    per_tokens=per_tokens,
-                    episode_mem_ids=episode_ids,
+        if self.use_spatial:
+            if spatial_valid is None:
+                spatial_valid = torch.ones(
+                    per_tokens.shape[0], device=per_tokens.device, dtype=torch.bool
                 )
+            else:
+                spatial_valid = torch.as_tensor(
+                    spatial_valid, device=per_tokens.device, dtype=torch.bool
+                )
+            if spatial_valid.ndim != 1 or spatial_valid.numel() != per_tokens.shape[0]:
+                raise ValueError("spatial_valid must have shape [batch_size]")
+            valid = spatial_valid.nonzero(as_tuple=True)[0]
 
-            if self.use_spatial:
-                if spatial_valid is None:
-                    spatial_valid = torch.ones(
-                        per_tokens.shape[0], device=per_tokens.device, dtype=torch.bool
+            if valid.numel() > 0:
+                if depth is None or intrinsics is None or extrinsics is None:
+                    raise ValueError(
+                        "Spatially valid samples require depth, intrinsics, and extrinsics"
                     )
-                else:
-                    spatial_valid = torch.as_tensor(
-                        spatial_valid, device=per_tokens.device, dtype=torch.bool
-                    )
-                if spatial_valid.ndim != 1 or spatial_valid.numel() != per_tokens.shape[0]:
-                    raise ValueError("spatial_valid must have shape [batch_size]")
-                valid = spatial_valid.nonzero(as_tuple=True)[0]
+                points_camera, valid_masks = geometry.depth_to_points(
+                    depth=depth[valid],
+                    intrinsics=intrinsics[valid],
+                    mask=None,
+                    flatten=True,
+                )
+                points_world = geometry.transform_points(
+                    points_camera,
+                    torch.linalg.inv(extrinsics[valid].float()),
+                )
+                spatial_tokens = self.point_cloud_spatial_encoder(
+                    points=points_world,
+                    proprio=proprio[valid] if proprio is not None else None,
+                    camera=camera[valid] if camera is not None else None,
+                    point_mask=valid_masks,
+                )
+                valid_cpu = valid.detach().cpu().tolist()
+                fused_valid = self._fuse_spatial_tokens(
+                    per_tokens=per_tokens[valid],
+                    spatial_tokens=spatial_tokens,
+                    episode_ids=[episode_ids[i] for i in valid_cpu],
+                    timesteps=[timesteps[i] for i in valid_cpu],
+                    instructions=[instructions[i] for i in valid_cpu],
+                    retrieval_image_embeddings=retrieval_image_embeddings[valid],
+                    retrieval_query_embeddings=retrieval_query_embeddings[valid],
+                    positions=positions[valid] if positions is not None else None,
+                )
+                fused_valid = fused_valid.to(
+                    device=per_tokens.device, dtype=per_tokens.dtype
+                )
+                per_tokens = per_tokens.index_copy(0, valid, fused_valid)
 
-                if valid.numel() > 0:
-                    if depth is None or intrinsics is None or extrinsics is None:
-                        raise ValueError(
-                            "Spatially valid samples require depth, intrinsics, and extrinsics"
-                        )
-                    points_camera, valid_masks = geometry.depth_to_points(
-                        depth=depth[valid],
-                        intrinsics=intrinsics[valid],
-                        mask=None,
-                        flatten=True,
+        if self.use_episodic:
+            for i in range(len(episode_ids)):
+                if bool(torch.as_tensor(episode_ends[i].item())):
+                    self.finish_episode(
+                        episode_id=int(torch.as_tensor(episode_ids[i]).item()),
+                        success=bool(torch.as_tensor(episode_successes[i]).item()),
                     )
-                    points_world = geometry.transform_points(
-                        points_camera,
-                        torch.linalg.inv(extrinsics[valid].float()),
-                    )
-                    spatial_tokens = self.point_cloud_spatial_encoder(
-                        points=points_world,
-                        proprio=proprio[valid] if proprio is not None else None,
-                        camera=camera[valid] if camera is not None else None,
-                        point_mask=valid_masks,
-                    )
-                    valid_cpu = valid.detach().cpu().tolist()
-                    fused_valid = self._fuse_spatial_tokens(
-                        per_tokens=per_tokens[valid],
-                        spatial_tokens=spatial_tokens,
-                        episode_ids=[episode_ids[i] for i in valid_cpu],
-                        timesteps=[timesteps[i] for i in valid_cpu],
-                        instructions=[instructions[i] for i in valid_cpu],
-                        retrieval_image_embeddings=retrieval_image_embeddings[valid],
-                        retrieval_query_embeddings=retrieval_query_embeddings[valid],
-                        positions=positions[valid] if positions is not None else None,
-                    )
-                    fused_valid = fused_valid.to(
-                        device=per_tokens.device, dtype=per_tokens.dtype
-                    )
-                    per_tokens = per_tokens.index_copy(0, valid, fused_valid)
-
-            if self.use_episodic:
-                for i in range(len(episode_ids)):
-                    if bool(torch.as_tensor(episode_ends[i].item())):
-                        self.finish_episode(
-                            episode_id=int(torch.as_tensor(episode_ids[i]).item()),
-                            success=bool(torch.as_tensor(episode_successes[i]).item()),
-                        )
         # Repeat 'actions' 'repeated_diffusion_steps' times, resulting in [repeated_diffusion_steps*B, T, D]
         actions_future = actions[:, -(self.future_action_window_size+1):, :]
         actions_repeated = actions_future.repeat(repeated_diffusion_steps, 1, 1)
@@ -1884,47 +1891,82 @@ class MemoryVLA(nn.Module):
         if episode_first_frame == 'True':
             self.cur_timestep = 0
 
-        if self.experiment_mode == "baseline":
-            if episode_first_frame == 'True':
-                print(" ** reset paper PCMB ** ")
-                self.cog_mem_bank.reset()
-                self.per_mem_bank.reset()
+        if episode_first_frame == 'True':
+            print(" ** reset memory ** ")
+            self.cog_mem_bank.reset()
+            self.per_mem_bank.reset()
+            if self.use_spatial:
+                self.spatial_mem_bank.reset()
+            if self.use_episodic:
+                self.active_ep_id = self.episodic_bank.episode_id
+                self._begin_episode(
+                    images=[image],
+                    instruction=instruction,
+                    episode_id=self.active_ep_id,
+                )
 
-            episode_ids = [0]
-            timesteps = [torch.tensor(self.cur_timestep, device=cog_tokens.device)]
-            cog_tokens = self.cog_mem_bank.process_batch(
-                tokens=cog_tokens,
-                episode_ids=episode_ids,
-                timesteps=timesteps,
-            )
-            per_tokens = self.per_mem_bank.process_batch(
-                tokens=per_tokens,
-                episode_ids=episode_ids,
-                timesteps=timesteps,
-            )
-
-        if self.use_query:
-            if episode_first_frame == 'True':
-                print(" ** reset memory ** ")
-                self.cog_mem_bank.reset()
-                self.per_mem_bank.reset()
-                if self.use_spatial:
-                    self.spatial_mem_bank.reset()
-                if self.use_episodic:
-                    self.active_ep_id = self.episodic_bank.episode_id
-                    self._begin_episode(
-                        images=[image],
-                        instruction=instruction,
-                        episode_id=self.active_ep_id,
-                    )
-
-            episode_ids = [self.active_ep_id if self.use_episodic else 0]
-            timesteps = [torch.tensor(self.cur_timestep, device=self.vlm.device)]
+        episode_ids = [self.active_ep_id if self.use_episodic else 0]
+        timesteps = [torch.tensor(self.cur_timestep, device=self.vlm.device)]
+        retrieval_image_embeddings = None
+        retrieval_query_embeddings = None
+        if self.use_query or self.use_episodic:
             retrieval_image_embeddings, retrieval_query_embeddings = (
                 self._encode_retrieval_inputs([image], [instruction])
             )
-            cog_tokens = self.cog_mem_bank.process_batch(
-                tokens=cog_tokens,
+
+        cog_tokens = self.cog_mem_bank.process_batch(
+            tokens=cog_tokens,
+            episode_ids=episode_ids,
+            timesteps=timesteps,
+            instructions=[instruction],
+            retrieval_image_embeddings=retrieval_image_embeddings,
+            retrieval_query_embeddings=retrieval_query_embeddings,
+            positions=positions,
+        )
+        per_tokens = self.per_mem_bank.process_batch(
+            tokens=per_tokens,
+            episode_ids=episode_ids,
+            timesteps=timesteps,
+            instructions=[instruction],
+            retrieval_image_embeddings=retrieval_image_embeddings,
+            retrieval_query_embeddings=retrieval_query_embeddings,
+            positions=positions,
+        )
+        if self.use_episodic:
+            cog_tokens, per_tokens = self._fuse_episodic_tokens(
+                cog_tokens=cog_tokens,
+                per_tokens=per_tokens,
+                episode_mem_ids=episode_ids,
+            )
+
+        if self.use_spatial:
+            if depth is None or intrinsics is None or extrinsics is None:
+                raise ValueError(
+                    "Full experiment mode requires depth, intrinsics, and extrinsics"
+                )
+            depth = self._add_batch_depth(depth)
+            intrinsics = self._add_batch_intrinsics(intrinsics)
+            extrinsics = self._add_batch_extrinsics(extrinsics)
+
+            points_camera, valid_masks = geometry.depth_to_points(
+                depth=depth,
+                intrinsics=intrinsics,
+                mask=None,
+                flatten=True,
+            )
+
+            camera_to_world = torch.linalg.inv(extrinsics.float())
+            points_world = geometry.transform_points(points_camera, camera_to_world)
+
+            spatial_tokens = self.point_cloud_spatial_encoder(
+                points=points_world,
+                proprio=proprio,
+                camera=camera,
+                point_mask=valid_masks,
+            )
+            per_tokens = self._fuse_spatial_tokens(
+                per_tokens=per_tokens,
+                spatial_tokens=spatial_tokens,
                 episode_ids=episode_ids,
                 timesteps=timesteps,
                 instructions=[instruction],
@@ -1932,60 +1974,6 @@ class MemoryVLA(nn.Module):
                 retrieval_query_embeddings=retrieval_query_embeddings,
                 positions=positions,
             )
-            per_tokens = self.per_mem_bank.process_batch(
-                tokens=per_tokens,
-                episode_ids=episode_ids,
-                timesteps=timesteps,
-                instructions=[instruction],
-                retrieval_image_embeddings=retrieval_image_embeddings,
-                retrieval_query_embeddings=retrieval_query_embeddings,
-                positions=positions,
-            )
-            if self.use_episodic:
-                cog_tokens, per_tokens = self._fuse_episodic_tokens(
-                    cog_tokens=cog_tokens,
-                    per_tokens=per_tokens,
-                    episode_mem_ids=episode_ids,
-                )
-
-            if self.use_spatial:
-                if depth is None or intrinsics is None or extrinsics is None:
-                    raise ValueError(
-                        "Full experiment mode requires depth, intrinsics, and extrinsics"
-                    )
-                depth = self._add_batch_depth(depth)
-                intrinsics = self._add_batch_intrinsics(intrinsics)
-                extrinsics = self._add_batch_extrinsics(extrinsics)
-
-                points_camera, valid_masks = geometry.depth_to_points(
-                    depth=depth,
-                    intrinsics=intrinsics,
-                    mask=None,
-                    flatten=True,
-                )
-
-                camera_to_world = torch.linalg.inv(extrinsics.float())
-
-                points_world = geometry.transform_points(
-                    points_camera, camera_to_world
-                )
-
-                spatial_tokens = self.point_cloud_spatial_encoder(
-                    points=points_world,
-                    proprio=proprio,
-                    camera=camera,
-                    point_mask=valid_masks,
-                )
-                per_tokens = self._fuse_spatial_tokens(
-                    per_tokens=per_tokens,
-                    spatial_tokens=spatial_tokens,
-                    episode_ids=episode_ids,
-                    timesteps=timesteps,
-                    instructions=[instruction],
-                    retrieval_image_embeddings=retrieval_image_embeddings,
-                    retrieval_query_embeddings=retrieval_query_embeddings,
-                    positions=positions,
-                )
 
         self.cur_timestep += 1
 

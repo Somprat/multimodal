@@ -138,10 +138,14 @@ class EpisodicMemBank(nn.Module):
         if not episode_banks:
             return None
         timestep = torch.tensor(0)
-        mean_feat = torch.stack([entry.feat for entry in episode_banks], dim=0).mean(dim=0)
+        mean_feat = torch.stack(
+            [entry.feat.detach() for entry in episode_banks], dim=0
+        ).mean(dim=0)
 
 
         first_scene_embedding = episode_banks[0].image_embedding
+        if first_scene_embedding is not None:
+            first_scene_embedding = first_scene_embedding.detach()
         task_tags = episode_banks[0].task_tags
 
         summary = BankEntry(
@@ -160,12 +164,23 @@ class EpisodicMemBank(nn.Module):
                     success: bool,
                     episode_cog_banks: list,
                     episode_per_banks: list):
+        completed_episode_id = self.episode_id - 1
+        if not success:
+            # Failure rollouts are not positive demonstrations. Do not let them
+            # consume FIFO capacity or become future retrieval context.
+            self.bank.pop(completed_episode_id, None)
+            return
+
         summarized_cog = self.summarize_mem_bank(episode_cog_banks)
         summarized_per = self.summarize_mem_bank(episode_per_banks)
 
-        self.bank[self.episode_id-1].success = success
-        self.bank[self.episode_id-1].cog_mem_bank = summarized_cog
-        self.bank[self.episode_id-1].per_mem_bank = summarized_per
+        if summarized_cog is None or summarized_per is None:
+            self.bank.pop(completed_episode_id, None)
+            return
+
+        self.bank[completed_episode_id].success = True
+        self.bank[completed_episode_id].cog_mem_bank = summarized_cog
+        self.bank[completed_episode_id].per_mem_bank = summarized_per
 
 
     
@@ -249,6 +264,13 @@ class EpisodicMemBank(nn.Module):
 
         scores = []
         for episode_id, memory_unit in self.bank.items():
+            # Demonstrations used for training are successful. Match that
+            # distribution at evaluation time and never retrieve a failed or
+            # not-yet-completed rollout as positive context.
+            if not memory_unit.success:
+                continue
+            if memory_unit.cog_mem_bank is None or memory_unit.per_mem_bank is None:
+                continue
             semantic_score = self.instruction_score(memory_unit, current_instruction)
             image_score = self.image_score(memory_unit, initial_frame)
 

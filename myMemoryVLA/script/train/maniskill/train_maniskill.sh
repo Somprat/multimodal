@@ -18,7 +18,7 @@ data_root_dir="${DATA_ROOT_DIR:-../datasets}"
 run_root_dir="${RUN_ROOT_DIR:-./log/maniskill}"
 experiment_mode="${EXPERIMENT_MODE:-full}"
 freeze_vlm="${FREEZE_VLM:-true}"
-freeze_action_model="${FREEZE_ACTION_MODEL:-false}"
+freeze_action_model="${FREEZE_ACTION_MODEL:-true}"
 if [[ "${freeze_vlm}" == "true" && "${freeze_action_model}" == "true" ]]; then
     scope_tag="frozen_vlm_action"
 elif [[ "${freeze_vlm}" == "true" ]]; then
@@ -36,8 +36,8 @@ shuffle_buffer_size="${SHUFFLE_BUFFER_SIZE:-4096}"
 cuda_devices="${CUDA_VISIBLE_DEVICES:-0}"
 dry_run="${DRY_RUN:-false}"
 
-if [[ "${experiment_mode}" != "baseline" && "${experiment_mode}" != "query_episodic" && "${experiment_mode}" != "full" ]]; then
-    echo "EXPERIMENT_MODE must be baseline, query_episodic, or full, got: ${experiment_mode}" >&2
+if [[ "${experiment_mode}" != "baseline" && "${experiment_mode}" != "episodic" && "${experiment_mode}" != "query" && "${experiment_mode}" != "query_episodic" && "${experiment_mode}" != "full" ]]; then
+    echo "EXPERIMENT_MODE must be baseline, episodic, query, query_episodic, or full, got: ${experiment_mode}" >&2
     exit 1
 fi
 
@@ -47,6 +47,10 @@ for boolean_value in "${freeze_vlm}" "${freeze_action_model}" "${dry_run}"; do
         exit 1
     fi
 done
+if [[ "${dry_run}" != "true" && "${freeze_vlm}" == "true" && "${freeze_action_model}" == "true" && ( "${experiment_mode}" == "baseline" || "${experiment_mode}" == "query" ) ]]; then
+    echo "${experiment_mode} is an evaluation-only ablation with the pretrained path frozen; no training is needed." >&2
+    exit 2
+fi
 
 dataset_info="${data_root_dir}/maniskill_dataset_converted_externally_to_rlds/0.1.0/dataset_info.json"
 
@@ -63,46 +67,45 @@ if [[ "${dry_run}" != "true" && ! -f "${dataset_info}" ]]; then
     exit 1
 fi
 
-for i in 0 1 2 3; do
-    for j in 0 1 2; do
-        train_command=(
-            torchrun --nproc_per_node="${n_gpu}" train.py
-            --pretrained_checkpoint "${pretrained_ckpt}"
-            --vla.type prism-dinosiglip-224px+oxe+diffusion
-            --vla.data_mix maniskill
-            --vla.expected_world_size "${n_gpu}"
-            --vla.per_device_batch_size "${per_device_batch_size}"
-            --vla.global_batch_size "$((n_gpu * per_device_batch_size))"
-            --vla.learning_rate "${LEARNING_RATE:-2e-5}"
-            --vla.max_steps "${max_steps}"
-            --vla.shuffle_buffer_size "${shuffle_buffer_size}"
-            --data_root_dir "${data_root_dir}"
-            --run_root_dir "${run_root_dir}"
-            --run_id "${run_id}_weights_${i}"
-            --experiment_mode "${experiment_mode}"
-            --freeze_vlm "${freeze_vlm}"
-            --freeze_action_model "${freeze_action_model}"
-            --image_aug "${IMAGE_AUG:-true}"
-            --save_interval "${save_interval}"
-            --repeated_diffusion_steps "${DIFFUSION_STEPS:-4}"
-            --future_action_window_size "${FUTURE_ACTION_WINDOW_SIZE:-15}"
-            --action_model_type DiT-L
-            --dataloader_type stream
-            --is_resume false
-            --resume_step 0
-            --resume_epoch 0
-            --wandb_project "${WANDB_PROJECT:-memvla}"
-            --wandb_entity "${WANDB_ENTITY:-}"
-            --hf_token "${HF_TOKEN_PATH:-.hf_token}"
-            --modality_weights_index "${i}"
-            --episodic_weights_index "${j}"
-        )
+train_command=(
+    torchrun --nproc_per_node="${n_gpu}" train.py
+    --pretrained_checkpoint "${pretrained_ckpt}"
+    --vla.type prism-dinosiglip-224px+oxe+diffusion
+    --vla.data_mix maniskill
+    --vla.expected_world_size "${n_gpu}"
+    --vla.per_device_batch_size "${per_device_batch_size}"
+    --vla.global_batch_size "$((n_gpu * per_device_batch_size))"
+    --vla.learning_rate "${LEARNING_RATE:-2e-5}"
+    --vla.max_steps "${max_steps}"
+    --vla.shuffle_buffer_size "${shuffle_buffer_size}"
+    --data_root_dir "${data_root_dir}"
+    --run_root_dir "${run_root_dir}"
+    --run_id "${run_id}"
+    --experiment_mode "${experiment_mode}"
+    --freeze_vlm "${freeze_vlm}"
+    --freeze_action_model "${freeze_action_model}"
+    --image_aug "${IMAGE_AUG:-true}"
+    --save_interval "${save_interval}"
+    --repeated_diffusion_steps "${DIFFUSION_STEPS:-4}"
+    --future_action_window_size "${FUTURE_ACTION_WINDOW_SIZE:-15}"
+    --action_model_type DiT-L
+    --dataloader_type stream
+    --is_resume false
+    --resume_step 0
+    --resume_epoch 0
+    --wandb_project "${WANDB_PROJECT:-memvla}"
+    --wandb_entity "${WANDB_ENTITY:-}"
+    --hf_token "${HF_TOKEN_PATH:-.hf_token}"
+    --query_retrieval_mode query
+    --query_retrieval_top_k "${QUERY_RETRIEVAL_TOP_K:-4}"
+    --episodic_max_steps "${EPISODIC_MAX_STEPS:-10}"
+    --episodic_top_k "${EPISODIC_TOP_K:-2}"
+)
 
-        if [[ "${dry_run}" == "true" ]]; then
-            printf 'CUDA_VISIBLE_DEVICES=%q ' "${cuda_devices}"
-            printf '%q ' "${train_command[@]}"
-            printf '\n'
-        else
-            CUDA_VISIBLE_DEVICES="${cuda_devices}" "${train_command[@]}"
-        fi
-done
+if [[ "${dry_run}" == "true" ]]; then
+    printf 'CUDA_VISIBLE_DEVICES=%q ' "${cuda_devices}"
+    printf '%q ' "${train_command[@]}"
+    printf '\n'
+else
+    CUDA_VISIBLE_DEVICES="${cuda_devices}" "${train_command[@]}"
+fi

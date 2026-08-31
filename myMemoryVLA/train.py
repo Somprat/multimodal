@@ -73,11 +73,11 @@ class TrainConfig:
     per_token_size: int = 256 # Token size for perception compression
     mem_length: int = 16 # Memory length
     retrieval_layers: int = 2 # Number of layers of memory retrieval
-    query_retrieval_mode: str = "by_modal" # One of: off, query, shuffled, by_modal
+    query_retrieval_mode: str = "query" # Keep query retrieval for controlled ablations
     query_retrieval_top_k: int = 4 # Historical cognition records selected per query
-    experiment_mode: str = "full" # One of: baseline, query_episodic, full
+    experiment_mode: str = "full" # baseline, episodic, query, query_episodic, or full
     freeze_vlm: bool = True # Recompute VLM features without updating PrismaticVLM
-    freeze_action_model: bool = False # Keep False for matched ManiSkill adaptation
+    freeze_action_model: bool = True # Preserve the pretrained action policy for adapter ablations
     use_timestep_pe: bool = True # Whether to use timestep positional encoding
     fusion_type: str = 'gate' # Memory fusion type, chose from ['gate', 'add']
     consolidate_type: str = 'tome' # Memory consolidate type, chose from ['fifo', 'tome']
@@ -86,7 +86,8 @@ class TrainConfig:
     load_proprio: bool = True # Whether to load proprioceptive observations from RLDS
     use_spatial_features: bool = True # Whether to load/use precomputed spatial features if available
     modality_weights_index:int = 1
-    eposdic_sweep_index: int = 1
+    episodic_max_steps: int = 10
+    episodic_top_k: int = 2
 
     # the same thing as per_token_size in memory_vla.py
     # spatial_token_size: int = 256
@@ -122,7 +123,9 @@ class TrainConfig:
 def train(cfg: TrainConfig) -> None:
     overwatch.info("MemoryVLA Training :: Warming Up")
 
-    valid_experiment_modes = {"baseline", "query_episodic", "full"}
+    valid_experiment_modes = {
+        "baseline", "episodic", "query", "query_episodic", "full"
+    }
     if cfg.experiment_mode not in valid_experiment_modes:
         raise ValueError(
             "experiment_mode must be one of "
@@ -238,6 +241,13 @@ def train(cfg: TrainConfig) -> None:
     # Print number of total/trainable model parameters
     num_params = sum(p.numel() for p in vla.parameters())
     num_trainable_params = sum(p.numel() for p in vla.parameters() if p.requires_grad)
+    if num_trainable_params == 0:
+        raise ValueError(
+            "This configuration has no trainable parameters. Baseline and query-only "
+            "are evaluation ablations when the pretrained VLM/PCMB and action model "
+            "are frozen; evaluate the downloaded checkpoint directly, or explicitly "
+            "unfreeze a module for a different experiment."
+        )
     overwatch.info(
         f"# Parameters (in millions): {num_params / 10**6:.3f} Total, {num_trainable_params / 10**6:.3f} Trainable"
     )
