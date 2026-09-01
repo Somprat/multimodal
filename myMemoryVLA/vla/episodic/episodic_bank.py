@@ -163,8 +163,13 @@ class EpisodicMemBank(nn.Module):
     def end_episode(self,
                     success: bool,
                     episode_cog_banks: list,
-                    episode_per_banks: list):
-        completed_episode_id = self.episode_id - 1
+                    episode_per_banks: list,
+                    episode_id: Optional[int] = None):
+        completed_episode_id = self.episode_id - 1 if episode_id is None else episode_id
+        if completed_episode_id not in self.bank:
+            raise KeyError(
+                f"Cannot finish unknown episodic-memory episode {completed_episode_id}"
+            )
         if not success:
             # Failure rollouts are not positive demonstrations. Do not let them
             # consume FIFO capacity or become future retrieval context.

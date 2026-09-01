@@ -29,7 +29,7 @@ else
   data_mix='bridge'
 fi
 
-n_gpu=1
+n_gpu="${N_GPU:-1}"
 
 "${python_bin}" -c "import rich, flash_attn, transformers, tensorflow, tensorflow_datasets, dlimp"
 available_gpus=$("${python_bin}" -c "import torch; print(torch.cuda.device_count())")
@@ -38,12 +38,26 @@ if (( available_gpus < n_gpu )); then
   echo "Expose ${n_gpu} GPUs or lower n_gpu and the batch sizes before launching." >&2
   exit 1
 fi
-bs=1
+bs="${BATCH_SIZE:-1}"
+global_batch_size="${GLOBAL_BATCH_SIZE:-8}"
 shuffle_buffer_size=1_024 # stream loader buffers decoded episodes, not individual frames
 
-save_interval=2500
+max_steps="${MAX_STEPS:-50000}"
+save_interval="${SAVE_INTERVAL:-2500}"
 dp_step=4
 future_action_window_size=15
+
+for value_name in n_gpu bs global_batch_size max_steps save_interval; do
+  value="${!value_name}"
+  if [[ ! "${value}" =~ ^[1-9][0-9]*$ ]]; then
+    echo "${value_name} must be a positive integer, got: ${value}" >&2
+    exit 1
+  fi
+done
+if (( global_batch_size % (n_gpu * bs) != 0 )); then
+  echo "GLOBAL_BATCH_SIZE must be divisible by N_GPU * BATCH_SIZE." >&2
+  exit 1
+fi
 
 image_aug=True
 freeze_action_model="${FREEZE_ACTION_MODEL:-true}"
@@ -71,9 +85,9 @@ CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 \
   --vla.data_mix ${data_mix} \
   --vla.expected_world_size ${n_gpu} \
   --vla.per_device_batch_size ${bs} \
-  --vla.global_batch_size 8 \
+  --vla.global_batch_size ${global_batch_size} \
   --vla.learning_rate 2e-5 \
-  --vla.max_steps 50000 \
+  --vla.max_steps ${max_steps} \
   --data_root_dir ${data_root_dir} \
   --run_root_dir ${run_root_dir} \
   --run_id ${run_id} \

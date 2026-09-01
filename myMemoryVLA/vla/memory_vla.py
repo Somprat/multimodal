@@ -1115,6 +1115,10 @@ class MemoryVLA(nn.Module):
             spatial_token_size = self.per_token_size,
             depth_patch_size = depth_patch_size
         )
+        # Legacy depth-patch encoder. The active full-mode path below uses
+        # point_cloud_spatial_encoder exclusively, so do not advertise or
+        # optimize parameters that can never receive a gradient.
+        self.spatial_encoder.requires_grad_(False)
 
         self.point_cloud_spatial_encoder = SpatialPointCloudEncoder(
                     spatial_token_size=self.per_token_size,
@@ -1321,12 +1325,15 @@ class MemoryVLA(nn.Module):
         else:
             active_ep_cog=None
             active_ep_per=None
-        self.episodic_bank.start_episode(image=images, instruction=[instruction])
+        bank_episode_id = self.episodic_bank.start_episode(
+            image=images, instruction=[instruction]
+        )
 
         #write somenotes about these things
         self.active_ep_contexts[episode_id] = {
             "cog": active_ep_cog,
-            "per": active_ep_per
+            "per": active_ep_per,
+            "bank_episode_id": bank_episode_id,
         }
         self.episode_recordings[episode_id] = {
             "cog": [],
@@ -1386,10 +1393,14 @@ class MemoryVLA(nn.Module):
 
         if episode_id is None:
             episode_id = self.active_ep_id
+        context = self.active_ep_contexts.get(episode_id)
+        if context is None:
+            raise KeyError(f"Cannot finish inactive episode {episode_id}")
         self.episodic_bank.end_episode(
             success=success,
             episode_cog_banks=self.cog_mem_bank.bank.get(episode_id, []),
             episode_per_banks=self.per_mem_bank.bank.get(episode_id, []),
+            episode_id=context["bank_episode_id"],
         )
 
         finished_id = episode_id

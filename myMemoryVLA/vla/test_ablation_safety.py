@@ -63,3 +63,25 @@ def test_failed_episode_is_removed_instead_of_consuming_capacity() -> None:
     bank.end_episode(False, [_entry(0.5)], [_entry(0.5)])
 
     assert bank.bank == {}
+
+
+def test_episode_completion_uses_the_explicit_episode_id() -> None:
+    bank = EpisodicMemBank.__new__(EpisodicMemBank)
+    torch.nn.Module.__init__(bank)
+    bank.episode_id = 3
+    bank.bank = {
+        1: _unit(score=0.1, success=True, complete=False),
+        2: _unit(score=0.2, success=True, complete=False),
+    }
+
+    bank.end_episode(
+        True,
+        [_entry(0.7)],
+        [_entry(0.8)],
+        episode_id=1,
+    )
+
+    assert bank.bank[1].cog_mem_bank is not None
+    assert bank.bank[1].per_mem_bank is not None
+    assert bank.bank[2].cog_mem_bank is None
+    assert bank.bank[2].per_mem_bank is None
